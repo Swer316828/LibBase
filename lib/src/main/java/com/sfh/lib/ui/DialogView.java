@@ -31,6 +31,50 @@ public interface DialogView {
         boolean showLeft = true;
         int gravity = Gravity.CENTER | Gravity.LEFT;
 
+        public Builder setTitle(CharSequence title) {
+            this.title = title;
+            return this;
+        }
+
+        public Builder setMessage(CharSequence message) {
+            this.message = message;
+            return this;
+        }
+
+        public Builder setLeftListener(DialogInterface.OnClickListener leftListener) {
+            this.leftListener = leftListener;
+            return this;
+        }
+
+        public Builder setRightListener(DialogInterface.OnClickListener rightListener) {
+            this.rightListener = rightListener;
+            return this;
+        }
+
+        public Builder setLeftText(CharSequence leftText) {
+            this.leftText = leftText;
+            return this;
+        }
+
+        public Builder setRightText(CharSequence rightText) {
+            this.rightText = rightText;
+            return this;
+        }
+
+        public Builder setCancele(boolean cancele) {
+            this.cancele = cancele;
+            return this;
+        }
+
+        public Builder setShowLeft(boolean showLeft) {
+            this.showLeft = showLeft;
+            return this;
+        }
+
+        public Builder setGravity(int gravity) {
+            this.gravity = gravity;
+            return this;
+        }
 
         public DialogView build() {
             return new DialogView() {
