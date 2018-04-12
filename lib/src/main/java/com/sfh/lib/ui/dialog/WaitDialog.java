@@ -1,0 +1,61 @@
+package com.sfh.lib.ui.dialog;
+
+import android.os.Bundle;
+import android.support.annotation.IdRes;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.TextView;
+
+import com.pnikosis.materialishprogress.ProgressWheel;
+import com.sfh.lib.R;
+
+/**
+ * 功能描述:等待对话框
+ *
+ * @author SunFeihu 孙飞虎
+ * 2018/3/28
+ */
+public class WaitDialog extends DialogFragment {
+
+
+    private ProgressWheel progressWheel;
+    private TextView tvContent;
+
+    public static WaitDialog newToastDialog() {
+        return new WaitDialog();
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        getDialog().requestWindowFeature(Window.FEATURE_NO_TITLE);
+        View view = inflater.inflate(R.layout.base_wait_dialog, container, false);
+        progressWheel = findView(view, R.id.tvTitle);
+        tvContent = findView(view, R.id.tvContent);
+        return view;
+    }
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
+    }
+
+    public <T extends View> T findView(View view, @IdRes int resId) {
+        return (T) view.findViewById(resId);
+    }
+
+
+    public void show(FragmentActivity activity){
+        if (activity == null){
+            return;
+        }
+        super.show(activity.getSupportFragmentManager(),WaitDialog.class.getName());
+
+    }
+
+}
