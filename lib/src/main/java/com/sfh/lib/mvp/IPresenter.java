@@ -2,7 +2,6 @@ package com.sfh.lib.mvp;
 
 
 
-import com.sfh.lib.mvp.service.AbstractObserver;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
@@ -47,6 +46,5 @@ public interface IPresenter<V extends IView>{
      * @param observer
      * @return
      */
-    <T> void execute(int taskId, Observable<T> observable, AbstractObserver<T> observer);
-
+    <T> void execute(int taskId, Observable<T> observable, IResult<T> observer);
 }

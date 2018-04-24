@@ -18,30 +18,28 @@ import okhttp3.RequestBody;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public class UtilRxHttp {
+public final class UtilRxHttp {
 
-    private UtilRxHttp(){}
+    private UtilRxHttp() {
+    }
+
     /***
      * 请求对象进行Map参数化处理
      * @return
      */
-    public static Map<String, String> buildParams(Object object) {
+    public static Map<String, String> buildParams(Object object) throws IllegalAccessException {
 
         Field[] fields = object.getClass().getFields();
         Map<String, String> params = new HashMap<>(fields.length);
-        try {
-            for (Field field : fields) {
-                field.setAccessible(true);
-                Object value = field.get(object);
-                if (isBaseType(value)) {
-                    // 基础类型
-                    params.put(field.getName(), value.toString());
-                } else {
-                    params.put(field.getName(), new Gson().toJson(value));
-                }
+        for (Field field : fields) {
+            field.setAccessible(true);
+            Object value = field.get(object);
+            if (isBaseType(value)) {
+                // 基础类型
+                params.put(field.getName(), value.toString());
+            } else {
+                params.put(field.getName(), new Gson().toJson(value));
             }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
         }
         return params;
     }
@@ -68,6 +66,7 @@ public class UtilRxHttp {
 
     /**
      * 文件加其他类型数据参数处理
+     *
      * @param params
      * @return
      */

@@ -4,6 +4,7 @@ import android.util.SparseArray;
 
 
 import com.sfh.lib.http.service.HandleException;
+import com.sfh.lib.mvp.IResult;
 import com.sfh.lib.utils.UtilLog;
 
 import io.reactivex.Observable;
@@ -87,8 +88,9 @@ final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public  <T> Disposable execute(Observable<T> observable, final AbstractObserver<T> observer) {
+    public  <T> Disposable execute(Observable<T> observable, IResult<T> result) {
 
+        Observer<T> subscribe = new Observer(result);
         return observable.compose(new ObservableTransformer<T,T>(){
 
             @Override
@@ -96,14 +98,19 @@ final class RetrofitManager {
                 return  upstream.subscribeOn(Schedulers.io())
                         .unsubscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .onErrorResumeNext(new HttpResponseFunc<T>());
+                        .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(observer, observer.throwable());
+        }).subscribe(subscribe, subscribe.onError());
     }
 
-    private  class HttpResponseFunc<T> implements Function<Throwable, Observable<T>> {
+
+    /***
+     * 异常处理类
+     * @param <E>
+     */
+    class ThrowableFunc<E extends Throwable> implements Function<E, Observable<HandleException>> {
         @Override
-        public Observable<T> apply(Throwable throwable) throws Exception {
+        public Observable<HandleException> apply(E throwable) throws Exception {
             // 封装成自定义异常对象
             return Observable.error(HandleException.handleException(throwable));
         }

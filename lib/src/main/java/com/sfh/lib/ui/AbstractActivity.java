@@ -10,6 +10,7 @@ import com.sfh.lib.mvp.ILifeCycle;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
 import com.sfh.lib.ui.dialog.AppDialog;
+import com.sfh.lib.utils.UtilTool;
 
 
 /**
@@ -27,15 +28,6 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
     private IDialog dialogProxy;
 
     /***
-     * 是否需要状态栏 默认 true 需要
-     * @return
-     */
-    public boolean isTitleBar() {
-        return true;
-    }
-
-
-    /***
      * 生命周期管理
      */
     private final ILifeCycle lifeCycle = AndroidLifecycle.createLifecycleProvider();
@@ -51,7 +43,6 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
 
         this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_CREATE);
     }
-
 
     @Override
     protected void onStart() {

@@ -36,7 +36,7 @@ public class AppDialog implements IDialog {
     }
 
     @Override
-    public <T extends IView> IPresenter<T> getPresenter() {
+    public IPresenter getPresenter() {
         return null;
     }
 

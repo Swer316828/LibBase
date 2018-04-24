@@ -14,10 +14,9 @@ public interface IView {
 
     /***
      * 创建UI请求控制中间层对象
-     * @param <T>
      * @return
      */
-    <T extends IView> IPresenter<T> getPresenter();
+    IPresenter getPresenter();
 
     /***
      * 显示等待对话框

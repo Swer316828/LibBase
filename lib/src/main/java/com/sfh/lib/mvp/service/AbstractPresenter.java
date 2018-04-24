@@ -1,12 +1,16 @@
 package com.sfh.lib.mvp.service;
 
 
-
+import com.sfh.lib.http.utils.UtilRxHttp;
 import com.sfh.lib.mvp.IPresenter;
+import com.sfh.lib.mvp.IResult;
 import com.sfh.lib.mvp.IView;
+
+import java.util.Map;
 
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 
 /**
  * 功能描述:Mode 与 View 中间层
@@ -58,9 +62,9 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
         }
         this.retrofit.put(taskId, disposable);
     }
-    
+
     @Override
-    public <T> void execute(int taskId, Observable<T> observable, AbstractObserver<T> observer) {
+    public <T> void execute(int taskId, Observable<T> observable, IResult<T> observer) {
         if (this.retrofit == null) {
             this.retrofit = new RetrofitManager();
         }
@@ -68,5 +72,30 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
         this.putDisposable(taskId, disposable);
     }
 
+    /***
+     * 公共参数
+     * @return
+     */
+    public abstract Map<String, String> getBaseParams();
 
+
+    /***
+     * 请求对象转换成Map<String, String>
+     * @param params
+     * @return
+     */
+    public Observable<Map<String, String>> buildParams(Object params) {
+
+        return Observable.just(params).map(new Function<Object, Map<String, String>>() {
+            @Override
+            public Map<String, String> apply(Object o) throws Exception {
+                Map<String, String> params = UtilRxHttp.buildParams(o);
+                Map<String, String> base = getBaseParams();
+                if (base != null && base.isEmpty()) {
+                    params.putAll(base);
+                }
+                return params;
+            }
+        });
+    }
 }
