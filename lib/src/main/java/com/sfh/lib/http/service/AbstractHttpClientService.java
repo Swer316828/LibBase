@@ -38,7 +38,11 @@ public abstract class AbstractHttpClientService implements IRxHttpClient, IRxHtt
         }
         return this.retrofit.create(service);
     }
-
+    @Override
+    public IRxHttpConfig getRxHttpConfig() {
+        // 网络配置
+        return this;
+    }
     @Override
     public long getReadTimeout() {
         return 15 * 1000L;

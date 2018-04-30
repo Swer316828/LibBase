@@ -2,10 +2,13 @@ package com.sfh.lib.ui;
 
 import android.os.Bundle;
 import android.support.annotation.IdRes;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.sfh.lib.mvp.ILifeCycle;
 import com.sfh.lib.mvp.IView;
@@ -19,27 +22,49 @@ import com.sfh.lib.mvp.service.ViewProxy;
  * @date 2017/7/5
  */
 public abstract class AbstractFragment extends Fragment implements IView {
-
-
+    protected ViewProxy<IView> viewProxy;
+    protected View mRoot;
     /***
      * 生命周期管理
      */
     @Nullable
     private final ILifeCycle lifeCycle = new AndroidLifecycle();
 
+    public abstract int getLayout();
 
+    public void initData(View view) {
+    }
+
+    @Nullable
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-
-        super.onViewCreated(view, savedInstanceState);
-
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        boolean initCreateView;
+        //在Fragment onCreateView方法中缓存View
+        //FragmentTab切换Fragment时避免重复加载UI
+        if (mRoot != null) {
+            ViewGroup parent = (ViewGroup) mRoot.getParent();
+            if (parent != null) {
+                parent.removeView(mRoot);
+            }
+            initCreateView = false;
+        } else {
+            mRoot = inflater.inflate(this.getLayout(), container, false);
+            initCreateView = true;
+        }
         // 视图代理类
-        ViewProxy viewProxy = new ViewProxy();
+        if (viewProxy == null) {
+            viewProxy = new ViewProxy();
+        }
 
         //绑定生命周期管理
         viewProxy.bindToLifecycle(this.lifeCycle);
 
         this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_CREATE);
+
+        if (initCreateView) {
+            this.initData(mRoot);
+        }
+        return mRoot;
     }
 
     @Override
@@ -81,6 +106,7 @@ public abstract class AbstractFragment extends Fragment implements IView {
     @Override
     public void onDestroy() {
         this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_DESTROY);
+        this.viewProxy = null;
         super.onDestroy();
     }
 
