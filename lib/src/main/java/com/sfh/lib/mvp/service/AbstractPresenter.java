@@ -73,13 +73,6 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
     }
 
     /***
-     * 公共参数
-     * @return
-     */
-    public abstract Map<String, String> getBaseParams();
-
-
-    /***
      * 请求对象转换成Map<String, String>
      * @param params
      * @return
@@ -89,12 +82,7 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
         return Observable.just(params).map(new Function<Object, Map<String, String>>() {
             @Override
             public Map<String, String> apply(Object o) throws Exception {
-                Map<String, String> params = UtilRxHttp.buildParams(o);
-                Map<String, String> base = getBaseParams();
-                if (base != null && base.isEmpty()) {
-                    params.putAll(base);
-                }
-                return params;
+                return UtilRxHttp.buildParams(o);
             }
         });
     }
