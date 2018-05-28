@@ -60,7 +60,6 @@ public final class RxBusEventManager {
             public void accept(Throwable throwable) throws Exception {
                 //onError()被调用，订阅者和被订阅者的订阅关系就解除,需要重新注册
                 register(eventClass, onNext);
-                UtilLog.e(eventClass, "监听回调操作异常：" + throwable.toString());
             }
         });
     }

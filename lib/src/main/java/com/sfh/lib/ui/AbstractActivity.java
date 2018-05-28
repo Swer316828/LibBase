@@ -10,7 +10,8 @@ import com.sfh.lib.mvp.ILifeCycle;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
 import com.sfh.lib.ui.dialog.AppDialog;
-import com.sfh.lib.utils.UtilTool;
+import com.sfh.lib.ui.dialog.DialogBuilder;
+import com.sfh.lib.mvp.IDialog;
 
 
 /**
@@ -111,7 +112,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
     }
 
     @Override
-    public void showDialog(DialogView dialog) {
+    public void showDialog(DialogBuilder dialog) {
 
         if (this.isLifeCycle()) {
             return;

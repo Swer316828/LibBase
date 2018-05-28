@@ -2,7 +2,11 @@ package com.sfh.lib.http.service;
 
 import android.os.Build;
 
+import com.sfh.lib.http.service.gson.CustomGsonConverterFactory;
+import com.sfh.lib.utils.UtilLog;
+
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
@@ -47,6 +51,7 @@ class OkHttpClientBuilder implements Interceptor {
      * @return
      */
     public OkHttpClientBuilder setLog(boolean log) {
+        UtilLog.setDEBUG(log);
         this.log = log;
         return this;
     }
@@ -90,7 +95,7 @@ class OkHttpClientBuilder implements Interceptor {
         //适配RxJava2.0
         builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
         //请求的结果转为实体类
-        builder.addConverterFactory(GsonConverterFactory.create());
+        builder.addConverterFactory(CustomGsonConverterFactory.create());
         builder.baseUrl(this.host);
         builder.client(okHttpClient);
         return builder.build();
@@ -109,6 +114,10 @@ class OkHttpClientBuilder implements Interceptor {
         } else {
             request = chain.request();
         }
-        return chain.proceed(request);
+        try {
+            return chain.proceed(request);
+        }catch (SocketTimeoutException e){
+            throw new IOException(e);
+        }
     }
 }

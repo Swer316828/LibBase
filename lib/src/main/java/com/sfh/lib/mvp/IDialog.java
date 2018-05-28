@@ -1,7 +1,5 @@
-package com.sfh.lib.ui;
+package com.sfh.lib.mvp;
 
-
-import com.sfh.lib.mvp.IView;
 
 /**
  * 功能描述:

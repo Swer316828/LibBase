@@ -9,10 +9,8 @@ import android.widget.TextView;
 
 
 import com.sfh.lib.R;
+import com.sfh.lib.mvp.IDialog;
 import com.sfh.lib.mvp.IPresenter;
-import com.sfh.lib.mvp.IView;
-import com.sfh.lib.ui.DialogView;
-import com.sfh.lib.ui.IDialog;
 
 import java.lang.ref.WeakReference;
 
@@ -64,7 +62,7 @@ public class AppDialog implements IDialog {
     }
 
     @Override
-    public void showDialog(DialogView dialog) {
+    public void showDialog(DialogBuilder dialog) {
         if (this.activity == null || this.activity.get() == null) {
             return;
         }

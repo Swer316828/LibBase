@@ -14,7 +14,6 @@ import android.view.Window;
 import android.widget.TextView;
 
 import com.sfh.lib.R;
-import com.sfh.lib.ui.DialogView;
 
 
 /**
@@ -23,7 +22,7 @@ import com.sfh.lib.ui.DialogView;
  * @author SunFeihu 孙飞虎
  * 2018/3/28
  */
-public class ToastDialog extends DialogFragment implements View.OnClickListener, DialogView.DialogInterface {
+public class ToastDialog extends DialogFragment implements View.OnClickListener, DialogBuilder.DialogInterface {
 
 
     private TextView tvTitle;
@@ -31,7 +30,7 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
     private TextView tvLeftClick;
     private TextView tvRightClick;
     private View vLine;
-    private DialogView data;
+    private DialogBuilder data;
 
     public static ToastDialog newToastDialog() {
         return new ToastDialog();
@@ -75,7 +74,7 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         return (T) view.findViewById(resId);
     }
 
-    public void setData(DialogView data) {
+    public void setData(DialogBuilder data) {
         this.data = data;
     }
 

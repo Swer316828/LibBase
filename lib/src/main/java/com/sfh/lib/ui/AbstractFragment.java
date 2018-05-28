@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import com.sfh.lib.mvp.ILifeCycle;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
+import com.sfh.lib.ui.dialog.DialogBuilder;
 
 
 /**
@@ -137,7 +138,7 @@ public abstract class AbstractFragment extends Fragment implements IView {
     }
 
     @Override
-    public void showDialog(DialogView alert) {
+    public void showDialog(DialogBuilder alert) {
 
         AbstractActivity activity = this.lifeCycle();
 

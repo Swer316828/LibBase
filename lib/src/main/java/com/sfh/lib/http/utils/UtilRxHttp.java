@@ -1,11 +1,20 @@
 package com.sfh.lib.http.utils;
 
+import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
+
 import com.google.gson.Gson;
+import com.sfh.lib.http.ReqBase;
+import com.sfh.lib.http.annotation.Lose;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import okhttp3.MediaType;
@@ -23,16 +32,29 @@ public final class UtilRxHttp {
     private UtilRxHttp() {
     }
 
+
     /***
      * 请求对象进行Map参数化处理
+     * 要求在异步线程中调用
      * @return
      */
+    @WorkerThread
     public static Map<String, String> buildParams(Object object) throws IllegalAccessException {
 
-        Field[] fields = object.getClass().getFields();
-        Map<String, String> params = new HashMap<>(fields.length);
+        Field[] fields = object.getClass().getDeclaredFields();
+        Map<String, String> params;
+        if (object instanceof ReqBase) {
+            // 公共参数
+            params = ((ReqBase) object).toMap();
+        } else {
+            params = new HashMap<>(fields.length);
+        }
+
         for (Field field : fields) {
             field.setAccessible(true);
+            if (isLose(object, field)) {
+                continue;
+            }
             Object value = field.get(object);
             if (isBaseType(value)) {
                 // 基础类型
@@ -44,6 +66,37 @@ public final class UtilRxHttp {
         return params;
     }
 
+    /***
+     * 忽略参数
+     * @param field
+     * @return
+     */
+    private static boolean isLose(Object object, Field field) throws IllegalAccessException {
+        //静态属性被忽略
+        if (Modifier.isStatic(field.getModifiers())
+                || Modifier.isFinal(field.getModifiers())
+                || Modifier.isTransient(field.getModifiers())) {
+            return true;
+        }
+        Lose lose = field.getAnnotation(Lose.class);
+        if (lose != null) {
+            // 忽略参数
+            return true;
+        }
+
+        Object value = field.get(object);
+        if (value == null || TextUtils.isEmpty(value.toString())) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 基础类型判断
+     *
+     * @param object
+     * @return
+     */
     private static boolean isBaseType(Object object) {
         if (object instanceof Integer) {
             return true;
@@ -62,6 +115,7 @@ public final class UtilRxHttp {
         }
         return false;
     }
+
 
 
     /**

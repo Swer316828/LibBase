@@ -1,7 +1,7 @@
 package com.sfh.lib.mvp;
 
 
-import com.sfh.lib.ui.DialogView;
+import com.sfh.lib.ui.dialog.DialogBuilder;
 
 /**
  * 功能描述:【V】视图操作接口
@@ -33,7 +33,7 @@ public interface IView {
      * 显示提示对话框
      * @param dialog 提示信息
      */
-    void showDialog(DialogView dialog);
+    void showDialog(DialogBuilder dialog);
 
     /***
      *隐藏提示对话框

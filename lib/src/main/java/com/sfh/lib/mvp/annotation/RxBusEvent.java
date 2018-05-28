@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 public @interface RxBusEvent {
 
     /**任务ID*/
-    int taskId() default -1;
+    int taskId() default 0x777777;
 
     /**监听数据类对象*/
     Class<?> eventClass();

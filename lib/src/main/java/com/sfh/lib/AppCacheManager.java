@@ -3,6 +3,8 @@ package com.sfh.lib;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.SharedPreferencesCompat;
 import android.text.TextUtils;
 import android.util.LruCache;
@@ -63,7 +65,6 @@ public class AppCacheManager implements Consumer<String> {
     private final LruCache<String, Object> cacheObject = new LruCache<String, Object>((int) Runtime.getRuntime().maxMemory() / 1024 / 50) {
         @Override
         protected int sizeOf(String key, Object value) {
-            //KB
             return String.valueOf(value).getBytes().length / 1024;
         }
     };
@@ -97,6 +98,7 @@ public class AppCacheManager implements Consumer<String> {
      * 返回缓存文件 可能出现NULL
      * @return
      */
+    @Nullable
     public File getFileCache() {
 
         if (TextUtils.isEmpty(this.fileCachePath)) {
@@ -118,7 +120,7 @@ public class AppCacheManager implements Consumer<String> {
 
         AbstractApplication application;
 
-        public Builder(AbstractApplication context) {
+        public Builder(@NonNull AbstractApplication context) {
 
             this.application = context;
         }
@@ -170,7 +172,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param <T>
      * @return
      */
-    public <T> T getCache(String key, T defaultObject) {
+    public <T> T getCache(@NonNull  String key,@NonNull  T defaultObject) {
 
         if (TextUtils.isEmpty(key)) {
             return defaultObject;
@@ -195,7 +197,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param <T>   class类型
      * @return
      */
-    public <T> boolean putMemoryCache(String key, T value) {
+    public <T> boolean putMemoryCache(@NonNull  String key,@NonNull  T value) {
         return this.putCache(false, key, value);
     }
 
@@ -204,7 +206,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param key
      * @return
      */
-    public void removeMemoryCache(String key) {
+    public void removeMemoryCache(@NonNull  String key) {
         this.removeCache(false, key);
     }
 
@@ -217,7 +219,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param value
      * @return
      */
-    public <T> boolean putCache(boolean persist, String key, T value) {
+    public <T> boolean putCache(boolean persist,@NonNull  String key,@NonNull  T value) {
         if (this.cacheObject == null || TextUtils.isEmpty(key)) {
             return false;
         }
@@ -235,7 +237,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param key
      * @return
      */
-    public void removeCache(boolean persist, String key) {
+    public void removeCache(boolean persist,@NonNull  String key) {
         if (this.cacheObject == null) {
             return;
         }
@@ -254,7 +256,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param <T>
      * @return
      */
-    private <T> boolean putObject(String key, T value) {
+    private <T> boolean putObject(@NonNull String key,@NonNull  T value) {
         if (this.preferences == null || TextUtils.isEmpty(key)) {
             return false;
         }
@@ -271,7 +273,7 @@ public class AppCacheManager implements Consumer<String> {
             // 非基本类型
             editor.putString(key, new Gson().toJson(value));
         }
-        SharedPreferencesCompat.EditorCompat.getInstance().apply(editor);
+        editor.apply();
         return true;
     }
 
@@ -314,7 +316,7 @@ public class AppCacheManager implements Consumer<String> {
         if (preferences.contains(key)) {
             SharedPreferences.Editor editor = this.preferences.edit();
             editor.remove(key);
-            SharedPreferencesCompat.EditorCompat.getInstance().apply(editor);
+            editor.apply();
         }
     }
 
