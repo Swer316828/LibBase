@@ -1,5 +1,6 @@
 package com.sfh.lib.mvp.service;
 
+import android.support.annotation.NonNull;
 import android.util.SparseArray;
 
 
@@ -88,7 +89,7 @@ final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public  <T> Disposable execute(Observable<T> observable, IResult<T> result) {
+    public  <T> Disposable execute(@NonNull Observable<T> observable, @NonNull IResult<T> result) {
 
         Observer<T> subscribe = new Observer(result);
         return observable.compose(new ObservableTransformer<T,T>(){

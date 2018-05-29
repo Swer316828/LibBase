@@ -3,6 +3,7 @@ package com.sfh.lib.mvp.service;
 
 import com.sfh.lib.http.service.HandleException;
 import com.sfh.lib.mvp.IResult;
+import com.sfh.lib.utils.UtilLog;
 
 import io.reactivex.functions.Consumer;
 
@@ -32,6 +33,7 @@ final class Observer<T> implements Consumer<T> {
         return  new Consumer<HandleException>() {
             @Override
             public void accept(HandleException e) throws Exception {
+                UtilLog.e(Observer.class, e.toString());
                 if (result == null) {
                     return;
                 }

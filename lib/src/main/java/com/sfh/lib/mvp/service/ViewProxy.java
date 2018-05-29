@@ -1,18 +1,19 @@
 package com.sfh.lib.mvp.service;
 
 import android.support.annotation.Nullable;
+import android.util.SparseArray;
 
 
 import com.sfh.lib.RxBusEventManager;
 import com.sfh.lib.mvp.ILifeCycle;
 import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IView;
-import com.sfh.lib.mvp.annotation.CacheMethod;
 import com.sfh.lib.mvp.annotation.RxBusEvent;
 import com.sfh.lib.utils.UtilLog;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
@@ -33,25 +34,6 @@ import io.reactivex.schedulers.Schedulers;
  */
 public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle<T>, Consumer {
 
-
-    /**
-     * 运行内存kB 1/50 大概10M以下
-     */
-//    private final static LruCache<String, Object[]> VIEWCACHES = new LruCache<String, Object[]>((int) Runtime.getRuntime().maxMemory() / 1024 / 50) {
-//        @Override
-//        protected int sizeOf(String key, Object[] value) {
-//            //KB
-//            return String.valueOf(value).getBytes().length / 1024;
-//        }
-//    };
-
-    /***
-     * 清除缓存数据
-     */
-    public static void onDertory() {
-//        VIEWCACHES.evictAll();
-    }
-
     /**
      * 生命周期状态值 默认 ON_CREATE
      */
@@ -70,7 +52,7 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
     /***
      * 当前V层方法中进行消息事件监听
      */
-    private  Map<String, Method> eventMethod = new HashMap<>(2);
+    private SparseArray<Method> eventMethod = new SparseArray<>(2);
 
     @Override
     public void onEvent(T listener, int event) {
@@ -124,35 +106,9 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
         return (T) Proxy.newProxyInstance(clz.getClassLoader(), clz.getInterfaces(), this);
     }
 
-    private boolean isLife() {
-
-        return this.lifecycleEvent != ILifeCycle.EVENT_ON_DESTROY || ILifeCycle.EVENT_ON_FINISH != this.lifecycleEvent;
-    }
-
-    private void bindView(T view) {
-        if (view == null) {
-            return;
-        }
-        this.unBindView();
-        this.viewHolder = new SoftReference(view);
-
-    }
-
-    /***
-     * 解除视图
-     */
-    private void unBindView() {
-        if (viewHolder != null) {
-            viewHolder.clear();
-            viewHolder = null;
-        }
-    }
-
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if (this.isCacheMethod(method)) {
-            this.cacheMethod(method, args);
-        }
+
         if (this.isBind() && this.isLife()) {
             UtilLog.d(ViewProxy.class, "代理类缓存数据:" + viewHolder.get().getClass().getName());
             return invokeMethod(viewHolder.get(), method, args);
@@ -160,34 +116,55 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
         return null;
     }
 
+    private boolean isLife() {
+        return this.lifecycleEvent != ILifeCycle.EVENT_ON_DESTROY || ILifeCycle.EVENT_ON_FINISH != this.lifecycleEvent;
+    }
+
+    /***
+     * 绑定视图
+     * @param view
+     */
+    private void bindView(T view) {
+        if (view == null) {
+            return;
+        }
+        this.unBindView();
+        this.viewHolder = new SoftReference(view);
+    }
+
+    /***
+     * 解除视图
+     */
+    private void unBindView() {
+        if (this.viewHolder != null) {
+            this.viewHolder.clear();
+            this.viewHolder = null;
+        }
+    }
+
+    /***
+     * 判断视图是否绑定
+     * @return true 绑定 fase 解绑
+     */
     private boolean isBind() {
         return viewHolder != null && viewHolder.get() != null;
     }
 
-    private boolean isCacheMethod(Method method) {
-        CacheMethod cacheMethod = method.getAnnotation(CacheMethod.class);
-        return cacheMethod != null && cacheMethod.isCached();
-    }
-
-    private void cacheMethod(Method method, Object[] args) {
-        //VIEWCACHES.put(method.getName(), args);
-    }
-
-    private Object invokeMethod(Object view, Method method, Object... args) {
+    /***
+     * 调用被代理对象的方法
+     * @param view
+     * @param method
+     * @param args
+     * @return
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
+    private Object invokeMethod(Object view, Method method, Object... args) throws InvocationTargetException, IllegalAccessException {
         if (view == null || method == null) {
             return null;
         }
-        try {
-            return method.invoke(view, args);
-        } catch (Exception e) {
-            e.printStackTrace();
-            UtilLog.d(ViewProxy.class, "IView 方法回调异常 Exception:" + e);
-        }
-        return null;
+        return method.invoke(view, args);
     }
-
-
-
 
     private void registerEvent(T t) {
 
@@ -202,7 +179,7 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
                     }
                     Class<?> clz = event.eventClass();
                     if (clz != null && event.taskId() != -1) {
-                        eventMethod.put(clz.getName(), method);
+                        eventMethod.put(clz.getName().hashCode(), method);
                         Disposable disposable = RxBusEventManager.register(clz, ViewProxy.this);
                         IPresenter presenter = t.getPresenter();
                         if (presenter == null) {
@@ -237,7 +214,7 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
     @Override
     public void accept(Object o) throws Exception {
         // 消息监听
-        Method method = eventMethod.get(o.getClass().getName());
+        Method method = eventMethod.get(o.getClass().getName().hashCode());
         if (method != null && this.isBind() && this.isLife()) {
             this.invokeMethod(viewHolder.get(), method, o);
         }

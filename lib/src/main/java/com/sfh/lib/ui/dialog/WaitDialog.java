@@ -45,6 +45,10 @@ public class WaitDialog extends DialogFragment {
         this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
     }
 
+    public boolean isShowing() {
+        return this.getDialog() != null
+                && this.getDialog().isShowing();
+    }
     public <T extends View> T findView(View view, @IdRes int resId) {
         return (T) view.findViewById(resId);
     }

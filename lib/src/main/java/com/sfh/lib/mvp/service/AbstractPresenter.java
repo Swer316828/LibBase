@@ -1,6 +1,8 @@
 package com.sfh.lib.mvp.service;
 
 
+import android.support.annotation.NonNull;
+
 import com.sfh.lib.http.utils.UtilRxHttp;
 import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IResult;
@@ -64,7 +66,7 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
     }
 
     @Override
-    public <T> void execute(int taskId, Observable<T> observable, IResult<T> observer) {
+    public <T> void execute(int taskId, @NonNull Observable<T> observable,@NonNull IResult<T> observer) {
         if (this.retrofit == null) {
             this.retrofit = new RetrofitManager();
         }

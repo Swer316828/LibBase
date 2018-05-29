@@ -55,7 +55,7 @@ public class AppDialog implements IDialog {
         if (this.activity == null || this.activity.get() == null) {
             return;
         }
-        if (this.waitDialog == null || !this.waitDialog.isVisible()) {
+        if (this.waitDialog == null || !this.waitDialog.isShowing()) {
             return;
         }
         this.waitDialog.dismiss();
