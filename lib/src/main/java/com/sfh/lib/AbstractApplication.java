@@ -54,7 +54,6 @@ public abstract class AbstractApplication extends MultiDexApplication {
         super.onLowMemory();
         //清理内存缓存
         AppCacheManager.newInstance().onDertory();
-        ViewProxy.onDertory();
     }
 
 
