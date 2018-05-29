@@ -39,7 +39,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.2'
 
     compile 'com.android.support:multidex:1.0.3'
-    compile 'com.tencent.bugly:crashreport:latest.release'//Buly异常捕获
+    compile 'com.tencent.bugly:crashreport_upgrade:latest.release'
 
-    compile 'com.pnikosis:materialish-progress:1.7' // 加载进度
+    compile 'com.pnikosis:materialish-progress:1.7'
 }

@@ -5,12 +5,11 @@ import android.content.SharedPreferences;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.SharedPreferencesCompat;
 import android.text.TextUtils;
 import android.util.LruCache;
 
 import com.google.gson.Gson;
-import com.tencent.bugly.crashreport.CrashReport;
+import com.tencent.bugly.Bugly;
 
 import java.io.File;
 
@@ -149,7 +148,7 @@ public class AppCacheManager implements Consumer<String> {
                 String crashReportID = this.application.getCrashReport();
                 if (!TextUtils.isEmpty(crashReportID)) {
                     // Bugly 异常上报
-                    CrashReport.initCrashReport(this.application, crashReportID, false);
+                    Bugly.init(this.application, crashReportID, false);
                 }
 
                 String prefFile = this.application.getPreFile();
