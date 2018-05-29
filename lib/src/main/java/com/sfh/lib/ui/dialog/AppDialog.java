@@ -84,11 +84,7 @@ public class AppDialog implements IDialog {
 
     @Override
     public void showToast(CharSequence msg) {
-        if (this.activity == null || this.activity.get() == null) {
-            return;
-        }
-        View view = this.activity.get().getCurrentFocus();
-        this.showToast(view, msg, 0, Snackbar.LENGTH_SHORT);
+        this.showToast(msg, 0);
     }
 
     @Override
@@ -103,14 +99,38 @@ public class AppDialog implements IDialog {
 
     private void showToast(View view, CharSequence msg, int type, int duration) {
         Snackbar mSnackbar = Snackbar.make(view, msg, duration);
-        int color = type == 1 ? Color.YELLOW :type == 2 ? Color.RED : Color.WHITE;
-        int res = type == 1 ? R.drawable.base_warring : type ==2 ? R.drawable.base_fail : R.drawable.base_info;
+        int color = Color.WHITE;
+        int res = R.drawable.base_info;
+        int colorTxt =  Color.BLACK;
+
+        switch (type) {
+            case 0: {
+                color = Color.WHITE;
+                colorTxt =  Color.BLACK;
+                res = R.drawable.base_info;
+                break;
+            }
+            case 1: {
+                color = Color.parseColor("#a8a809");
+                colorTxt =  Color.BLACK;
+                res = R.drawable.base_warring;
+                break;
+            }
+            case 2: {
+                color = Color.RED;
+                colorTxt =  Color.WHITE;
+                res = R.drawable.base_fail;
+                break;
+            }
+            default:
+                break;
+        }
 
         mSnackbar.getView().setBackgroundColor(color);
-        mSnackbar.setText(msg);
 
         TextView tvContent = mSnackbar.getView().findViewById(R.id.snackbar_text);
-        tvContent.setTextColor(Color.BLACK);
+        tvContent.setTextColor(colorTxt);
+        tvContent.setText(msg);
         tvContent.setCompoundDrawablePadding(15);
         tvContent.setGravity(Gravity.CENTER | Gravity.LEFT);
         tvContent.setCompoundDrawablesWithIntrinsicBounds(res, 0, 0, 0);
