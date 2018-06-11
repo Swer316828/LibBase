@@ -10,7 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.sfh.lib.mvp.ILifeCycle;
+import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
 import com.sfh.lib.ui.dialog.DialogBuilder;
@@ -23,18 +23,27 @@ import com.sfh.lib.ui.dialog.DialogBuilder;
  * @date 2017/7/5
  */
 public abstract class AbstractFragment extends Fragment implements IView {
-    protected ViewProxy<IView> viewProxy;
-    protected View mRoot;
-    /***
-     * 生命周期管理
-     */
-    @Nullable
-    private final ILifeCycle lifeCycle = new AndroidLifecycle();
 
+    /***
+     * 布局
+     * @return
+     */
     public abstract int getLayout();
 
+    /***
+     * 获取控制
+     * @return
+     */
+    public abstract IPresenter getPresenter();
+
+    /***
+     * 视图创建
+     * @param view
+     */
     public void initData(View view) {
     }
+
+    protected View mRoot;
 
     @Nullable
     @Override
@@ -52,64 +61,23 @@ public abstract class AbstractFragment extends Fragment implements IView {
             mRoot = inflater.inflate(this.getLayout(), container, false);
             initCreateView = true;
         }
-        // 视图代理类
-        if (viewProxy == null) {
-            viewProxy = new ViewProxy();
-        }
-
-        //绑定生命周期管理
-        viewProxy.bindToLifecycle(this.lifeCycle);
-
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_CREATE);
 
         if (initCreateView) {
+            // 视图代理类
+            ViewProxy viewProxy = new ViewProxy(this);
+            try {
+                IPresenter presenter = getPresenter();
+                if (presenter != null) {
+                    presenter.onBindProxy(viewProxy.getProxy(this));
+                }
+            } catch (Exception e) {
+                this.showToast(e.getMessage());
+            }
             this.initData(mRoot);
         }
         return mRoot;
     }
 
-    @Override
-    public void onStart() {
-
-        super.onStart();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_START);
-    }
-
-    @Override
-    public void onResume() {
-
-        super.onResume();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_RESUME);
-    }
-
-    @Override
-    public void onPause() {
-
-        super.onPause();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_PAUSE);
-    }
-
-
-    @Override
-    public void onStop() {
-
-        super.onStop();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_STOP);
-    }
-
-    @Override
-    public void onDestroyView() {
-
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_FINISH);
-        super.onDestroyView();
-    }
-
-    @Override
-    public void onDestroy() {
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_DESTROY);
-        this.viewProxy = null;
-        super.onDestroy();
-    }
 
     public String getName() {
         return "";

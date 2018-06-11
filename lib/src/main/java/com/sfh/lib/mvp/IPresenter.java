@@ -3,6 +3,8 @@ package com.sfh.lib.mvp;
 
 
 
+import android.arch.lifecycle.LifecycleObserver;
+
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 
@@ -13,18 +15,13 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public interface IPresenter<V extends IView>{
+public interface IPresenter<V extends IView> extends LifecycleObserver{
 
     /**
      * 创建代理
      * @param proxy
      */
-    void onCreate(V proxy);
-
-    /***
-     * 销毁
-     */
-    void onDestory();
+    void onBindProxy(V proxy);
 
     /***
      * 获取视图代理类对象
@@ -41,10 +38,9 @@ public interface IPresenter<V extends IView>{
 
     /***
      * 操作处理
-     * @param taskId
      * @param observable
      * @param observer
      * @return
      */
-    <T> void execute(int taskId, Observable<T> observable, IResult<T> observer);
+    <T> int execute( Observable<T> observable, IResult<T> observer);
 }

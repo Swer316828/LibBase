@@ -6,9 +6,10 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import com.sfh.lib.mvp.ILifeCycle;
+import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
+import com.sfh.lib.mvp.service.empty.EmptyPresenter;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.mvp.IDialog;
@@ -22,75 +23,40 @@ import com.sfh.lib.mvp.IDialog;
  */
 public abstract class AbstractActivity extends AppCompatActivity implements IView {
 
+    /***
+     * 获取控制对象
+     * @return
+     */
+    public abstract  IPresenter getPresenter();
 
     /***
      * 对话框句柄【基础操作】
      */
-    private IDialog dialogProxy;
+    private IDialog mDialogBridge;
 
-    /***
-     * 生命周期管理
-     */
-    private final ILifeCycle lifeCycle = AndroidLifecycle.createLifecycleProvider();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         // 视图代理类
-        ViewProxy viewProxy = new ViewProxy();
+        ViewProxy viewProxy = new ViewProxy(this);
+
         //绑定生命周期管理
-        viewProxy.bindToLifecycle(this.lifeCycle);
+        this.getLifecycle().addObserver(viewProxy);
 
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_CREATE);
-    }
-
-    @Override
-    protected void onStart() {
-
-        super.onStart();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_START);
-    }
-
-
-    @Override
-    protected void onResume() {
-
-        super.onResume();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_RESUME);
-    }
-
-    @Override
-    protected void onPause() {
-
-        super.onPause();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_PAUSE);
-    }
-
-    @Override
-    protected void onStop() {
-
-        super.onStop();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_STOP);
-    }
-
-    @Override
-    public void finish() {
-
-        super.finish();
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_FINISH);
-        if (this.dialogProxy != null) {
-            this.dialogProxy.onDestroy();
-            this.dialogProxy = null;
+        try {
+            IPresenter presenter = this.getPresenter();
+            if (presenter != null){
+                presenter.onBindProxy(viewProxy.getProxy(this));
+                //绑定生命周期管理
+                this.getLifecycle().addObserver(presenter);
+            }
+        }catch (Exception e){
+            this.showToast(e.getMessage());
         }
     }
 
-    @Override
-    protected void onDestroy() {
-
-        this.lifeCycle.onEvent(this, ILifeCycle.EVENT_ON_DESTROY);
-        super.onDestroy();
-    }
 
     @Override
     public void showLoading(boolean cancelAble) {
@@ -99,7 +65,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
             return;
         }
 
-        this.dialogProxy.showLoading(cancelAble);
+        this.mDialogBridge.showLoading(cancelAble);
     }
 
     @Override
@@ -108,7 +74,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         if (this.isLifeCycle()) {
             return;
         }
-        this.dialogProxy.hideLoading();
+        this.mDialogBridge.hideLoading();
     }
 
     @Override
@@ -117,7 +83,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         if (this.isLifeCycle()) {
             return;
         }
-        this.dialogProxy.showDialog(dialog);
+        this.mDialogBridge.showDialog(dialog);
     }
 
     @Override
@@ -126,7 +92,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         if (this.isLifeCycle()) {
             return;
         }
-        this.dialogProxy.hideDialog();
+        this.mDialogBridge.hideDialog();
     }
 
     @Override
@@ -134,7 +100,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         if (this.isLifeCycle()) {
             return;
         }
-        this.dialogProxy.showToast(message);
+        this.mDialogBridge.showToast(message);
     }
 
     @Override
@@ -142,26 +108,29 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         if (this.isLifeCycle()) {
             return;
         }
-        this.dialogProxy.showToast(message, type);
+        this.mDialogBridge.showToast(message, type);
     }
 
     /***
-     * 创建对话框句柄
+     * 创建对话框句柄【可自定义】
      * @return
      */
-    protected   IDialog onCreateDialog(){
-        return  new AppDialog(this);
+
+    protected IDialog onCreateDialog() {
+        return new AppDialog(this);
     }
 
     private boolean isLifeCycle() {
         if (this.isFinishing()) {
             return true;
         }
-        if (this.dialogProxy == null) {
+        if (this.mDialogBridge == null) {
             // 创建统一对话框与等待框，提示框
-            this.dialogProxy = this.onCreateDialog();
+            this.mDialogBridge = this.onCreateDialog();
+            // 绑定生命周期
+            this.getLifecycle().addObserver(this.mDialogBridge);
         }
-        if (this.dialogProxy == null) {
+        if (this.mDialogBridge == null) {
             return true;
         }
         return false;

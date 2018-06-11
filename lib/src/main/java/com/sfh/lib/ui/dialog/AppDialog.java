@@ -1,5 +1,7 @@
 package com.sfh.lib.ui.dialog;
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.OnLifecycleEvent;
 import android.graphics.Color;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
@@ -23,63 +25,59 @@ import java.lang.ref.WeakReference;
 public class AppDialog implements IDialog {
 
 
-    private ToastDialog toastDialog;
+    private ToastDialog mToastDialog;
 
-    private WaitDialog waitDialog;
+    private WaitDialog mWaitDialog;
 
-    private WeakReference<FragmentActivity> activity;
+    private WeakReference<FragmentActivity> mActivity;
 
     public AppDialog(FragmentActivity activity) {
-        this.activity = new WeakReference<>(activity);
+        this.mActivity = new WeakReference<>(activity);
     }
 
-    @Override
-    public IPresenter getPresenter() {
-        return null;
-    }
 
     @Override
     public void showLoading(boolean cancel) {
-        if (this.activity == null || this.activity.get() == null) {
+        if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }
-        if (this.waitDialog == null) {
-            this.waitDialog = WaitDialog.newToastDialog();
+        if (this.mWaitDialog == null) {
+            this.mWaitDialog = WaitDialog.newToastDialog();
         }
-        this.waitDialog.setCancelable(cancel);
-        this.waitDialog.show(this.activity.get());
+        this.mWaitDialog.setCancelable(cancel);
+        this.mWaitDialog.show(this.mActivity.get());
     }
 
     @Override
     public void hideLoading() {
-        if (this.activity == null || this.activity.get() == null) {
+        if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }
-        if (this.waitDialog == null || !this.waitDialog.isShowing()) {
+        if (this.mWaitDialog == null || !this.mWaitDialog.isShowing()) {
             return;
         }
-        this.waitDialog.dismiss();
+        this.mWaitDialog.dismiss();
     }
 
     @Override
     public void showDialog(DialogBuilder dialog) {
-        if (this.activity == null || this.activity.get() == null) {
+        if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }
-        if (this.toastDialog == null) {
-            this.toastDialog = ToastDialog.newToastDialog();
+        if (this.mToastDialog == null) {
+            this.mToastDialog = ToastDialog.newToastDialog();
         }
 
-        this.toastDialog.setData(dialog);
-        this.toastDialog.show(this.activity.get());
+        this.mToastDialog.setData(dialog);
+        this.mToastDialog.show(this.mActivity.get());
     }
 
     @Override
     public void hideDialog() {
-        if (this.toastDialog == null) {
+        if (this.mToastDialog == null) {
             return;
         }
-        this.toastDialog.dismiss();
+        this.mToastDialog.dismiss();
     }
 
     @Override
@@ -89,16 +87,16 @@ public class AppDialog implements IDialog {
 
     @Override
     public void showToast(CharSequence msg, int type) {
-        if (this.activity == null || this.activity.get() == null) {
+        if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }
-        View view = this.activity.get().getWindow().getDecorView();
+        View view = this.mActivity.get().getWindow().getDecorView();
         this.showToast(view, msg, type, Snackbar.LENGTH_SHORT);
     }
 
 
     private void showToast(View view, CharSequence msg, int type, int duration) {
-        Snackbar mSnackbar = Snackbar.make(view, msg, duration);
+        Snackbar snackbar = Snackbar.make(view, msg, duration);
         int color = Color.WHITE;
         int res = R.drawable.base_info;
         int colorTxt =  Color.BLACK;
@@ -126,24 +124,25 @@ public class AppDialog implements IDialog {
                 break;
         }
 
-        mSnackbar.getView().setBackgroundColor(color);
+        snackbar.getView().setBackgroundColor(color);
 
-        TextView tvContent = mSnackbar.getView().findViewById(R.id.snackbar_text);
+        TextView tvContent = snackbar.getView().findViewById(R.id.snackbar_text);
         tvContent.setTextColor(colorTxt);
         tvContent.setText(msg);
         tvContent.setCompoundDrawablePadding(15);
         tvContent.setGravity(Gravity.CENTER | Gravity.LEFT);
         tvContent.setCompoundDrawablesWithIntrinsicBounds(res, 0, 0, 0);
-        mSnackbar.show();
+        snackbar.show();
     }
 
 
-    @Override
-    public void onDestroy() {
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    public void disconnectListener()  {
         this.hideDialog();
         this.hideLoading();
-        this.activity.clear();
-        this.activity = null;
-        this.toastDialog = null;
+        this.mActivity.clear();
+        this.mActivity = null;
+        this.mToastDialog = null;
+        this.mWaitDialog = null;
     }
 }

@@ -1,18 +1,16 @@
 package com.sfh.lib.mvp.service;
 
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.OnLifecycleEvent;
 import android.support.annotation.NonNull;
 
-import com.sfh.lib.http.utils.UtilRxHttp;
 import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IResult;
 import com.sfh.lib.mvp.IView;
 
-import java.util.Map;
-
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 
 /**
  * 功能描述:Mode 与 View 中间层
@@ -23,6 +21,7 @@ import io.reactivex.functions.Function;
  */
 public abstract class AbstractPresenter<V extends IView> implements IPresenter<V> {
 
+
     /**
      * 视图回调代理对象
      */
@@ -31,7 +30,7 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
     /***
      * 管理操作
      */
-    private RetrofitManager retrofit;
+    private  RetrofitManager retrofit;
 
     @Override
     public V getView() {
@@ -41,20 +40,21 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
 
 
     @Override
-    public void onCreate(V proxy) {
+    public void onBindProxy(V proxy) {
         if (this.retrofit == null) {
             this.retrofit = new RetrofitManager();
         }
         this.proxy = proxy;
     }
 
-    @Override
-    public void onDestory() {
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    public void disconnectListener() {
         //取消业务层监听
         if (retrofit != null) {
             this.retrofit.clearAll();
         }
     }
+
 
     @Override
     public void putDisposable(int taskId, Disposable disposable) {
@@ -66,26 +66,10 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
     }
 
     @Override
-    public <T> void execute(int taskId, @NonNull Observable<T> observable,@NonNull IResult<T> observer) {
+    public <T> int execute( @NonNull Observable<T> observable, @NonNull IResult<T> observer) {
         if (this.retrofit == null) {
             this.retrofit = new RetrofitManager();
         }
-        Disposable disposable = this.retrofit.execute(observable, observer);
-        this.putDisposable(taskId, disposable);
-    }
-
-    /***
-     * 请求对象转换成Map<String, String>
-     * @param params
-     * @return
-     */
-    public Observable<Map<String, String>> buildParams(Object params) {
-
-        return Observable.just(params).map(new Function<Object, Map<String, String>>() {
-            @Override
-            public Map<String, String> apply(Object o) throws Exception {
-                return UtilRxHttp.buildParams(o);
-            }
-        });
+        return this.retrofit.execute(observable, observer);
     }
 }

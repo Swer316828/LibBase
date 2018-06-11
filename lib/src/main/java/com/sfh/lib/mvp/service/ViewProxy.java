@@ -1,14 +1,16 @@
 package com.sfh.lib.mvp.service;
 
-import android.support.annotation.Nullable;
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleObserver;
+import android.arch.lifecycle.OnLifecycleEvent;
+import android.support.annotation.NonNull;
 import android.util.SparseArray;
 
 
 import com.sfh.lib.RxBusEventManager;
-import com.sfh.lib.mvp.ILifeCycle;
-import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.annotation.RxBusEvent;
+import com.sfh.lib.mvp.service.empty.EmptyResult;
 import com.sfh.lib.utils.UtilLog;
 
 import java.lang.ref.SoftReference;
@@ -16,8 +18,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.Map;
 
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
@@ -32,122 +32,103 @@ import io.reactivex.schedulers.Schedulers;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle<T>, Consumer {
-
-    /**
-     * 生命周期状态值 默认 ON_CREATE
-     */
-    private int lifecycleEvent = ILifeCycle.EVENT_ON_CREATE;
+public class ViewProxy<V extends IView> implements InvocationHandler, LifecycleObserver, Consumer {
 
     /**
      * 视图回调
      */
-    private SoftReference<T> viewHolder;
+    private SoftReference<V> mViewHolder;
 
     /***
-     * 管理任务-防止界面无IPresenter 有需要消息监听
+     * 管理任务消息监听
      */
-    private  RetrofitManager retrofitManager;
+    private RetrofitManager mRetrofitManager;
 
     /***
      * 当前V层方法中进行消息事件监听
      */
-    private SparseArray<Method> eventMethod = new SparseArray<>(2);
+    private SparseArray<Method> mEventMethod;
 
-    @Override
-    public void onEvent(T listener, int event) {
-
-        this.lifecycleEvent = event;
-        switch (event) {
-
-            case EVENT_ON_CREATE: {
-                // 绑定View
-                this.bindView(listener);
-                IPresenter<T> presenter = listener.getPresenter();
-                if (presenter != null) {
-                    presenter.onCreate(this.proxy(listener));
-                }
-                this.registerEvent(listener);
-                break;
-            }
-            case EVENT_ON_FINISH: {
-                // 销毁资源
-                this.unBindView();
-                IPresenter<T> presenter = listener.getPresenter();
-                if (presenter != null) {
-                    presenter.onDestory();
-                }
-                this.unregisterEvent();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    @Override
-    public void bindToLifecycle(@Nullable ILifeCycle<T> lifeCycle) {
-        // 加入生命周期管理
-        lifeCycle.bindToLifecycle(this);
+    public ViewProxy(@NonNull V listener) {
+        // 绑定View
+        this.bindView(listener);
     }
 
     /**
      * 获取代理对象
      *
-     * @param t
      * @return
      */
-    private T proxy(T t) {
+    public V getProxy(@NonNull V listener) {
 
-        Class<?> clz = t.getClass();
-        if (clz == null) {
-            throw new NullPointerException("proxy class is NULL class:" + clz.getClass().getName());
-        }
-        return (T) Proxy.newProxyInstance(clz.getClassLoader(), clz.getInterfaces(), this);
+        Class<?> clz = listener.getClass();
+
+        return (V) Proxy.newProxyInstance(clz.getClassLoader(), clz.getInterfaces(), this);
     }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    public void connectListener() {
+
+        V listener = this.getView();
+        if (listener != null) {
+            this.registerEvent(listener);
+        }
+    }
+
+    private V getView() {
+        if (mViewHolder == null) {
+            return null;
+        }
+        return mViewHolder.get();
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    public void disconnectListener() {
+        // 销毁资源
+        this.unBindView();
+        this.unregisterEvent();
+    }
+
+    private void unregisterEvent() {
+        if (this.mRetrofitManager != null) {
+            this.mRetrofitManager.clearAll();
+        }
+        if (this.mEventMethod != null) {
+            this.mEventMethod.clear();
+        }
+    }
+
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
-        if (this.isBind() && this.isLife()) {
-            UtilLog.d(ViewProxy.class, "代理类缓存数据:" + viewHolder.get().getClass().getName());
-            return invokeMethod(viewHolder.get(), method, args);
+        V listener = this.getView();
+        if (listener != null) {
+            UtilLog.d(ViewProxy.class, "代理类缓存数据:" + listener.getClass().getName());
+            return invokeMethod(listener, method, args);
         }
         return null;
-    }
-
-    private boolean isLife() {
-        return this.lifecycleEvent != ILifeCycle.EVENT_ON_DESTROY || ILifeCycle.EVENT_ON_FINISH != this.lifecycleEvent;
     }
 
     /***
      * 绑定视图
      * @param view
      */
-    private void bindView(T view) {
+    private void bindView(V view) {
         if (view == null) {
             return;
         }
         this.unBindView();
-        this.viewHolder = new SoftReference(view);
+        this.mViewHolder = new SoftReference(view);
     }
 
     /***
      * 解除视图
      */
     private void unBindView() {
-        if (this.viewHolder != null) {
-            this.viewHolder.clear();
-            this.viewHolder = null;
+        if (this.mViewHolder != null) {
+            this.mViewHolder.clear();
+            this.mViewHolder = null;
         }
-    }
-
-    /***
-     * 判断视图是否绑定
-     * @return true 绑定 fase 解绑
-     */
-    private boolean isBind() {
-        return viewHolder != null && viewHolder.get() != null;
     }
 
     /***
@@ -166,11 +147,17 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
         return method.invoke(view, args);
     }
 
-    private void registerEvent(T t) {
+    /***
+     * 检查view 视图中是否存在消息通知监听的方法
+     * @param t
+     */
+    private void registerEvent(V t) {
 
-        Disposable disposable = Flowable.just(t).map(new Function<T, Boolean>() {
+        Observer emptyObserver = new Observer(new EmptyResult());
+
+        Disposable disposable = Flowable.just(t).map(new Function<V, Boolean>() {
             @Override
-            public Boolean apply(T t) throws Exception {
+            public Boolean apply(V t) throws Exception {
                 Method[] methods = t.getClass().getMethods();
                 for (Method method : methods) {
                     RxBusEvent event = method.getAnnotation(RxBusEvent.class);
@@ -179,44 +166,42 @@ public class ViewProxy<T extends IView> implements InvocationHandler, ILifeCycle
                     }
                     Class<?> clz = event.eventClass();
                     if (clz != null && event.taskId() != -1) {
-                        eventMethod.put(clz.getName().hashCode(), method);
-                        Disposable disposable = RxBusEventManager.register(clz, ViewProxy.this);
-                        IPresenter presenter = t.getPresenter();
-                        if (presenter == null) {
-                            retrofitManager = new RetrofitManager();
-                            retrofitManager.put(event.taskId(), disposable);
-                        } else {
-                            presenter.putDisposable(event.taskId(), disposable);
+                        if (mEventMethod == null) {
+                            mEventMethod = new SparseArray<>(2);
                         }
+                        mEventMethod.put(clz.getName().hashCode(), method);
+                        Disposable disposable = RxBusEventManager.register(clz, ViewProxy.this);
+                        putDisposable(event.taskId(), disposable);
                     }
                 }
                 return true;
             }
-        }).onBackpressureLatest().subscribeOn(Schedulers.io()).subscribe();
-        IPresenter presenter = t.getPresenter();
-        if (presenter == null) {
-            this.retrofitManager = new RetrofitManager();
-            this.retrofitManager.put(0x100001, disposable);
-        } else {
-            presenter.putDisposable(0x100001, disposable);
-        }
+        }).onBackpressureLatest().subscribeOn(Schedulers.io()).subscribe(emptyObserver, emptyObserver.onError());
+
+        putDisposable(0x100001, disposable);
     }
 
-    private void unregisterEvent() {
-        if (this.retrofitManager != null) {
-            this.retrofitManager.clearAll();
+    private void putDisposable(int taskId, Disposable disposable) {
+
+        if (this.mRetrofitManager == null) {
+            this.mRetrofitManager = new RetrofitManager();
         }
-        if (this.eventMethod != null) {
-            this.eventMethod.clear();
-        }
+        this.mRetrofitManager.put(taskId, disposable);
     }
+
 
     @Override
     public void accept(Object o) throws Exception {
+        if (mEventMethod == null || mEventMethod.size() == 0) {
+            return;
+        }
         // 消息监听
-        Method method = eventMethod.get(o.getClass().getName().hashCode());
-        if (method != null && this.isBind() && this.isLife()) {
-            this.invokeMethod(viewHolder.get(), method, o);
+        Method method = mEventMethod.get(o.getClass().getName().hashCode());
+        if (method != null) {
+            V listener = this.getView();
+            if (listener != null) {
+                this.invokeMethod(listener, method, o);
+            }
         }
     }
 }

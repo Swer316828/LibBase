@@ -13,12 +13,6 @@ import com.sfh.lib.ui.dialog.DialogBuilder;
 public interface IView {
 
     /***
-     * 创建UI请求控制中间层对象
-     * @return
-     */
-    IPresenter getPresenter();
-
-    /***
      * 显示等待对话框
      * @param cancel true 可以取消默认值 false 不可以取消
      */

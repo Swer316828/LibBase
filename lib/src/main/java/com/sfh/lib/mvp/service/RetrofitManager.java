@@ -8,11 +8,16 @@ import com.sfh.lib.http.service.HandleException;
 import com.sfh.lib.mvp.IResult;
 import com.sfh.lib.utils.UtilLog;
 
+import org.reactivestreams.Publisher;
+
+import io.reactivex.Flowable;
+import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
@@ -25,7 +30,7 @@ import io.reactivex.schedulers.Schedulers;
 final class RetrofitManager {
 
 
-    private final SparseArray<Disposable> serverList = new SparseArray<>(5);
+    private volatile SparseArray<Disposable> serverList = new SparseArray<>(2);
 
 
     /***
@@ -65,21 +70,14 @@ final class RetrofitManager {
         if (this.serverList.size() == 0) {
             return;
         }
-
-        // 防止任务内容已经被清空导致异常
-        try {
-            final int size = this.serverList.size() - 1;
-            for (int i = size; i >= 0; i--) {
-                Disposable subscription = this.serverList.valueAt(i);
-                if (null != subscription) {
-                    subscription.dispose();
-                }
+        final int size = this.serverList.size();
+        for (int i = 0; i <= size; i--) {
+            Disposable subscription = this.serverList.valueAt(i);
+            if (null != subscription) {
+                subscription.dispose();
             }
-            this.serverList.clear();
-        } catch (Exception e) {
-
-             UtilLog.e (RetrofitManager.class,"取消业务层监听 e:"+e.toString ());
         }
+        this.serverList.clear();
 
     }
 
@@ -89,19 +87,55 @@ final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public  <T> Disposable execute(@NonNull Observable<T> observable, @NonNull IResult<T> result) {
+    public <T> int execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
 
         Observer<T> subscribe = new Observer(result);
-        return observable.compose(new ObservableTransformer<T,T>(){
+        final int taskId = subscribe.hashCode();
+        Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
 
             @Override
             public ObservableSource<T> apply(Observable<T> upstream) {
-                return  upstream.subscribeOn(Schedulers.io())
+                return upstream.subscribeOn(Schedulers.io())
                         .unsubscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError());
+        }).subscribe(subscribe, subscribe.onError(), new Action() {
+            @Override
+            public void run() throws Exception {
+                remove(taskId);
+            }
+        });
+        put(taskId, disposable);
+        return taskId;
+    }
+    /***
+     * [背压]异步请求操作
+     * @param observable
+     * @param <T>
+     * @return
+     */
+    public <T> int execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
+
+        Observer<T> subscribe = new Observer(result);
+        final int taskId = subscribe.hashCode();
+        Disposable disposable = observable.compose(new FlowableTransformer<T, T>() {
+
+            @Override
+            public Publisher<T> apply(Flowable<T> upstream) {
+               return upstream.subscribeOn(Schedulers.io())
+                        .unsubscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .onErrorResumeNext(new ThrowableFunc());
+            }
+        }).subscribe(subscribe, subscribe.onError(), new Action() {
+            @Override
+            public void run() throws Exception {
+                remove(taskId);
+            }
+        });
+        put(taskId, disposable);
+        return taskId;
     }
 
 
