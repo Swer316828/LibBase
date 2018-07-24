@@ -1,10 +1,11 @@
 package com.sfh.lib.mvp;
 
 
-
-
 import android.arch.lifecycle.LifecycleObserver;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 
@@ -15,10 +16,11 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public interface IPresenter<V extends IView> extends LifecycleObserver{
+public interface IPresenter<V extends IView> extends LifecycleObserver {
 
     /**
      * 创建代理
+     *
      * @param proxy
      */
     void onBindProxy(V proxy);
@@ -31,10 +33,9 @@ public interface IPresenter<V extends IView> extends LifecycleObserver{
 
     /***
      * 绑定监听
-     * @param taskId
      * @param disposable
      */
-    void putDisposable(int taskId, Disposable disposable);
+    void putDisposable(Disposable disposable);
 
     /***
      * 操作处理
@@ -42,5 +43,12 @@ public interface IPresenter<V extends IView> extends LifecycleObserver{
      * @param observer
      * @return
      */
-    <T> int execute( Observable<T> observable, IResult<T> observer);
+    <T> void execute(@NonNull Observable<T> observable,  @Nullable  IResult<T> observer);
+    /***
+     * 操作处理
+     * @param observable
+     * @param observer
+     * @return
+     */
+    <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResult<T> observer);
 }

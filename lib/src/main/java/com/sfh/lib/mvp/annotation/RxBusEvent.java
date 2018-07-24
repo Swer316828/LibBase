@@ -15,9 +15,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RxBusEvent {
 
-    /**任务ID*/
-    int taskId() default 0x777777;
-
     /**监听数据类对象*/
     Class<?> eventClass();
 }

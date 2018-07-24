@@ -1,18 +1,16 @@
 package com.sfh.lib.ui;
 
 import android.os.Bundle;
-import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
 
+import com.sfh.lib.mvp.IDialog;
 import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
-import com.sfh.lib.mvp.service.empty.EmptyPresenter;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
-import com.sfh.lib.mvp.IDialog;
+import com.sfh.lib.utils.ViewModelProviders;
 
 
 /**
@@ -39,21 +37,17 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        // 视图代理类
-        ViewProxy viewProxy = new ViewProxy(this);
+        // 视图代理类-ViewModel
+        ViewProxy viewProxy =  ViewModelProviders.of(this).get(ViewProxy.class);
+        viewProxy.register(this);
 
-        //绑定生命周期管理
-        this.getLifecycle().addObserver(viewProxy);
+        //Lifecycle
+        IPresenter presenter = this.getPresenter();
+        if (presenter != null){
 
-        try {
-            IPresenter presenter = this.getPresenter();
-            if (presenter != null){
-                presenter.onBindProxy(viewProxy.getProxy(this));
-                //绑定生命周期管理
-                this.getLifecycle().addObserver(presenter);
-            }
-        }catch (Exception e){
-            this.showToast(e.getMessage());
+            viewProxy.bindProxy(presenter);
+            //绑定生命周期管理
+            this.getLifecycle().addObserver(presenter);
         }
     }
 
@@ -127,8 +121,6 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         if (this.mDialogBridge == null) {
             // 创建统一对话框与等待框，提示框
             this.mDialogBridge = this.onCreateDialog();
-            // 绑定生命周期
-            this.getLifecycle().addObserver(this.mDialogBridge);
         }
         if (this.mDialogBridge == null) {
             return true;
@@ -136,14 +128,12 @@ public abstract class AbstractActivity extends AppCompatActivity implements IVie
         return false;
     }
 
-    /***
-     *
-     * @param resId
-     * @param <T>
-     * @return
-     */
-    public <T extends View> T findView(@IdRes int resId) {
-        return (T) super.findViewById(resId);
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (this.mDialogBridge != null) {
+            this.mDialogBridge. onDestory();
+        }
+        this.mDialogBridge = null;
     }
-
 }

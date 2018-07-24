@@ -4,11 +4,13 @@ package com.sfh.lib.mvp.service;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.OnLifecycleEvent;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IResult;
 import com.sfh.lib.mvp.IView;
 
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 
@@ -30,14 +32,13 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
     /***
      * 管理操作
      */
-    private  RetrofitManager retrofit;
+    private  volatile RetrofitManager retrofit;
 
     @Override
     public V getView() {
 
         return this.proxy;
     }
-
 
     @Override
     public void onBindProxy(V proxy) {
@@ -55,21 +56,34 @@ public abstract class AbstractPresenter<V extends IView> implements IPresenter<V
         }
     }
 
-
     @Override
-    public void putDisposable(int taskId, Disposable disposable) {
+    public void putDisposable(Disposable disposable) {
 
         if (this.retrofit == null) {
             this.retrofit = new RetrofitManager();
         }
-        this.retrofit.put(taskId, disposable);
+        this.retrofit.put(disposable);
     }
 
     @Override
-    public <T> int execute( @NonNull Observable<T> observable, @NonNull IResult<T> observer) {
+    public <T> void execute( @NonNull Observable<T> observable, @NonNull IResult<T> observer) {
         if (this.retrofit == null) {
             this.retrofit = new RetrofitManager();
         }
-        return this.retrofit.execute(observable, observer);
+         this.retrofit.execute(observable, observer);
+    }
+
+    /***
+     * 操作处理
+     * @param observable
+     * @param observer
+     * @return
+     */
+    @Override
+    public <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResult<T> observer){
+        if (this.retrofit == null) {
+            this.retrofit = new RetrofitManager();
+        }
+        this.retrofit.execute(observable, observer);
     }
 }

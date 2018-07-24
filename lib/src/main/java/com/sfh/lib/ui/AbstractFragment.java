@@ -14,6 +14,7 @@ import com.sfh.lib.mvp.IPresenter;
 import com.sfh.lib.mvp.IView;
 import com.sfh.lib.mvp.service.ViewProxy;
 import com.sfh.lib.ui.dialog.DialogBuilder;
+import com.sfh.lib.utils.ViewModelProviders;
 
 
 /**
@@ -41,6 +42,8 @@ public abstract class AbstractFragment extends Fragment implements IView {
      * @param view
      */
     public void initData(View view) {
+
+
     }
 
     protected View mRoot;
@@ -63,16 +66,16 @@ public abstract class AbstractFragment extends Fragment implements IView {
         }
 
         if (initCreateView) {
-            // 视图代理类
-            ViewProxy viewProxy = new ViewProxy(this);
-            try {
-                IPresenter presenter = getPresenter();
-                if (presenter != null) {
-                    presenter.onBindProxy(viewProxy.getProxy(this));
-                }
-            } catch (Exception e) {
-                this.showToast(e.getMessage());
+            // 视图代理类-ViewModel
+            ViewProxy viewProxy = ViewModelProviders.of(this).get(ViewProxy.class);
+            viewProxy.register(this);
+
+            IPresenter presenter = this.getPresenter();
+
+            if (presenter != null) {
+                viewProxy.bindProxy(presenter);
             }
+
             this.initData(mRoot);
         }
         return mRoot;

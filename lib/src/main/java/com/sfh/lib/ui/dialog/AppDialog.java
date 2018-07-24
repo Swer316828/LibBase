@@ -136,8 +136,8 @@ public class AppDialog implements IDialog {
     }
 
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    public void disconnectListener()  {
+    @Override
+    public void onDestory()  {
         this.hideDialog();
         this.hideLoading();
         this.mActivity.clear();

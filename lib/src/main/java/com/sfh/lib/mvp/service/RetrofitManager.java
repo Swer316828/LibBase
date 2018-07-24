@@ -16,6 +16,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Function;
@@ -30,36 +31,24 @@ import io.reactivex.schedulers.Schedulers;
 final class RetrofitManager {
 
 
-    private volatile SparseArray<Disposable> serverList = new SparseArray<>(2);
+    private volatile CompositeDisposable serverList = new CompositeDisposable();
 
 
     /***
      * 添加业务层控制监听
-     * @param taskId 任务ID
      * @param disposable
      */
-    public void put(int taskId, Disposable disposable) {
+    public void put(Disposable disposable) {
 
-        this.remove(taskId);
-        this.serverList.put(taskId, disposable);
+        this.serverList.add(disposable);
     }
 
     /***
      *  取消业务层控制监听
-     * @param taskId
      */
-    public void remove(int taskId) {
+    public void remove(Disposable disposable) {
 
-        // 没有任务
-        if (this.serverList.size() == 0) {
-            return;
-        }
-
-        Disposable subscription = this.serverList.get(taskId);
-        if (subscription != null) {
-            subscription.dispose();
-        }
-        this.serverList.remove(taskId);
+        this.serverList.remove(disposable);
     }
 
     /***
@@ -67,16 +56,6 @@ final class RetrofitManager {
      */
     public void clearAll() {
 
-        if (this.serverList.size() == 0) {
-            return;
-        }
-        final int size = this.serverList.size();
-        for (int i = 0; i <= size; i--) {
-            Disposable subscription = this.serverList.valueAt(i);
-            if (null != subscription) {
-                subscription.dispose();
-            }
-        }
         this.serverList.clear();
 
     }
@@ -87,10 +66,9 @@ final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public <T> int execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
+    public <T> void execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
 
         Observer<T> subscribe = new Observer(result);
-        final int taskId = subscribe.hashCode();
         Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
 
             @Override
@@ -100,25 +78,20 @@ final class RetrofitManager {
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError(), new Action() {
-            @Override
-            public void run() throws Exception {
-                remove(taskId);
-            }
-        });
-        put(taskId, disposable);
-        return taskId;
+        }).subscribe(subscribe, subscribe.onError());
+        this.put(disposable);
     }
+
+
     /***
      * [背压]异步请求操作
      * @param observable
      * @param <T>
      * @return
      */
-    public <T> int execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
+    public <T> void execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
 
         Observer<T> subscribe = new Observer(result);
-        final int taskId = subscribe.hashCode();
         Disposable disposable = observable.compose(new FlowableTransformer<T, T>() {
 
             @Override
@@ -128,14 +101,8 @@ final class RetrofitManager {
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError(), new Action() {
-            @Override
-            public void run() throws Exception {
-                remove(taskId);
-            }
-        });
-        put(taskId, disposable);
-        return taskId;
+        }).subscribe(subscribe, subscribe.onError());
+        this.put(disposable);
     }
 
 
