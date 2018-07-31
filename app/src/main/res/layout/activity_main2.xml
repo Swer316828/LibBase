@@ -4,13 +4,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.sfh.base.MainActivity">
-
-<ListView
-    android:dividerHeight="0.5dp"
-    android:divider="#f0eff5"
-    android:id="@+id/lv"
+    tools:context=".Main2Activity">
+<WebView
+    android:id="@+id/web"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"></ListView>
-
+    android:layout_height="wrap_content"></WebView>
 </LinearLayout>
