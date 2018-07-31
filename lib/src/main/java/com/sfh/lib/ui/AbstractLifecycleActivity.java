@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.BaseAdapter;
 
 import com.sfh.lib.mvvm.IDialog;
 import com.sfh.lib.mvvm.IView;
@@ -21,7 +20,7 @@ import java.lang.reflect.ParameterizedType;
 
 
 /**
- * 功能描述:MVP【不存在任何业务逻辑代码】
+ * 功能描述:UI【不存在任何业务逻辑代码】
  *
  * @author SunFeihu 孙飞虎
  * @date 2017/7/5

@@ -18,7 +18,7 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public interface IModel {
+public interface IViewModel {
 
     /***
      * 数据持有者

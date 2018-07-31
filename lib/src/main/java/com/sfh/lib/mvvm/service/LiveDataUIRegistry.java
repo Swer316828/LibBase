@@ -4,7 +4,7 @@ import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.sfh.lib.mvvm.IModel;
+import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
 import com.sfh.lib.mvvm.service.empty.EmptyResult;
@@ -48,7 +48,7 @@ public class LiveDataUIRegistry<V extends IView> extends ViewModel implements  F
      */
     public void observe(@NonNull V listener) {
         UtilLog.d(TAG, "LiveDataUIRegistry =========== 注册监听");
-        IModel model = listener.getViewModel();
+        IViewModel model = listener.getViewModel();
         if (model != null) {
             //LiveData 加入生命周期管理中
             model.getLiveData().observe(listener.getLifecycleOwner(),listener.getObserver());
@@ -62,7 +62,7 @@ public class LiveDataUIRegistry<V extends IView> extends ViewModel implements  F
     @Override
     public Boolean apply(V listener) throws Exception {
 
-        final IModel viewModel = listener.getViewModel();
+        final IViewModel viewModel = listener.getViewModel();
         if (viewModel == null) {
             return false;
         }

@@ -20,7 +20,7 @@ public interface IView  {
 
 
     @Nullable
-    <T extends IModel> T getViewModel();
+    <T extends IViewModel> T getViewModel();
 
 
     /***
