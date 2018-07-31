@@ -1,6 +1,11 @@
 package com.sfh.lib.ui.dialog;
 
+import android.support.annotation.ColorRes;
+import android.support.annotation.DimenRes;
+import android.support.annotation.Dimension;
+import android.support.annotation.IntegerRes;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.Gravity;
 
 /**
@@ -9,7 +14,7 @@ import android.view.Gravity;
  * @date 2016/11/14
  */
 
-public interface DialogBuilder {
+public class DialogBuilder {
 
     interface DialogInterface {
 
@@ -20,166 +25,149 @@ public interface DialogBuilder {
         }
     }
 
-    final class Builder {
-        CharSequence title;
-        CharSequence message;
-        DialogInterface.OnClickListener leftListener;
-        DialogInterface.OnClickListener rightListener;
-        CharSequence leftText;
-        CharSequence rightText;
-        boolean cancele = true;
-        boolean showLeft = true;
-        int gravity = Gravity.CENTER | Gravity.LEFT;
+    public CharSequence title;
+    @ColorRes
+    public int titleTextColor;
+    @DimenRes
+    public int titleTextSize;
 
-        public Builder setTitle(CharSequence title) {
-            this.title = title;
-            return this;
-        }
+    public CharSequence leftText;
+    @ColorRes
+    public int leftTextColor;
+    @DimenRes
+    public int leftTextSize;
 
-        public Builder setMessage(CharSequence message) {
-            this.message = message;
-            return this;
-        }
+    public CharSequence rightText;
+    @ColorRes
+    public int rightTextColor;
+    @DimenRes
+    public int rightTextSize;
 
-        public Builder setLeftListener(DialogInterface.OnClickListener leftListener) {
-            this.leftListener = leftListener;
-            return this;
-        }
 
-        public Builder setRightListener(DialogInterface.OnClickListener rightListener) {
-            this.rightListener = rightListener;
-            return this;
-        }
+    public CharSequence message;
+    @ColorRes
+    public int messageTextColor;
+    @DimenRes
+    public int messageTextSize;
 
-        public Builder setLeftText(CharSequence leftText) {
-            this.leftText = leftText;
-            return this;
-        }
+    public DialogInterface.OnClickListener leftListener;
+    public DialogInterface.OnClickListener rightListener;
 
-        public Builder setRightText(CharSequence rightText) {
-            this.rightText = rightText;
-            return this;
-        }
+    /**
+     * 是否可以取消
+     */
+    public boolean isCancelable = true;
 
-        public Builder setCancele(boolean cancele) {
-            this.cancele = cancele;
-            return this;
-        }
+    /**
+     * 内容对齐方式
+     */
+    public int gravity = Gravity.LEFT;
 
-        public Builder setShowLeft(boolean showLeft) {
-            this.showLeft = showLeft;
-            return this;
-        }
-
-        public Builder setGravity(int gravity) {
-            this.gravity = gravity;
-            return this;
-        }
-
-        public DialogBuilder build() {
-            return new DialogBuilder() {
-
-                @Override
-                public boolean cancele() {
-                    return cancele;
-                }
-
-                @Override
-                public CharSequence getTitle() {
-                    return title;
-                }
-
-                @Override
-                public CharSequence getMessage() {
-                    return message;
-                }
-
-                @Override
-                public DialogInterface.OnClickListener getOnLeftClick() {
-                    return leftListener;
-                }
-
-                @Override
-                public DialogInterface.OnClickListener getOnRightClick() {
-                    return rightListener;
-                }
-
-                @Override
-                public CharSequence getLeftText() {
-                    return leftText;
-                }
-
-                @Override
-                public CharSequence getRightText() {
-                    return rightText;
-                }
-
-                @Override
-                public boolean isLeftShow() {
-                    return showLeft;
-                }
-
-                @Override
-                public int gravity() {
-                    return gravity;
-                }
-            };
-        }
-
+    public void setTitle(CharSequence title) {
+        this.title = title;
     }
 
-    /***
-     * 是否可取消
-     * @return
-     */
-    boolean cancele();
+    public void setTitleColor(CharSequence title, @ColorRes int titleTextColor) {
+        this.title = title;
+        this.titleTextColor = titleTextColor;
+    }
 
-    /***
-     * 标题
-     * @return
-     */
-    CharSequence getTitle();
+    public void setTitleSize(CharSequence title, @DimenRes int titleTextSize) {
+        this.title = title;
+        this.titleTextSize = titleTextSize;
+    }
 
-    /***
-     * 消息内容
-     * @return
-     */
-    CharSequence getMessage();
+    public void setTitleSizeColor(CharSequence title, @ColorRes int titleTextColor, @DimenRes int titleTextSize) {
+        this.title = title;
+        this.titleTextColor = titleTextColor;
+        this.titleTextSize = titleTextSize;
+    }
 
-    /***
-     * 左按钮点击事件
-     * @return
-     */
-    DialogInterface.OnClickListener getOnLeftClick();
+    public void setLeftText(CharSequence leftText) {
+        this.leftText = leftText;
+    }
 
-    /***
-     * 右按钮点击事件
-     * @return
-     */
-    DialogInterface.OnClickListener getOnRightClick();
+    public void setLeftTextColor(CharSequence leftText, @ColorRes int leftTextColor) {
+        this.leftText = leftText;
+        this.leftTextColor = leftTextColor;
+    }
 
-    /***
-     * 左按钮文字
-     * @return
-     */
-    CharSequence getLeftText();
+    public void setLeftTextSize(CharSequence leftText, @DimenRes int leftTextSize) {
+        this.leftText = leftText;
+        this.leftTextSize = leftTextSize;
+    }
 
-    /***
-     * 右按钮文字
-     * @return
-     */
-    CharSequence getRightText();
+    public void setLeftTextColorSize(CharSequence leftText, @ColorRes int leftTextColor, @DimenRes int leftTextSize) {
+        this.leftText = leftText;
+        this.leftTextColor = leftTextColor;
+        this.leftTextSize = leftTextSize;
+    }
 
-    /***
-     * 左按钮是否可见
-     * @return
-     */
-    boolean isLeftShow();
 
-    /*****
-     * 内容对齐方式
-     * @return
-     */
-    int gravity();
+    public void setRightText(CharSequence rightText) {
+        this.rightText = rightText;
+    }
 
+    public void setRightTextColor(CharSequence rightText, @ColorRes int rightTextColor) {
+        this.rightText = rightText;
+        this.rightTextColor = rightTextColor;
+    }
+
+    public void setRightTextSize(CharSequence rightText, @DimenRes int rightTextSize) {
+        this.rightText = rightText;
+        this.rightTextSize = rightTextSize;
+    }
+
+    public void setRightTextColorSize(CharSequence rightText, @ColorRes int rightTextColor, @DimenRes int rightTextSize) {
+        this.rightText = rightText;
+        this.rightTextColor = rightTextColor;
+        this.rightTextSize = rightTextSize;
+    }
+
+    public void setMessage(CharSequence message) {
+        this.message = message;
+    }
+    public void setMessageGravity(CharSequence message,int gravity) {
+        this.message = message;
+        this.gravity = gravity;
+    }
+
+    public void setGravity(int gravity) {
+        this.gravity = gravity;
+    }
+
+    public void setMessageTextColor(CharSequence message, @ColorRes int messageTextColor) {
+        this.message = message;
+        this.messageTextColor = messageTextColor;
+    }
+
+    public void setMessageTextSize(CharSequence message, @DimenRes int messageTextSize) {
+        this.message = message;
+        this.messageTextSize = messageTextSize;
+    }
+
+    public void setMessageTextColorSize(CharSequence message, @ColorRes int messageTextColor, @DimenRes int messageTextSize) {
+        this.message = message;
+        this.messageTextColor = messageTextColor;
+        this.messageTextSize = messageTextSize;
+    }
+
+    public void setLeftListener(DialogInterface.OnClickListener leftListener) {
+        this.leftListener = leftListener;
+    }
+
+    public void setRightListener(DialogInterface.OnClickListener rightListener) {
+        this.rightListener = rightListener;
+    }
+
+    public void setCancelable(boolean cancelable) {
+        this.isCancelable = cancelable;
+    }
+
+
+    public void build(FragmentActivity activity) {
+        ToastDialog toastDialog = ToastDialog.newToastDialog();
+        toastDialog.setData(this);
+        toastDialog.show(activity);
+    }
 }

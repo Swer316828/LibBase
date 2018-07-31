@@ -1,7 +1,8 @@
 package com.sfh.lib.ui;
 
+import android.arch.lifecycle.LifecycleOwner;
+import android.arch.lifecycle.Observer;
 import android.os.Bundle;
-import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,20 +11,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.sfh.lib.mvp.IPresenter;
-import com.sfh.lib.mvp.IView;
-import com.sfh.lib.mvp.service.ViewProxy;
+import com.sfh.lib.mvvm.IView;
+import com.sfh.lib.mvvm.service.BaseViewModel;
+import com.sfh.lib.mvvm.service.LiveDataUIRegistry;
+import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
+import java.lang.reflect.ParameterizedType;
+
 
 /**
- * 功能描述:MVP【不存在任何业务逻辑代码】
+ * 功能描述:不存在任何业务逻辑代码
  *
  * @author SunFeihu 孙飞虎
  * @date 2017/7/5
  */
-public abstract class AbstractFragment extends Fragment implements IView {
+public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extends Fragment implements IView,Observer {
 
     /***
      * 布局
@@ -31,20 +35,30 @@ public abstract class AbstractFragment extends Fragment implements IView {
      */
     public abstract int getLayout();
 
-    /***
-     * 获取控制
-     * @return
-     */
-    public abstract IPresenter getPresenter();
+    protected VM mViewModel;
+
+    private LiveDataUIRegistry mLiveDataRegistry;
+
+    @Override
+    @Nullable
+    public VM getViewModel() {
+        if (mViewModel == null) {
+            Class<VM> cls = (Class<VM>) ((ParameterizedType)this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+            mViewModel = ViewModelProviders.of(this).get(cls);
+        }
+        return mViewModel;
+    }
+    @Override
+    @NonNull
+    public LifecycleOwner getLifecycleOwner() {
+        return this;
+    }
 
     /***
      * 视图创建
      * @param view
      */
-    public void initData(View view) {
-
-
-    }
+    public abstract void initData(View view);
 
     protected View mRoot;
 
@@ -67,15 +81,8 @@ public abstract class AbstractFragment extends Fragment implements IView {
 
         if (initCreateView) {
             // 视图代理类-ViewModel
-            ViewProxy viewProxy = ViewModelProviders.of(this).get(ViewProxy.class);
-            viewProxy.register(this);
-
-            IPresenter presenter = this.getPresenter();
-
-            if (presenter != null) {
-                viewProxy.bindProxy(presenter);
-            }
-
+            mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataUIRegistry.class);
+            mLiveDataRegistry.observe(this);
             this.initData(mRoot);
         }
         return mRoot;
@@ -86,9 +93,18 @@ public abstract class AbstractFragment extends Fragment implements IView {
         return "";
     }
 
+    /***
+     * 获取LiveData 监听
+     * @return
+     */
     @Override
+    @NonNull
+    public Observer getObserver() {
+        return this;
+    }
+
     public void showLoading(boolean cancel) {
-        AbstractActivity activity = this.lifeCycle();
+        AbstractLifecycleActivity activity = this.lifeCycle();
 
         if (activity == null) {
             return;
@@ -97,10 +113,9 @@ public abstract class AbstractFragment extends Fragment implements IView {
 
     }
 
-    @Override
     public void hideLoading() {
 
-        AbstractActivity activity = this.lifeCycle();
+        AbstractLifecycleActivity activity = this.lifeCycle();
 
         if (activity == null) {
             return;
@@ -108,10 +123,9 @@ public abstract class AbstractFragment extends Fragment implements IView {
         activity.hideLoading();
     }
 
-    @Override
     public void showDialog(DialogBuilder alert) {
 
-        AbstractActivity activity = this.lifeCycle();
+        AbstractLifecycleActivity activity = this.lifeCycle();
 
         if (activity == null) {
             return;
@@ -119,10 +133,9 @@ public abstract class AbstractFragment extends Fragment implements IView {
         activity.showDialog(alert);
     }
 
-    @Override
     public void hideDialog() {
 
-        AbstractActivity activity = this.lifeCycle();
+        AbstractLifecycleActivity activity = this.lifeCycle();
 
         if (activity == null) {
             return;
@@ -130,9 +143,8 @@ public abstract class AbstractFragment extends Fragment implements IView {
         activity.hideDialog();
     }
 
-    @Override
     public void showToast(CharSequence message) {
-        AbstractActivity activity = this.lifeCycle();
+        AbstractLifecycleActivity activity = this.lifeCycle();
 
         if (activity == null) {
             return;
@@ -140,9 +152,8 @@ public abstract class AbstractFragment extends Fragment implements IView {
         activity.showToast(message);
     }
 
-    @Override
     public void showToast(CharSequence message, int type) {
-        AbstractActivity activity = this.lifeCycle();
+        AbstractLifecycleActivity activity = this.lifeCycle();
 
         if (activity == null) {
             return;
@@ -150,16 +161,25 @@ public abstract class AbstractFragment extends Fragment implements IView {
         activity.showToast(message, type);
     }
 
-    private AbstractActivity lifeCycle() {
+    private AbstractLifecycleActivity lifeCycle() {
         FragmentActivity activity = getActivity();
-        if (activity == null || activity.isFinishing() || !(activity instanceof AbstractActivity)) {
+        if (activity == null || activity.isFinishing() || !(activity instanceof AbstractLifecycleActivity)) {
             return null;
         }
-        return (AbstractActivity) activity;
+        return (AbstractLifecycleActivity) activity;
     }
+    @Override
+    public void onChanged(@Nullable Object data){
 
+        if (data instanceof NetWorkState) {
+            AbstractLifecycleActivity activity = this.lifeCycle();
+            if (activity == null) {
+                return;
+            }
+            activity.setNetWorkState((NetWorkState) data);
+        } else {
+            this.mLiveDataRegistry.showLiveData(this, data);
+        }
 
-    public <T extends View> T findView(View view, @IdRes int resId) {
-        return (T) view.findViewById(resId);
     }
 }

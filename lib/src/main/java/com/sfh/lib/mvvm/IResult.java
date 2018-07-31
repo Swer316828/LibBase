@@ -1,4 +1,4 @@
-package com.sfh.lib.mvp;
+package com.sfh.lib.mvvm;
 
 import com.sfh.lib.http.service.HandleException;
 

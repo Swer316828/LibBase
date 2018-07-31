@@ -1,16 +1,16 @@
-package com.sfh.lib.mvp;
+package com.sfh.lib.mvvm;
 
 
 import com.sfh.lib.ui.dialog.DialogBuilder;
 
 /**
- * 功能描述:【V】视图操作接口
+ * 功能描述:
  *
- * @author sunfeihu
- * @date 2016/11/14
+ * @author SunFeihu 孙飞虎
+ *         2018/3/28
  */
+public interface IDialog {
 
-public interface IView {
 
     /***
      * 显示等待对话框
@@ -45,4 +45,9 @@ public interface IView {
      * @param type 0 正常 1 警告 2错误
      */
     void showToast(CharSequence msg, int type);
+
+    /***
+     * 销毁
+     */
+    void onDestory();
 }

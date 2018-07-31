@@ -16,8 +16,6 @@ import java.lang.reflect.InvocationTargetException;
  * 功能描述: TODO
  *
  * @author SunFeihu 孙飞虎
- * @company 中储南京智慧物流科技有限公司
- * @copyright （版权）中储南京智慧物流科技有限公司所有
  * @date 2018/7/24
  */
 public class ViewModelProviders {

@@ -5,6 +5,7 @@ import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
@@ -17,7 +18,7 @@ import com.sfh.lib.R;
 
 
 /**
- * 功能描述:
+ * 功能描述:提示类对话框
  *
  * @author SunFeihu 孙飞虎
  * 2018/3/28
@@ -55,20 +56,44 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         this.tvLeftClick.setOnClickListener(this);
         this.tvRightClick.setOnClickListener(this);
         this.tvContent.setMovementMethod(ScrollingMovementMethod.getInstance());
+        this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
 
-        if (data == null) {
+        if (this.data == null) {
             return;
         }
-        this.setCancelable(data.cancele());
-        this.tvContent.setGravity(data.gravity());
-        this.tvTitle.setText(TextUtils.isEmpty(data.getTitle()) ? "提示" : data.getTitle());
-        this.tvContent.setText(TextUtils.isEmpty(data.getMessage()) ? "" : data.getMessage());
-        this.tvLeftClick.setText(TextUtils.isEmpty(data.getLeftText()) ? "取消" : data.getLeftText());
-        this.tvRightClick.setText(TextUtils.isEmpty(data.getRightText()) ? "确定" : data.getRightText());
-        this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
+        this.setCancelable(data.isCancelable);
+        this.tvContent.setGravity(data.gravity);
+        if (TextUtils.isEmpty(data.title)) {
+            this.tvTitle.setVisibility(View.GONE);
+        } else {
+            this.tvTitle.setVisibility(View.VISIBLE);
+            this.tvTitle.setText(data.title);
+        }
+
+        setTextViewStyle(this.tvContent, data.message, data.messageTextColor, data.messageTextSize);
+        setTextViewStyle(this.tvLeftClick, data.leftText, data.leftTextColor, data.leftTextSize);
+        setTextViewStyle(this.tvRightClick, data.message, data.rightTextColor, data.rightTextSize);
+
+
+
 
     }
 
+    private void setTextViewStyle(TextView tv, CharSequence msg, int color, int size) {
+        if (TextUtils.isEmpty(msg)) {
+            tv.setVisibility(View.GONE);
+            return;
+        }
+        tv.setVisibility(View.VISIBLE);
+        tv.setText(msg);
+        if (color >= 0) {
+            tv.setTextColor(ContextCompat.getColor(this.getContext(), data.messageTextColor));
+        }
+        if (size >= 0) {
+            tv.setTextSize(getResources().getDimensionPixelSize(data.messageTextSize));
+        }
+
+    }
 
     public <T extends View> T findView(View view, @IdRes int resId) {
         return (T) view.findViewById(resId);
@@ -79,11 +104,11 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
     }
 
 
-    public void show(FragmentActivity activity){
-        if (activity == null){
+    public void show(FragmentActivity activity) {
+        if (activity == null) {
             return;
         }
-        super.show(activity.getSupportFragmentManager(),ToastDialog.class.getName());
+        super.show(activity.getSupportFragmentManager(), ToastDialog.class.getName());
     }
 
     @Override
@@ -95,20 +120,20 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
 
         if (v == this.tvLeftClick) {
 
-            if (this.data.getOnLeftClick() == null) {
+            if (this.data.leftListener == null) {
                 this.dismiss();
                 return;
             }
-            this.data.getOnLeftClick().onClick(this, v.getId());
+            this.data.leftListener.onClick(this, v.getId());
             return;
         }
 
         if (v == this.tvRightClick) {
-            if (this.data.getOnRightClick() == null) {
+            if (this.data.rightListener == null) {
                 this.dismiss();
                 return;
             }
-            this.data.getOnRightClick().onClick(this, v.getId());
+            this.data.rightListener.onClick(this, v.getId());
         }
     }
 

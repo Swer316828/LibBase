@@ -1,9 +1,11 @@
-package com.sfh.lib.mvp;
+package com.sfh.lib.mvvm;
 
 
-import android.arch.lifecycle.LifecycleObserver;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import com.sfh.lib.mvvm.service.BaseLiveData;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -16,36 +18,45 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public interface IPresenter<V extends IView> extends LifecycleObserver {
-
-    /**
-     * 创建代理
-     *
-     * @param proxy
-     */
-    void onBindProxy(V proxy);
+public interface IModel {
 
     /***
-     * 获取视图代理类对象
+     * 数据持有者
      * @return
      */
-    V getView();
+    BaseLiveData getLiveData();
 
     /***
-     * 绑定监听
+     * 注册LvieData数据持有者观察的类类型
+     * @param clz
+     */
+    void onLiveDataClass(Class<?> clz);
+
+    /***
+     * 刷新数据
+     * @param t
+     * @param <T>
+     */
+    @MainThread
+    <T> void setValue(T t);
+
+
+    /***
+     * 任务加入管理中
      * @param disposable
      */
     void putDisposable(Disposable disposable);
 
     /***
-     * 操作处理
+     * 异步处理任务
      * @param observable
      * @param observer
-     * @return
+     * @param <T>
      */
-    <T> void execute(@NonNull Observable<T> observable,  @Nullable  IResult<T> observer);
+    <T> void execute(@NonNull Observable<T> observable, @NonNull IResult<T> observer);
+
     /***
-     * 操作处理
+     * 异步处理任务
      * @param observable
      * @param observer
      * @return

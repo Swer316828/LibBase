@@ -1,8 +1,8 @@
-package com.sfh.lib.mvp.service;
+package com.sfh.lib.mvvm.service;
 
 
 import com.sfh.lib.http.service.HandleException;
-import com.sfh.lib.mvp.IResult;
+import com.sfh.lib.mvvm.IResult;
 import com.sfh.lib.utils.UtilLog;
 
 import io.reactivex.functions.Consumer;
@@ -13,7 +13,7 @@ import io.reactivex.functions.Consumer;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-final class Observer<T> implements Consumer<T> {
+public final class Observer<T> implements Consumer<T> {
 
     private IResult<T> result;
 

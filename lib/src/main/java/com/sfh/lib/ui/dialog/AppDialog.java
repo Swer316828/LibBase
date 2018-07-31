@@ -1,7 +1,5 @@
 package com.sfh.lib.ui.dialog;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.OnLifecycleEvent;
 import android.graphics.Color;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
@@ -9,10 +7,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.TextView;
 
-
 import com.sfh.lib.R;
-import com.sfh.lib.mvp.IDialog;
-import com.sfh.lib.mvp.IPresenter;
+import com.sfh.lib.mvvm.IDialog;
 
 import java.lang.ref.WeakReference;
 

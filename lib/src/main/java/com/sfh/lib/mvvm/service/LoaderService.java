@@ -1,9 +1,9 @@
-package com.sfh.lib.mvp.service;
+package com.sfh.lib.mvvm.service;
 
 
 import android.support.annotation.Nullable;
 
-import com.sfh.lib.mvp.annotation.Service;
+import com.sfh.lib.mvvm.annotation.Service;
 import com.sfh.lib.utils.UtilLog;
 
 /**
@@ -13,6 +13,8 @@ import com.sfh.lib.utils.UtilLog;
  * @date 2018/4/10
  */
 public class LoaderService {
+
+
     @Nullable
     public static <T> T getService(Class<T> clz) {
         Service service = clz.getAnnotation(Service.class);

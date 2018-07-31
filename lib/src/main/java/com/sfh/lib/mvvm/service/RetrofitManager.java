@@ -1,12 +1,10 @@
-package com.sfh.lib.mvp.service;
+package com.sfh.lib.mvvm.service;
 
 import android.support.annotation.NonNull;
-import android.util.SparseArray;
 
 
 import com.sfh.lib.http.service.HandleException;
-import com.sfh.lib.mvp.IResult;
-import com.sfh.lib.utils.UtilLog;
+import com.sfh.lib.mvvm.IResult;
 
 import org.reactivestreams.Publisher;
 
@@ -18,7 +16,6 @@ import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Action;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
@@ -28,7 +25,7 @@ import io.reactivex.schedulers.Schedulers;
  * @author sunfeihu
  * @date 2017/7/19
  */
-final class RetrofitManager {
+public final class RetrofitManager {
 
 
     private volatile CompositeDisposable serverList = new CompositeDisposable();

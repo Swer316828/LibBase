@@ -4,8 +4,6 @@ import android.content.Context;
 import android.support.multidex.MultiDex;
 import android.support.multidex.MultiDexApplication;
 
-import com.sfh.lib.mvp.service.ViewProxy;
-
 /**
  * 功能描述:全局唯一
  *
