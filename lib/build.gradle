@@ -5,11 +5,13 @@ group='com.github.Swer316828'
 android {
     compileSdkVersion 27
 
+    compileSdkVersion config.compileSdkVersion
+
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion config.minSdkVersion
+        targetSdkVersion config.targetSdkVersion
+        versionCode config.versionCode
+        versionName config.versionName
     }
 
     buildTypes {
@@ -23,23 +25,19 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:design:27.1.0'
+    implementation libs.android_design
 
-    compile 'io.reactivex.rxjava2:rxjava:2.1.12'
-    compile 'io.reactivex.rxjava2:rxandroid:2.0.2'
+    compile libs.comm_rxandroid
+    compile libs.comm_rxjava
 
-    compile 'com.squareup.retrofit2:retrofit:2.4.0'
-    compile 'com.squareup.retrofit2:converter-gson:2.4.0'
-    compile 'com.squareup.retrofit2:adapter-rxjava2:2.4.0'
-    compile 'com.squareup.retrofit2:converter-scalars:2.4.0'
+    compile libs.comm_rft
+    compile libs.comm_rftJson
+    compile libs.comm_rftAdapter
+    compile libs.comm_rftConverter
 
-    compile 'com.squareup.okhttp3:okhttp:3.10.0'
-    compile 'com.squareup.okhttp3:logging-interceptor:3.10.0'
+    compile libs.comm_okhttp
+    compile libs.comm_okhttpLog
 
-    compile 'com.google.code.gson:gson:2.8.2'
+    compile libs.comm_gson
 
-    compile 'com.android.support:multidex:1.0.3'
-    compile 'com.tencent.bugly:crashreport_upgrade:latest.release'
-
-    compile 'com.pnikosis:materialish-progress:1.7'
 }

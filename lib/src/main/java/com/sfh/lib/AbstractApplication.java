@@ -1,8 +1,6 @@
 package com.sfh.lib;
 
-import android.content.Context;
-import android.support.multidex.MultiDex;
-import android.support.multidex.MultiDexApplication;
+import android.app.Application;
 
 /**
  * 功能描述:全局唯一
@@ -10,7 +8,7 @@ import android.support.multidex.MultiDexApplication;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/11
  */
-public abstract class AbstractApplication extends MultiDexApplication {
+public abstract class AbstractApplication extends Application {
 
     /***
      *  首选项-文件名
@@ -24,13 +22,6 @@ public abstract class AbstractApplication extends MultiDexApplication {
      * @return
      */
     public abstract String getCachePath();
-
-
-    /***
-     * 获取Bugly ID 异常处理上报
-     * @return
-     */
-    public abstract String getCrashReport();
 
 
     /***
@@ -54,12 +45,5 @@ public abstract class AbstractApplication extends MultiDexApplication {
         AppCacheManager.newInstance().onDertory();
     }
 
-
-
-    @Override
-    protected void attachBaseContext(Context base) {
-        super.attachBaseContext(base);
-        MultiDex.install(this);
-    }
 
 }

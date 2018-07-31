@@ -2,8 +2,6 @@ package com.sfh.lib.http.service;
 
 import android.net.ParseException;
 
-import com.tencent.bugly.crashreport.CrashReport;
-
 import org.apache.http.conn.ConnectTimeoutException;
 import org.json.JSONException;
 
@@ -59,9 +57,6 @@ public final class HandleException extends RuntimeException {
 
 
     public static HandleException handleException(Throwable e) {
-
-        // bugly会将这个以下 throwable上报
-        CrashReport.postCatchedException(e);
 
         if (e == null || e.getCause() == null) {
             // bugly会将这个throwable上报

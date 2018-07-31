@@ -9,7 +9,6 @@ import android.text.TextUtils;
 import android.util.LruCache;
 
 import com.google.gson.Gson;
-import com.tencent.bugly.Bugly;
 
 import java.io.File;
 
@@ -143,12 +142,6 @@ public class AppCacheManager implements Consumer<String> {
                 if (!TextUtils.isEmpty(cachePath)) {
                     // 创建缓存路径
                     app.createFile(cachePath);
-                }
-
-                String crashReportID = this.application.getCrashReport();
-                if (!TextUtils.isEmpty(crashReportID)) {
-                    // Bugly 异常上报
-                    Bugly.init(this.application, crashReportID, false);
                 }
 
                 String prefFile = this.application.getPreFile();

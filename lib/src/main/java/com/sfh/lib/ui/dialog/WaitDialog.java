@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.TextView;
 
-import com.pnikosis.materialishprogress.ProgressWheel;
 import com.sfh.lib.R;
 
 /**
@@ -23,8 +22,6 @@ import com.sfh.lib.R;
 public class WaitDialog extends DialogFragment {
 
 
-    private ProgressWheel progressWheel;
-    private TextView tvContent;
 
     public static WaitDialog newToastDialog() {
         return new WaitDialog();
@@ -34,10 +31,7 @@ public class WaitDialog extends DialogFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().requestWindowFeature(Window.FEATURE_NO_TITLE);
-        View view = inflater.inflate(R.layout.base_wait_dialog, container, false);
-        progressWheel = findView(view, R.id.tvTitle);
-        tvContent = findView(view, R.id.tvContent);
-        return view;
+        return  inflater.inflate(R.layout.base_wait_dialog, container, false);
     }
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
@@ -48,9 +42,6 @@ public class WaitDialog extends DialogFragment {
     public boolean isShowing() {
         return this.getDialog() != null
                 && this.getDialog().isShowing();
-    }
-    public <T extends View> T findView(View view, @IdRes int resId) {
-        return (T) view.findViewById(resId);
     }
 
 
