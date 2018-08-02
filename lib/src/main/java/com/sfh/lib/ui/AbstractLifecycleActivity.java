@@ -40,8 +40,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     @Nullable
     public VM getViewModel() {
         if (this.mViewModel == null) {
-            Class<VM> cls = (Class<VM>) ((ParameterizedType)this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-            this.mViewModel = ViewModelProviders.of(this).get(cls);
+            mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
         }
         return this.mViewModel;
     }

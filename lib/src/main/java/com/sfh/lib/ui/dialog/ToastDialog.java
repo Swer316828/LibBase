@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.sfh.lib.R;
@@ -32,6 +33,7 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
     private TextView tvRightClick;
     private View vLine;
     private DialogBuilder data;
+    private FrameLayout fyContent;
 
     public static ToastDialog newToastDialog() {
         return new ToastDialog();
@@ -46,6 +48,7 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         tvContent = findView(view, R.id.tvContent);
         tvLeftClick = findView(view, R.id.tvLeftClick);
         tvRightClick = findView(view, R.id.tvRightClick);
+        fyContent = findView(view, R.id.fyContent);
         vLine = findView(view, R.id.vLine);
         return view;
     }
@@ -61,22 +64,38 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         if (this.data == null) {
             return;
         }
-        this.setCancelable(data.isCancelable);
-        this.tvContent.setGravity(data.gravity);
-        if (TextUtils.isEmpty(data.title)) {
+        this.setCancelable(data.isCancelable());
+
+        if (TextUtils.isEmpty(data.getTitle())) {
             this.tvTitle.setVisibility(View.GONE);
         } else {
             this.tvTitle.setVisibility(View.VISIBLE);
-            this.tvTitle.setText(data.title);
+            this.tvTitle.setText(data.getTitle());
+        }
+        fyContent.removeAllViews();
+        View v = data.getView();
+        if (v != null){
+            tvContent.setVisibility(View.GONE);
+            fyContent.setVisibility(View.VISIBLE);
+            fyContent.addView(v);
+
+        }else {
+            tvContent.setVisibility(View.VISIBLE);
+            fyContent.setVisibility(View.GONE);
+            this.tvContent.setGravity(data.getGravity());
+            this.setTextViewStyle(this.tvContent, data.getMessage(), data.getMessageTextColor(), data.getMessageTextSize());
         }
 
-        setTextViewStyle(this.tvContent, data.message, data.messageTextColor, data.messageTextSize);
-        setTextViewStyle(this.tvLeftClick, data.leftText, data.leftTextColor, data.leftTextSize);
-        setTextViewStyle(this.tvRightClick, data.message, data.rightTextColor, data.rightTextSize);
+        if (data.isHideCancel()){
+            this.tvLeftClick.setVisibility(View.GONE);
+            this.vLine.setVisibility(View.GONE);
+        }else{
+            this.tvLeftClick.setVisibility(View.VISIBLE);
+            this.vLine.setVisibility(View.VISIBLE);
+            this.setTextViewStyle(this.tvLeftClick, data.getCancelText(), data.getCancelTextColor(), data.getCancelTextSize());
+        }
 
-
-
-
+        this.setTextViewStyle(this.tvRightClick, data.getOkText(), data.getOkTextColor(), data.getOkTextSize());
     }
 
     private void setTextViewStyle(TextView tv, CharSequence msg, int color, int size) {
@@ -86,13 +105,12 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         }
         tv.setVisibility(View.VISIBLE);
         tv.setText(msg);
-        if (color >= 0) {
-            tv.setTextColor(ContextCompat.getColor(this.getContext(), data.messageTextColor));
+        if (color > 0) {
+            tv.setTextColor(ContextCompat.getColor(this.getContext(), color));
         }
-        if (size >= 0) {
-            tv.setTextSize(getResources().getDimensionPixelSize(data.messageTextSize));
+        if (size > 0) {
+            tv.setTextSize(getResources().getDimensionPixelSize(size));
         }
-
     }
 
     public <T extends View> T findView(View view, @IdRes int resId) {
@@ -112,7 +130,14 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
     }
 
     @Override
+    public void dismiss() {
+        super.dismiss();
+        this.data = null;
+    }
+
+    @Override
     public void onClick(View v) {
+
         if (this.data == null) {
             this.dismiss();
             return;
@@ -120,20 +145,20 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
 
         if (v == this.tvLeftClick) {
 
-            if (this.data.leftListener == null) {
+            if (this.data.getCancelListener() == null) {
                 this.dismiss();
                 return;
             }
-            this.data.leftListener.onClick(this, v.getId());
+            this.data.getCancelListener().onClick(this, v.getId());
             return;
         }
 
         if (v == this.tvRightClick) {
-            if (this.data.rightListener == null) {
+            if (this.data.getOkListener() == null) {
                 this.dismiss();
                 return;
             }
-            this.data.rightListener.onClick(this, v.getId());
+            this.data.getOkListener().onClick(this, v.getId());
         }
     }
 

@@ -39,15 +39,16 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
     private LiveDataUIRegistry mLiveDataRegistry;
 
+
     @Override
     @Nullable
     public VM getViewModel() {
-        if (mViewModel == null) {
-            Class<VM> cls = (Class<VM>) ((ParameterizedType)this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-            mViewModel = ViewModelProviders.of(this).get(cls);
+        if (this.mViewModel == null) {
+            mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
         }
-        return mViewModel;
+        return this.mViewModel;
     }
+
     @Override
     @NonNull
     public LifecycleOwner getLifecycleOwner() {

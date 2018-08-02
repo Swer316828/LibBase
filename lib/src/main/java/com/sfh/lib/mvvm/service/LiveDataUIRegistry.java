@@ -8,10 +8,15 @@ import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
 import com.sfh.lib.mvvm.service.empty.EmptyResult;
+import com.sfh.lib.ui.AbstractLifecycleActivity;
+import com.sfh.lib.ui.AbstractLifecycleFragment;
 import com.sfh.lib.utils.UtilLog;
+import com.sfh.lib.utils.ViewModelProviders;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,6 +46,41 @@ public class LiveDataUIRegistry<V extends IView> extends ViewModel implements  F
         this.mRetrofit = new RetrofitManager();
     }
 
+    public <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity) {
+
+        ///对象的直接超类的 Type
+        Type type =  activity.getClass().getGenericSuperclass();
+        if (type == null){
+            return null;
+        }
+
+        if (type instanceof ParameterizedType){
+            //参数化类型
+            Type[] types = ((ParameterizedType) type).getActualTypeArguments();
+            if (types != null && types.length > 0) {
+                return ViewModelProviders.of(activity).get((Class<T>) types[0]);
+            }
+        }
+        return null;
+    }
+
+    public <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment) {
+
+        ///对象的直接超类的 Type
+        Type type =  fragment.getClass().getGenericSuperclass();
+        if (type == null){
+            return null;
+        }
+
+        if (type instanceof ParameterizedType){
+            //参数化类型
+            Type[] types = ((ParameterizedType) type).getActualTypeArguments();
+            if (types != null && types.length > 0) {
+                return ViewModelProviders.of(fragment).get((Class<T>) types[0]);
+            }
+        }
+        return null;
+    }
 
     /***
      * 绑定UI 数据刷新

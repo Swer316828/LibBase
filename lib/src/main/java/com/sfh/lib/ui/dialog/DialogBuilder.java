@@ -7,6 +7,7 @@ import android.support.annotation.IntegerRes;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.view.Gravity;
+import android.view.View;
 
 /**
  * 功能描述:提示对话框接口
@@ -21,153 +22,245 @@ public class DialogBuilder {
         void dismiss();
 
         interface OnClickListener {
-            void onClick(DialogFragment dialog, int which);
+            void onClick(DialogInterface dialog, int which);
         }
     }
 
-    public CharSequence title;
+    private CharSequence title;
     @ColorRes
-    public int titleTextColor;
+    private int titleTextColor;
     @DimenRes
-    public int titleTextSize;
+    private int titleTextSize;
 
-    public CharSequence leftText;
+    private CharSequence cancelText;
     @ColorRes
-    public int leftTextColor;
+    private int cancelTextColor;
     @DimenRes
-    public int leftTextSize;
+    private int cancelTextSize;
 
-    public CharSequence rightText;
+    private CharSequence okText;
     @ColorRes
-    public int rightTextColor;
+    private int okTextColor;
     @DimenRes
-    public int rightTextSize;
+    private int okTextSize;
 
 
-    public CharSequence message;
+    private CharSequence message;
     @ColorRes
-    public int messageTextColor;
+    private int messageTextColor;
     @DimenRes
-    public int messageTextSize;
+    private int messageTextSize;
 
-    public DialogInterface.OnClickListener leftListener;
-    public DialogInterface.OnClickListener rightListener;
+    private DialogInterface.OnClickListener cancelListener;
+    private DialogInterface.OnClickListener okListener;
 
-    /**
-     * 是否可以取消
-     */
-    public boolean isCancelable = true;
+    private boolean cancelable = true;
 
-    /**
-     * 内容对齐方式
-     */
-    public int gravity = Gravity.LEFT;
+    private int gravity = Gravity.LEFT;
 
-    public void setTitle(CharSequence title) {
-        this.title = title;
+    private View view = null;
+
+    private boolean hideCancel;
+
+
+    public DialogBuilder() {
+        this.title = "提示";
+        this.cancelText = "取消";
+        this.okText = "确定";
     }
 
-    public void setTitleColor(CharSequence title, @ColorRes int titleTextColor) {
+    public DialogBuilder setTitle(CharSequence title) {
         this.title = title;
-        this.titleTextColor = titleTextColor;
+        return this;
     }
 
-    public void setTitleSize(CharSequence title, @DimenRes int titleTextSize) {
-        this.title = title;
-        this.titleTextSize = titleTextSize;
-    }
-
-    public void setTitleSizeColor(CharSequence title, @ColorRes int titleTextColor, @DimenRes int titleTextSize) {
+    public DialogBuilder setTitleColor(CharSequence title, @ColorRes int titleTextColor) {
         this.title = title;
         this.titleTextColor = titleTextColor;
+        return this;
+    }
+
+    public DialogBuilder setTitleSize(CharSequence title, @DimenRes int titleTextSize) {
+        this.title = title;
         this.titleTextSize = titleTextSize;
+        return this;
     }
 
-    public void setLeftText(CharSequence leftText) {
-        this.leftText = leftText;
+    public DialogBuilder setTitleSizeColor(CharSequence title, @ColorRes int titleTextColor, @DimenRes int titleTextSize) {
+        this.title = title;
+        this.titleTextColor = titleTextColor;
+        this.titleTextSize = titleTextSize;
+        return this;
     }
 
-    public void setLeftTextColor(CharSequence leftText, @ColorRes int leftTextColor) {
-        this.leftText = leftText;
-        this.leftTextColor = leftTextColor;
+    public DialogBuilder setCancelText(CharSequence cancelText) {
+        this.cancelText = cancelText;
+        return this;
     }
 
-    public void setLeftTextSize(CharSequence leftText, @DimenRes int leftTextSize) {
-        this.leftText = leftText;
-        this.leftTextSize = leftTextSize;
+    public DialogBuilder setCancelTextColor(CharSequence cancelText, @ColorRes int cancelTextColor) {
+        this.cancelText = cancelText;
+        this.cancelTextColor = cancelTextColor;
+        return this;
     }
 
-    public void setLeftTextColorSize(CharSequence leftText, @ColorRes int leftTextColor, @DimenRes int leftTextSize) {
-        this.leftText = leftText;
-        this.leftTextColor = leftTextColor;
-        this.leftTextSize = leftTextSize;
+    public DialogBuilder setCancelTextSize(CharSequence cancelText, @DimenRes int cancelTextSize) {
+        this.cancelText = cancelText;
+        this.cancelTextSize = cancelTextSize;
+        return this;
+    }
+
+    public DialogBuilder setCancelTextColorSize(CharSequence cancelText, @ColorRes int cancelTextColor, @DimenRes int cancelTextSize) {
+        this.cancelText = cancelText;
+        this.cancelTextColor = cancelTextColor;
+        this.cancelTextSize = cancelTextSize;
+        return this;
     }
 
 
-    public void setRightText(CharSequence rightText) {
-        this.rightText = rightText;
+    public DialogBuilder setOKText(CharSequence okText) {
+        this.okText = okText;
+        return this;
     }
 
-    public void setRightTextColor(CharSequence rightText, @ColorRes int rightTextColor) {
-        this.rightText = rightText;
-        this.rightTextColor = rightTextColor;
+    public DialogBuilder setOKTextColor(CharSequence okText, @ColorRes int okTextColor) {
+        this.okText = okText;
+        this.okTextColor = okTextColor;
+        return this;
     }
 
-    public void setRightTextSize(CharSequence rightText, @DimenRes int rightTextSize) {
-        this.rightText = rightText;
-        this.rightTextSize = rightTextSize;
+    public DialogBuilder setOKTextSize(CharSequence okText, @DimenRes int okTextSize) {
+        this.okText = okText;
+        this.okTextSize = okTextSize;
+        return this;
     }
 
-    public void setRightTextColorSize(CharSequence rightText, @ColorRes int rightTextColor, @DimenRes int rightTextSize) {
-        this.rightText = rightText;
-        this.rightTextColor = rightTextColor;
-        this.rightTextSize = rightTextSize;
+    public DialogBuilder setOKTextColorSize(CharSequence okText, @ColorRes int okTextColor, @DimenRes int okTextSize) {
+        this.okText = okText;
+        this.okTextColor = okTextColor;
+        this.okTextSize = okTextSize;
+        return this;
     }
 
-    public void setMessage(CharSequence message) {
+    public DialogBuilder setMessage(CharSequence message) {
         this.message = message;
+        return this;
     }
-    public void setMessageGravity(CharSequence message,int gravity) {
+
+    public DialogBuilder setMessageGravity(CharSequence message, int gravity) {
         this.message = message;
         this.gravity = gravity;
+        return this;
     }
 
-    public void setGravity(int gravity) {
+    public DialogBuilder setGravity(int gravity) {
         this.gravity = gravity;
+        return this;
     }
 
-    public void setMessageTextColor(CharSequence message, @ColorRes int messageTextColor) {
+    public DialogBuilder setMessageTextColor(CharSequence message, @ColorRes int messageTextColor) {
         this.message = message;
         this.messageTextColor = messageTextColor;
+        return this;
     }
 
-    public void setMessageTextSize(CharSequence message, @DimenRes int messageTextSize) {
+    public DialogBuilder setMessageTextSize(CharSequence message, @DimenRes int messageTextSize) {
         this.message = message;
         this.messageTextSize = messageTextSize;
+        return this;
     }
 
-    public void setMessageTextColorSize(CharSequence message, @ColorRes int messageTextColor, @DimenRes int messageTextSize) {
+    public DialogBuilder setMessageTextColorSize(CharSequence message, @ColorRes int messageTextColor, @DimenRes int messageTextSize) {
         this.message = message;
         this.messageTextColor = messageTextColor;
         this.messageTextSize = messageTextSize;
+        return this;
     }
 
-    public void setLeftListener(DialogInterface.OnClickListener leftListener) {
-        this.leftListener = leftListener;
+    public DialogBuilder setCancelable(boolean cancelable) {
+        this.cancelable = cancelable;
+        return this;
     }
 
-    public void setRightListener(DialogInterface.OnClickListener rightListener) {
-        this.rightListener = rightListener;
+    public DialogBuilder setView(View view) {
+        this.view = view;
+        return this;
     }
 
-    public void setCancelable(boolean cancelable) {
-        this.isCancelable = cancelable;
+    public DialogBuilder setHideCancel(boolean hideCancel) {
+        this.hideCancel = hideCancel;
+        return this;
     }
 
+    public int getGravity() {
+        return gravity;
+    }
 
-    public void build(FragmentActivity activity) {
-        ToastDialog toastDialog = ToastDialog.newToastDialog();
-        toastDialog.setData(this);
-        toastDialog.show(activity);
+    public CharSequence getTitle() {
+        return title;
+    }
+
+    public int getTitleTextColor() {
+        return titleTextColor;
+    }
+
+    public int getTitleTextSize() {
+        return titleTextSize;
+    }
+
+    public CharSequence getCancelText() {
+        return cancelText;
+    }
+
+    public int getCancelTextColor() {
+        return cancelTextColor;
+    }
+
+    public int getCancelTextSize() {
+        return cancelTextSize;
+    }
+
+    public CharSequence getOkText() {
+        return okText;
+    }
+
+    public int getOkTextColor() {
+        return okTextColor;
+    }
+
+    public int getOkTextSize() {
+        return okTextSize;
+    }
+
+    public CharSequence getMessage() {
+        return message;
+    }
+
+    public int getMessageTextColor() {
+        return messageTextColor;
+    }
+
+    public int getMessageTextSize() {
+        return messageTextSize;
+    }
+
+    public DialogInterface.OnClickListener getCancelListener() {
+        return cancelListener;
+    }
+
+    public DialogInterface.OnClickListener getOkListener() {
+        return okListener;
+    }
+
+    public boolean isCancelable() {
+        return cancelable;
+    }
+
+    public View getView() {
+        return view;
+    }
+
+    public boolean isHideCancel() {
+        return hideCancel;
     }
 }

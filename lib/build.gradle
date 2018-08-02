@@ -3,7 +3,6 @@ apply plugin: 'com.github.dcendents.android-maven'
 group='com.github.Swer316828'
 
 android {
-    compileSdkVersion 27
 
     compileSdkVersion config.compileSdkVersion
 

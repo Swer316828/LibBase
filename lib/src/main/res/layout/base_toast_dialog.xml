@@ -2,8 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/base_file_toast_dialog"
     android:layout_margin="42dp"
+    android:background="@drawable/base_file_toast_dialog"
     android:orientation="vertical">
 
     <TextView
@@ -11,9 +11,9 @@
         android:layout_width="match_parent"
         android:layout_height="45dp"
         android:gravity="center"
-        android:text="温馨提示"
+        android:text="提示"
         android:textColor="#333333"
-        android:textSize="18sp" />
+        android:textSize="14sp" />
 
 
     <TextView
@@ -28,8 +28,14 @@
         android:paddingLeft="17dp"
         android:paddingRight="17dp"
         android:textColor="#666666"
-        android:textSize="15sp" />
+        android:textSize="15sp"
+        android:visibility="gone" />
 
+    <FrameLayout
+        android:id="@+id/fyContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
     <View
         android:layout_width="match_parent"
@@ -48,8 +54,8 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="取消"
-            android:textColor="#666666"
-            android:textSize="18sp" />
+            android:textColor="#999999"
+            android:textSize="14sp" />
 
         <View
             android:id="@+id/vLine"
@@ -65,7 +71,7 @@
             android:gravity="center"
             android:text="确定"
             android:textColor="#000000"
-            android:textSize="18sp" />
+            android:textSize="14sp" />
     </LinearLayout>
 
 </LinearLayout>
