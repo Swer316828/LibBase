@@ -27,12 +27,6 @@ public interface IViewModel {
     BaseLiveData getLiveData();
 
     /***
-     * 注册LvieData数据持有者观察的类类型
-     * @param clz
-     */
-    void onLiveDataClass(Class<?> clz);
-
-    /***
      * 刷新数据
      * @param t
      * @param <T>

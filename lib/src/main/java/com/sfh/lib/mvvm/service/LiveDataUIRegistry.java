@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 
 
@@ -92,11 +93,11 @@ public class LiveDataUIRegistry<V extends IView> extends ViewModel implements  F
         if (model != null) {
             //LiveData 加入生命周期管理中
             model.getLiveData().observe(listener.getLifecycleOwner(),listener.getObserver());
-            // 注册网络数据监听
-            model.onLiveDataClass(NetWorkState.class);
+            // 注册LiveData监听
+            Disposable disposable = RetrofitManager.execute(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult());
+            this.mRetrofit.put(disposable);
         }
-        // 注册LiveData监听
-        this.mRetrofit.execute(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult());
+
     }
 
     @Override
@@ -118,9 +119,8 @@ public class LiveDataUIRegistry<V extends IView> extends ViewModel implements  F
             Class<?>[] parameterTypes = method.getParameterTypes();
             Class<?> dataClass;
             if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-                this.mLiveDataMethod.put(dataClass, method);
                 // 注册LiveData监听
-                viewModel.onLiveDataClass(dataClass);
+                this.mLiveDataMethod.put(dataClass, method);
             }
         }
         return true;

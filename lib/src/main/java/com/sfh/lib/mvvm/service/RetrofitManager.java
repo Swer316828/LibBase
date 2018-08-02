@@ -63,7 +63,7 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public <T> void execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
+    public static <T> Disposable execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
 
         Observer<T> subscribe = new Observer(result);
         Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
@@ -76,7 +76,7 @@ public final class RetrofitManager {
                         .onErrorResumeNext(new ThrowableFunc());
             }
         }).subscribe(subscribe, subscribe.onError());
-        this.put(disposable);
+        return disposable;
     }
 
 
@@ -86,20 +86,20 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public <T> void execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
+    public static <T> Disposable execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
 
         Observer<T> subscribe = new Observer(result);
         Disposable disposable = observable.compose(new FlowableTransformer<T, T>() {
 
             @Override
             public Publisher<T> apply(Flowable<T> upstream) {
-               return upstream.subscribeOn(Schedulers.io())
+                return upstream.subscribeOn(Schedulers.io())
                         .unsubscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
         }).subscribe(subscribe, subscribe.onError());
-        this.put(disposable);
+        return disposable;
     }
 
 
@@ -107,7 +107,7 @@ public final class RetrofitManager {
      * 异常处理类
      * @param <E>
      */
-    class ThrowableFunc<E extends Throwable> implements Function<E, Observable<HandleException>> {
+    static class ThrowableFunc<E extends Throwable> implements Function<E, Observable<HandleException>> {
         @Override
         public Observable<HandleException> apply(E throwable) throws Exception {
             // 封装成自定义异常对象
