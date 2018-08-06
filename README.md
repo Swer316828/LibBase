@@ -32,7 +32,7 @@ ext {
 步骤二：在项目module的build.gradle 中添加依赖
  implementation 'com.github.Swer316828:LibBase:3.0.0'
  
- 步骤三：在使用Activity，Fragment分别需要继承 AbstractLifecycleActivity<T>,AbstractLifecycleFragment<T>.T是需要处理业务逻辑ViewMode类，在activty
+步骤三：在使用Activity，Fragment分别需要继承 AbstractLifecycleActivity<T>,AbstractLifecycleFragment<T>.T是需要处理业务逻辑ViewMode类，在activty
  or Fragment 中通过LiveDataMatch 注解方式响应ViewMode中对应数据类型响应到UI 界面上，其中action用于标识是ViewMode中那个方法触发的
  
     @LiveDataMatch(action = "getFileExtMht")
@@ -40,3 +40,5 @@ ext {
         adapter = new ItemAdapter(this, data);
         lv.setAdapter(adapter);
     }
+ 步骤四：自定义AppContent 需要继承AbstractApplication，需要进行一些初始化操作。AppCacheManager 作为全局缓存类使用，RxBusEventManager用于发送消息通知
+ 
