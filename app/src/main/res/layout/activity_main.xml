@@ -4,13 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.sfh.base.MainActivity">
 
-<ListView
-    android:dividerHeight="0.5dp"
-    android:divider="#f0eff5"
-    android:id="@+id/lv"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"></ListView>
+    <ListView
+        android:id="@+id/lv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:divider="#f0eff5"
+        android:dividerHeight="0.5dp"></ListView>
 
+    <Button
+        android:id="@+id/bt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="搜索" />
 </LinearLayout>

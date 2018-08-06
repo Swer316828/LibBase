@@ -8,11 +8,12 @@ import android.widget.ListView;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
 import com.sfh.lib.mvvm.annotation.RxBusEvent;
 import com.sfh.lib.ui.AbstractLifecycleActivity;
+import com.sfh.lib.ui.dialog.DialogBuilder;
 
 import java.io.File;
 import java.util.List;
 
-public class MainActivity extends AbstractLifecycleActivity<FilePresenter> implements AdapterView.OnItemClickListener{
+public class MainActivity extends AbstractLifecycleActivity<FilePresenter> implements AdapterView.OnItemClickListener {
 
     ListView lv;
     ItemAdapter adapter;
@@ -25,22 +26,25 @@ public class MainActivity extends AbstractLifecycleActivity<FilePresenter> imple
         lv.setOnItemClickListener(this);
         mViewModel.getFileExtMht();
 
+        findViewById(R.id.bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DialogBuilder builder = new DialogBuilder();
+                builder.setMessage("你好");
+                showDialog(builder);
+            }
+        });
+
     }
+
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-         Main2Activity.statUI(this,adapter.getItem(position).getAbsolutePath());
-    }
-
-
-
-    @LiveDataMatch(action = "getFileExtMht2")
-    public  void onFail(List<String> data){
-      showToast("---------------------------------");
+        Main2Activity.statUI(this, adapter.getItem(position).getAbsolutePath());
     }
 
     @LiveDataMatch(action = "getFileExtMht")
-    public  void onSuccess(List<File> data){
-        adapter = new ItemAdapter(this,data);
+    public void onSuccess(List<File> data) {
+        adapter = new ItemAdapter(this, data);
         lv.setAdapter(adapter);
     }
 
