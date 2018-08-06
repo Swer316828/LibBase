@@ -147,7 +147,13 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
                 break;
             }
             case NetWorkState.TYPE_SHOW_DIALOG: {
-                // TODO 显示对话框
+                //  显示对话框
+                DialogBuilder builder = new DialogBuilder();
+                builder.setHideCancel(true);
+                builder.setTitle("提示");
+                builder.setOKText("我知道了");
+                builder.setMessage(state.getShowToast());
+                showDialog(builder);
                 break;
             }
             default:

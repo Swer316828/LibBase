@@ -1,14 +1,12 @@
 package com.sfh.lib.ui.dialog;
 
-import android.graphics.Color;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
-import android.view.Gravity;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.Toast;
 
-import com.sfh.lib.R;
+import com.sfh.lib.AppCacheManager;
 import com.sfh.lib.mvvm.IDialog;
+import com.sfh.lib.utils.UtilsToast;
 
 import java.lang.ref.WeakReference;
 
@@ -26,6 +24,11 @@ public class AppDialog implements IDialog {
     private WaitDialog mWaitDialog;
 
     private WeakReference<FragmentActivity> mActivity;
+
+    /**
+     * 不属于当前类，防止
+     */
+    private static Toast mToast;
 
     public AppDialog(FragmentActivity activity) {
         this.mActivity = new WeakReference<>(activity);
@@ -87,53 +90,25 @@ public class AppDialog implements IDialog {
             return;
         }
         View view = this.mActivity.get().getWindow().getDecorView();
-        this.showToast(view, msg, type, Snackbar.LENGTH_SHORT);
+        this.showToast(view, msg, type, Toast.LENGTH_SHORT);
     }
 
 
     private void showToast(View view, CharSequence msg, int type, int duration) {
-        Snackbar snackbar = Snackbar.make(view, msg, duration);
-        int color = Color.WHITE;
-        int res = R.drawable.base_info;
-        int colorTxt =  Color.BLACK;
 
-        switch (type) {
-            case 0: {
-                color = Color.WHITE;
-                colorTxt =  Color.BLACK;
-                res = R.drawable.base_info;
-                break;
-            }
-            case 1: {
-                color = Color.parseColor("#a8a809");
-                colorTxt =  Color.BLACK;
-                res = R.drawable.base_warring;
-                break;
-            }
-            case 2: {
-                color = Color.RED;
-                colorTxt =  Color.WHITE;
-                res = R.drawable.base_fail;
-                break;
-            }
-            default:
-                break;
+        if (mToast == null) {
+            mToast = Toast.makeText(AppCacheManager.getApplication(), msg, duration);
+            UtilsToast.hook(mToast);
         }
 
-        snackbar.getView().setBackgroundColor(color);
-
-        TextView tvContent = snackbar.getView().findViewById(R.id.snackbar_text);
-        tvContent.setTextColor(colorTxt);
-        tvContent.setText(msg);
-        tvContent.setCompoundDrawablePadding(15);
-        tvContent.setGravity(Gravity.CENTER | Gravity.LEFT);
-        tvContent.setCompoundDrawablesWithIntrinsicBounds(res, 0, 0, 0);
-        snackbar.show();
+        mToast.setText(msg);
+        mToast.setDuration(duration);
+        mToast.show();
     }
 
 
     @Override
-    public void onDestory()  {
+    public void onDestory() {
         this.hideDialog();
         this.hideLoading();
         this.mActivity.clear();

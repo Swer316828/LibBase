@@ -29,9 +29,7 @@ public class MainActivity extends AbstractLifecycleActivity<FilePresenter> imple
         findViewById(R.id.bt).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DialogBuilder builder = new DialogBuilder();
-                builder.setMessage("你好");
-                showDialog(builder);
+                mViewModel.getFileExtMht();
             }
         });
 
