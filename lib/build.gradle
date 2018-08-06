@@ -24,7 +24,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation libs.android_design
+    implementation libs.android_supportV7
 
     compile libs.comm_rxandroid
     compile libs.comm_rxjava

@@ -37,8 +37,6 @@ ext {
     //依赖
     libs = [
             android_supportV7: 'com.android.support:appcompat-v7:27.1.0',
-            android_supportV4: 'com.android.support:support-v4:27.1.0',
-            android_design   : 'com.android.support:design:27.1.0',
 
             comm_rxjava      : 'io.reactivex.rxjava2:rxjava:2.1.12',
             comm_rxandroid   : 'io.reactivex.rxjava2:rxandroid:2.0.2',
