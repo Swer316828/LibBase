@@ -4,6 +4,7 @@ import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
@@ -94,8 +95,7 @@ public class LiveDataUIRegistry<V extends IView> extends ViewModel implements  F
             //LiveData 加入生命周期管理中
             model.getLiveData().observe(listener.getLifecycleOwner(),listener.getObserver());
             // 注册LiveData监听
-            Disposable disposable = RetrofitManager.execute(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult());
-            this.mRetrofit.put(disposable);
+            this.mRetrofit.execute(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult());
         }
 
     }

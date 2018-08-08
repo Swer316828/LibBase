@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.sfh.lib.mvvm.service.BaseLiveData;
+import com.sfh.lib.rx.IResult;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -55,5 +56,5 @@ public interface IViewModel {
      * @param observer
      * @return
      */
-    <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResult<T> observer);
+    <T> void execute(@NonNull Flowable<T> observable, @Nullable  IResult<T> observer);
 }

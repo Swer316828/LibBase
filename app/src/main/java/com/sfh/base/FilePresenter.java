@@ -2,8 +2,8 @@ package com.sfh.base;
 
 import android.os.Environment;
 
-import com.sfh.lib.http.service.HandleException;
-import com.sfh.lib.mvvm.IResult;
+import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.rx.IResult;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.NetWorkState;
 

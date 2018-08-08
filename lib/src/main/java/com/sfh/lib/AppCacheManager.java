@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.util.LruCache;
 
 import com.google.gson.Gson;
+import com.sfh.lib.exception.HandleException;
 
 import java.io.File;
 
@@ -16,6 +17,7 @@ import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -149,6 +151,13 @@ public class AppCacheManager implements Consumer<String> {
                     // 创建sharePrefer 文件
                     app.preferences = application.getSharedPreferences(prefFile, Context.MODE_PRIVATE);
                 }
+                // 防止Disposable 之后出现异常导致应用崩溃
+                RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        HandleException.handleException(throwable);
+                    }
+                });
             }
 
             return app;

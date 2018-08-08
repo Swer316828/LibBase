@@ -7,7 +7,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
-import com.sfh.lib.mvvm.IDialog;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataUIRegistry;
@@ -15,8 +14,6 @@ import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
-
-import java.lang.reflect.ParameterizedType;
 
 
 /**

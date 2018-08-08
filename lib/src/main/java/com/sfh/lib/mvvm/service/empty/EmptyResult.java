@@ -1,7 +1,7 @@
 package com.sfh.lib.mvvm.service.empty;
 
-import com.sfh.lib.http.service.HandleException;
-import com.sfh.lib.mvvm.IResult;
+import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.rx.IResult;
 
 /**
  * 功能描述:

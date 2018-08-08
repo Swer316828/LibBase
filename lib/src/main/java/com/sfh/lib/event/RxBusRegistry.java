@@ -1,7 +1,6 @@
-package com.sfh.lib.mvvm.service;
+package com.sfh.lib.event;
 
-import com.sfh.lib.RxBusEventManager;
-import com.sfh.lib.mvvm.annotation.RxBusEvent;
+import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.mvvm.service.empty.EmptyResult;
 
 import java.lang.reflect.Method;
@@ -10,16 +9,15 @@ import java.util.Map;
 
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 
 /**
- * 功能描述: TODO
+ * 功能描述: 注入RxEvent 监听
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/7/30
  */
-public class RxBusRegistry implements Consumer, Function<Object, Boolean> {
+public class RxBusRegistry implements Function<Object, Boolean>, IEventResult {
 
     private final static String TAG = RxBusRegistry.class.getName();
 
@@ -32,25 +30,11 @@ public class RxBusRegistry implements Consumer, Function<Object, Boolean> {
     public RxBusRegistry() {
         this.mRetrofit = new RetrofitManager();
         this.mMethod = new HashMap<>(2);
-
     }
 
     public void registry(Object observe) {
         this.observe = observe;
         this.mRetrofit.execute(Flowable.just(observe).map(this), new EmptyResult<Boolean>());
-    }
-
-
-    @Override
-    public void accept(Object data) throws Exception {
-        // RxBus 消息监听
-        if (data == null) {
-            return;
-        }
-        Method method = this.getMethod(this.mMethod, data);
-        if (method != null) {
-            method.invoke(this.observe, data);
-        }
     }
 
 
@@ -78,8 +62,7 @@ public class RxBusRegistry implements Consumer, Function<Object, Boolean> {
                 Class<?> dataClass;
                 if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
                     this.mMethod.put(dataClass, method);
-                    Disposable disposable = RxBusEventManager.register(dataClass, this);
-                    this.mRetrofit.put(disposable);
+                    RxBusEventManager.register(dataClass, this);
                 }
             }
         }
@@ -96,6 +79,23 @@ public class RxBusRegistry implements Consumer, Function<Object, Boolean> {
             mRetrofit = null;
         }
         observe = null;
+    }
+
+    @Override
+    public void onEventSuccess(Object data) throws Exception {
+        // RxBus 消息监听
+        if (data == null) {
+            return;
+        }
+        Method method = this.getMethod(this.mMethod, data);
+        if (method != null) {
+            method.invoke(this.observe, data);
+        }
+    }
+
+    @Override
+    public void onSubscribe(Disposable d) {
+        this.mRetrofit.put(d);
     }
 }
 

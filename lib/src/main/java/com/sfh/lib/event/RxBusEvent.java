@@ -1,4 +1,4 @@
-package com.sfh.lib.mvvm.annotation;
+package com.sfh.lib.event;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,8 +15,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RxBusEvent {
     /***
-     * 触发动作
+     * 数据来源说明
      * @return
      */
-   String action();
+   String from();
 }

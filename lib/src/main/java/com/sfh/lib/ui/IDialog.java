@@ -1,4 +1,4 @@
-package com.sfh.lib.mvvm;
+package com.sfh.lib.ui;
 
 
 import com.sfh.lib.ui.dialog.DialogBuilder;

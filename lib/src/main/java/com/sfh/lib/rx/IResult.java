@@ -1,6 +1,6 @@
-package com.sfh.lib.mvvm;
+package com.sfh.lib.rx;
 
-import com.sfh.lib.http.service.HandleException;
+import com.sfh.lib.exception.HandleException;
 
 /**
  * 功能描述:处理结果

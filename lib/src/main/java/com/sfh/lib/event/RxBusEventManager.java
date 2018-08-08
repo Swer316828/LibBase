@@ -1,14 +1,10 @@
-package com.sfh.lib;
+package com.sfh.lib.event;
 
 
 import android.support.annotation.NonNull;
 
 
-import com.sfh.lib.utils.UtilLog;
-
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 
@@ -40,6 +36,9 @@ public final class RxBusEventManager {
      * @param data 数据对象
      */
     public static <T> void postEvent(@NonNull T data) {
+        if (data == null) {
+            return;
+        }
         Hondler.EVENT.bus.onNext(data);
     }
 
@@ -52,16 +51,14 @@ public final class RxBusEventManager {
      * @param <T> class类型
      * @return Disposable 需要手动销毁
      */
-    public static  <T> Disposable register(@NonNull final Class<T> eventClass, @NonNull final Consumer<T> onNext) {
-
-        return Hondler.EVENT.bus.ofType(eventClass).observeOn(AndroidSchedulers.mainThread()).subscribe(onNext, new Consumer<Throwable>() {
-
-            @Override
-            public void accept(Throwable throwable) throws Exception {
-                //onError()被调用，订阅者和被订阅者的订阅关系就解除,需要重新注册
-                register(eventClass, onNext);
-            }
-        });
+    public static <T> void register(@NonNull final Class<T> eventClass, @NonNull final IEventResult<T> onNext) {
+        if (eventClass == null) {
+            throw new NullPointerException("Class<T> eventClass is null");
+        }
+        if (onNext == null) {
+            throw new NullPointerException("IEventResult<T> onNext is null");
+        }
+        Hondler.EVENT.bus.ofType(eventClass).observeOn(AndroidSchedulers.mainThread()).subscribe(new RxEventObserver<>(onNext));
     }
 
 }

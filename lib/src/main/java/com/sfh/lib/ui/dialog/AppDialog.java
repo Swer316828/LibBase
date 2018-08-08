@@ -5,7 +5,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.sfh.lib.AppCacheManager;
-import com.sfh.lib.mvvm.IDialog;
+import com.sfh.lib.ui.IDialog;
 import com.sfh.lib.utils.UtilsToast;
 
 import java.lang.ref.WeakReference;

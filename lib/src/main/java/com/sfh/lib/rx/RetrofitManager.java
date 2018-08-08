@@ -1,10 +1,10 @@
-package com.sfh.lib.mvvm.service;
+package com.sfh.lib.rx;
 
 import android.support.annotation.NonNull;
 
 
-import com.sfh.lib.http.service.HandleException;
-import com.sfh.lib.mvvm.IResult;
+import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.mvvm.service.RxObserver;
 
 import org.reactivestreams.Publisher;
 
@@ -63,9 +63,9 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public static <T> Disposable execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
+    public  <T> void execute(@NonNull Observable<T> observable, @NonNull final IResult<T> result) {
 
-        Observer<T> subscribe = new Observer(result);
+        RxObserver<T> subscribe = new RxObserver(result);
         Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
 
             @Override
@@ -75,8 +75,8 @@ public final class RetrofitManager {
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError());
-        return disposable;
+        }).subscribe(subscribe, subscribe.onError);
+        this.put(disposable);
     }
 
 
@@ -86,9 +86,9 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public static <T> Disposable execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
+    public  <T> void execute(@NonNull Flowable<T> observable, @NonNull final IResult<T> result) {
 
-        Observer<T> subscribe = new Observer(result);
+        RxObserver<T> subscribe = new RxObserver(result);
         Disposable disposable = observable.compose(new FlowableTransformer<T, T>() {
 
             @Override
@@ -98,8 +98,8 @@ public final class RetrofitManager {
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError());
-        return disposable;
+        }).subscribe(subscribe, subscribe.onError);
+        this.put(disposable);
     }
 
 

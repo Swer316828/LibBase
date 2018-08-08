@@ -1,4 +1,4 @@
-package com.sfh.lib.mvvm.service;
+package com.sfh.lib;
 
 
 import android.support.annotation.Nullable;

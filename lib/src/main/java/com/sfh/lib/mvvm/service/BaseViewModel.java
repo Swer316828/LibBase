@@ -5,13 +5,11 @@ import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.sfh.lib.http.service.HandleException;
+import com.sfh.lib.rx.RetrofitManager;
+import com.sfh.lib.event.RxBusRegistry;
+import com.sfh.lib.rx.IResult;
 import com.sfh.lib.mvvm.IViewModel;
-import com.sfh.lib.mvvm.IResult;
 import com.sfh.lib.utils.UtilLog;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -64,24 +62,20 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     @Override
     public void putDisposable(Disposable disposable) {
-
         this.mRetrofit.put(disposable);
     }
 
 
     @Override
     public <T> void execute(@NonNull Observable<T> observable, @NonNull IResult<T> observer) {
-
-        Disposable disposable =  RetrofitManager.execute(observable, observer);
-        this.putDisposable(disposable);
+        this.mRetrofit.execute(observable, observer);
     }
 
 
     @Override
     public <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResult<T> observer) {
 
-       Disposable disposable =  RetrofitManager.execute(observable, observer);
-       this.putDisposable(disposable);
+        this.mRetrofit.execute(observable, observer);
     }
 
 }
