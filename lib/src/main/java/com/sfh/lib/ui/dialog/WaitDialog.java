@@ -49,6 +49,9 @@ public class WaitDialog extends DialogFragment {
         if (activity == null){
             return;
         }
+        if (this.isAdded()){
+            return;
+        }
         super.show(activity.getSupportFragmentManager(),WaitDialog.class.getName());
 
     }

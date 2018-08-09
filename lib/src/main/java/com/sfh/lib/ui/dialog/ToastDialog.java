@@ -5,6 +5,7 @@ import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
@@ -124,6 +125,9 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
 
     public void show(FragmentActivity activity) {
         if (activity == null) {
+            return;
+        }
+        if (this.isAdded()){
             return;
         }
         super.show(activity.getSupportFragmentManager(), ToastDialog.class.getName());
