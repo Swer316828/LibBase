@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 
 
 import com.sfh.lib.exception.HandleException;
-import com.sfh.lib.mvvm.service.RxObserver;
 
 import org.reactivestreams.Publisher;
 

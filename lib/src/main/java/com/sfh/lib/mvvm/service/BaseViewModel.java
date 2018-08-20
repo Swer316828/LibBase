@@ -1,5 +1,7 @@
 package com.sfh.lib.mvvm.service;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -32,7 +34,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     private RxBusRegistry mRxBus;
 
-    private final BaseLiveData mLiveData = new BaseLiveData();
+    private final MutableLiveData mLiveData = new MutableLiveData();
 
     public BaseViewModel() {
 
@@ -43,7 +45,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
     @Override
-    public BaseLiveData getLiveData() {
+    public LiveData getLiveData() {
         return this.mLiveData;
     }
 

@@ -1,7 +1,7 @@
 package com.sfh.lib.event;
 
 import com.sfh.lib.rx.RetrofitManager;
-import com.sfh.lib.mvvm.service.empty.EmptyResult;
+import com.sfh.lib.rx.EmptyResult;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ public class RxBusRegistry implements Function<Object, Boolean>, IEventResult {
 
     public RxBusRegistry() {
         this.mRetrofit = new RetrofitManager();
-        this.mMethod = new HashMap<>(2);
+        this.mMethod = new HashMap<>(5);
     }
 
     public void registry(Object observe) {

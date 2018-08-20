@@ -10,7 +10,7 @@ import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
-import com.sfh.lib.mvvm.service.empty.EmptyResult;
+import com.sfh.lib.rx.EmptyResult;
 import com.sfh.lib.ui.AbstractLifecycleActivity;
 import com.sfh.lib.ui.AbstractLifecycleFragment;
 import com.sfh.lib.utils.UtilLog;
@@ -128,11 +128,11 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
     protected void onCleared() {
         super.onCleared();
         UtilLog.d(TAG, "LiveDataRegistry =========== 资源销毁");
-        if (this.mLiveDataMethod != null) {
-            this.mLiveDataMethod.clear();
-        }
         if (this.mRetrofit != null){
             this.mRetrofit.clearAll();
+        }
+        if (this.mLiveDataMethod != null) {
+            this.mLiveDataMethod.clear();
         }
     }
 

@@ -1,4 +1,4 @@
-package com.sfh.lib.mvvm.service.empty;
+package com.sfh.lib.rx;
 
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.rx.IResult;
