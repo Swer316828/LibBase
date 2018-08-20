@@ -14,10 +14,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LiveDataMatch {
-
-    /***
-     * 触发动作
-     * @return
-     */
-    String action();
 }

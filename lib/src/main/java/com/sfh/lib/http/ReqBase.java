@@ -9,9 +9,12 @@ import java.util.Map;
  * @date 2018/5/28
  */
 public interface ReqBase {
+
     /***
      * 基础参数转换
      * @return
      */
      Map<String,String> toMap();
+
+     boolean checkParams();
 }

@@ -67,6 +67,7 @@ public class FilePresenter extends BaseViewModel {
             @Override
             public void onFail(HandleException e) {
                 setValue(NetWorkState.HIDE_LOADING);
+
                 setValue(NetWorkState.showToast("未找到相关文件"+e));
 
             }
@@ -88,5 +89,8 @@ public class FilePresenter extends BaseViewModel {
         return result;
     }
 
+    public void delete(String path){
+
+    }
 
 }

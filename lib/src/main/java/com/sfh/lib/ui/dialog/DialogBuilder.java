@@ -12,6 +12,7 @@ import android.view.View;
 /**
  * 功能描述:提示对话框接口
  *
+ * @author Sunfehu
  * @date 2016/11/14
  */
 
@@ -19,9 +20,17 @@ public class DialogBuilder {
 
     interface DialogInterface {
 
+        /***
+         * 对话框取消
+         */
         void dismiss();
 
         interface OnClickListener {
+            /***
+             * 对话框按钮点击
+             * @param dialog
+             * @param which
+             */
             void onClick(DialogInterface dialog, int which);
         }
     }
@@ -189,6 +198,16 @@ public class DialogBuilder {
 
     public DialogBuilder setHideCancel(boolean hideCancel) {
         this.hideCancel = hideCancel;
+        return this;
+    }
+
+    public DialogBuilder setCancelListener(DialogInterface.OnClickListener cancelListener) {
+        this.cancelListener = cancelListener;
+        return this;
+    }
+
+    public DialogBuilder setOkListener(DialogInterface.OnClickListener okListener) {
+        this.okListener = okListener;
         return this;
     }
 

@@ -5,6 +5,8 @@ import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.sfh.lib.http.ReqBase;
+import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.rx.IResult;
@@ -14,6 +16,7 @@ import com.sfh.lib.utils.UtilLog;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Predicate;
 
 /**
  * 功能描述: 业务Model
@@ -44,11 +47,15 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         return this.mLiveData;
     }
 
-
     @MainThread
-    @Override
     public <T> void setValue(T t) {
         this.mLiveData.setValue(t);
+    }
+
+
+    @MainThread
+    public <T> void setValue(String action, T t) {
+        this.mLiveData.setValue(new UIData(action, t));
     }
 
 

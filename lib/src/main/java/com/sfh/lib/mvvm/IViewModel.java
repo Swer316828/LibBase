@@ -27,14 +27,6 @@ public interface IViewModel {
      */
     BaseLiveData getLiveData();
 
-    /***
-     * 刷新数据
-     * @param t
-     * @param <T>
-     */
-    @MainThread
-    <T> void setValue(T t);
-
 
     /***
      * 任务加入管理中

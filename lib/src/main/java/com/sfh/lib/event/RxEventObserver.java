@@ -10,7 +10,7 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public  class RxEventObserver<T> implements Observer<T> {
+class RxEventObserver<T> implements Observer<T> {
 
     private IEventResult<T> result;
 

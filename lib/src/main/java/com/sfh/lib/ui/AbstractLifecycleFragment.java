@@ -13,12 +13,10 @@ import android.view.ViewGroup;
 
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.service.BaseViewModel;
-import com.sfh.lib.mvvm.service.LiveDataUIRegistry;
+import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
-
-import java.lang.reflect.ParameterizedType;
 
 
 /**
@@ -37,7 +35,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
     protected VM mViewModel;
 
-    private LiveDataUIRegistry mLiveDataRegistry;
+    private LiveDataRegistry mLiveDataRegistry;
 
 
     @Override
@@ -82,7 +80,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
         if (initCreateView) {
             // 视图代理类-ViewModel
-            mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataUIRegistry.class);
+            mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataRegistry.class);
             mLiveDataRegistry.observe(this);
             this.initData(mRoot);
         }
@@ -169,6 +167,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         }
         return (AbstractLifecycleActivity) activity;
     }
+
     @Override
     public void onChanged(@Nullable Object data){
 

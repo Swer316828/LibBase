@@ -9,7 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.service.BaseViewModel;
-import com.sfh.lib.mvvm.service.LiveDataUIRegistry;
+import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
@@ -31,7 +31,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
     protected VM mViewModel;
 
-    private LiveDataUIRegistry mLiveDataRegistry;
+    private LiveDataRegistry mLiveDataRegistry;
 
     @Override
     @Nullable
@@ -53,7 +53,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        this.mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataUIRegistry.class);
+        this.mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataRegistry.class);
         this.mLiveDataRegistry.observe(this);
 
     }
@@ -145,12 +145,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             }
             case NetWorkState.TYPE_SHOW_DIALOG: {
                 //  显示对话框
-                DialogBuilder builder = new DialogBuilder();
-                builder.setHideCancel(true);
-                builder.setTitle("提示");
-                builder.setOKText("我知道了");
-                builder.setMessage(state.getShowToast());
-                showDialog(builder);
+                showDialog(state.getBuilder());
                 break;
             }
             default:

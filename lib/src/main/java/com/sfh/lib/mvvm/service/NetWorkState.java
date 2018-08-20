@@ -1,11 +1,11 @@
 package com.sfh.lib.mvvm.service;
 
+import com.sfh.lib.ui.dialog.DialogBuilder;
+
 /**
- * 功能描述: UI 通用
+ * 功能描述: UI提示信息 【通用】
  *
  * @author SunFeihu 孙飞虎
- * @company 中储南京智慧物流科技有限公司
- * @copyright （版权）中储南京智慧物流科技有限公司所有
  * @date 2018/7/19
  */
 public class NetWorkState {
@@ -23,7 +23,6 @@ public class NetWorkState {
     /**取消加载等待对话框*/
     public final static NetWorkState HIDE_LOADING = new NetWorkState(TYPE_HIDE_LOADING);
 
-
     /***
      * 显示提示信息
      * @param toast
@@ -32,18 +31,20 @@ public class NetWorkState {
     public static NetWorkState showToast(String toast){
         return new NetWorkState(TYPE_SHOW_TOAST,toast);
     }
+
+
     /***
      * 显示提示对话框
-     * @param toast
      * @return
      */
-    public static NetWorkState showDialog(String toast){
-        return new NetWorkState(TYPE_SHOW_DIALOG,toast);
+    public static NetWorkState showDialog(DialogBuilder builder){
+        return new NetWorkState(TYPE_SHOW_DIALOG,builder);
     }
 
 
     private  int type;
     private  String showToast;
+    private DialogBuilder builder;
 
     public NetWorkState(int type) {
         this.type = type;
@@ -51,9 +52,12 @@ public class NetWorkState {
 
     public NetWorkState(int type, String toast) {
         this.type = type;
-        this.showToast = showToast;
+        this.showToast = toast;
     }
-
+    public NetWorkState(int type, DialogBuilder toast) {
+        this.type = type;
+        this.builder = toast;
+    }
 
     public int getType() {
         return type;
@@ -67,8 +71,8 @@ public class NetWorkState {
         return showToast;
     }
 
-    public void setShowToast(String showToast) {
-        this.showToast = showToast;
-    }
 
+    public DialogBuilder getBuilder() {
+        return builder;
+    }
 }
