@@ -1,7 +1,7 @@
 package com.sfh.lib.mvvm;
 
 
-import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -24,7 +24,7 @@ public interface IViewModel {
      * 数据持有者
      * @return
      */
-    <T> LiveData<T> getLiveData();
+    <T> MutableLiveData<T> getLiveData();
 
 
     /***
