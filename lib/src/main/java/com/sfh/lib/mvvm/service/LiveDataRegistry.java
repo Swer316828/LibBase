@@ -150,11 +150,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
         if (data instanceof UIData){
             UIData uiData = (UIData) data;
             method = this.getMethod(uiData.getAction(),this.mLiveDataMethod);
+            this.invokeMethod(view, method, uiData.getData());
         }else{
             method = this.getMethod(data, this.mLiveDataMethod);
+            this.invokeMethod(view, method, data);
         }
 
-        this.invokeMethod(view, method, data);
+
     }
 
     private Method getMethod(Object data, Map<String, Method> map) {
