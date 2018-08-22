@@ -18,7 +18,7 @@ import android.view.View;
 
 public class DialogBuilder {
 
-    interface DialogInterface {
+    public interface DialogInterface {
 
         /***
          * 对话框取消
