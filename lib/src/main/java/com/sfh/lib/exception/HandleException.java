@@ -39,35 +39,35 @@ public final class HandleException extends RuntimeException {
 
     /*** 未识别的异常*/
     public static final int CODE_UNKNOWN_EXCEPTION = 10000;
-    public static final String UNKNOWN_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String UNKNOWN_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** 数据解析的异常*/
     public static final int CODE_PARSE_EXCEPTION = 10001;
-    public static final String PARSE_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String PARSE_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** 网络异常*/
     public static final int CODE_NET_EXCEPTION = 10002;
-    public static final String NET_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String NET_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** 网络连接异常*/
     public static final int CODE_HTTP_EXCEPTION = 10003;
-    public static final String HTTP_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String HTTP_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** 网络超时异常*/
     public static final int CODE_TIMEOUT_EXCEPTION = 10004;
-    public static final String TIMEOUT_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String TIMEOUT_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** SSL 安全异常*/
     public static final int CODE_SSL_EXCEPTION = 10005;
-    public static final String SSL_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String SSL_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** IO 异常*/
     public static final int CODE_IO_EXCEPTION = 10006;
-    public static final String IO_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String IO_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
     /*** NullPointerException 指针 异常*/
     public static final int CODE_NULL_EXCEPTION = 10007;
-    public static final String NULL_EXCEPTION = "系统繁忙,请稍后再试(AD_%s)";
+    public static final String NULL_EXCEPTION = "系统繁忙,请稍后再试(%s)";
 
 
     public static HandleException handleException(Throwable e) {
