@@ -227,6 +227,11 @@ public final class HandleException extends RuntimeException {
     }
 
 
+    @Override
+    public String getMessage() {
+        return this.msg;
+    }
+
     public String getCode() {
 
         return code;
