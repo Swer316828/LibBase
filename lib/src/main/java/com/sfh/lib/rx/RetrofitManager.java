@@ -86,9 +86,6 @@ public final class RetrofitManager {
      */
     public  <T> void execute(@NonNull Observable<T> observable, @Nullable final IResult<T> result,  @Nullable  IHanderLoading loading) {
 
-        if (loading != null){
-            loading.showLoading();
-        }
         RxObserver<T> subscribe = new RxObserver(result,loading);
         Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
 
