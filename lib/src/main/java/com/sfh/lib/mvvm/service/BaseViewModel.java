@@ -60,6 +60,11 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
 
+    @MainThread
+    public  void setValue(String action) {
+        this.setValue(new UIData(action));
+    }
+
     @Override
     protected void onCleared() {
         super.onCleared();

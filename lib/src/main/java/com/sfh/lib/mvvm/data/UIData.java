@@ -14,6 +14,9 @@ public class UIData<T> {
         this.action = action;
         this.data = data;
     }
+    public UIData(String action){
+        this.action = action;
+    }
 
     public String getAction() {
         return action;
