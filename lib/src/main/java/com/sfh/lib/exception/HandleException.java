@@ -2,6 +2,8 @@ package com.sfh.lib.exception;
 
 import android.net.ParseException;
 
+import com.sfh.lib.utils.UtilLog;
+
 import org.apache.http.conn.ConnectTimeoutException;
 import org.json.JSONException;
 
@@ -75,13 +77,11 @@ public final class HandleException extends RuntimeException {
         if (crashReportHandler != null) {
             crashReportHandler.accept(e);
         }
-
-        if (e == null || e.getCause() == null) {
+        UtilLog.e(HandleException.class,e.toString());
+        if (e == null) {
             // bugly会将这个throwable上报
             return new HandleException(CODE_NULL_EXCEPTION, NULL_EXCEPTION);
         }
-
-        Throwable throwable = e.getCause();
 
         // 服务器请求超时 or 服务器响应超时
         if (socketTimeoutException(e)) {
@@ -108,7 +108,7 @@ public final class HandleException extends RuntimeException {
         }
 
         //没有信任证书，导致请求失败
-        if (throwable instanceof SSLException) {
+        if (e instanceof SSLException) {
             return new HandleException(CODE_SSL_EXCEPTION, SSL_EXCEPTION);
         }
 
