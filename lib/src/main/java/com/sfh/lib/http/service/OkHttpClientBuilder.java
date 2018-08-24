@@ -83,11 +83,11 @@ class OkHttpClientBuilder implements Interceptor {
         httpBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
         httpBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
         httpBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
-        if (log) {
+        //if (log) {
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
             httpBuilder.addNetworkInterceptor(loggingInterceptor);
-        }
+      //  }
         OkHttpClient okHttpClient = httpBuilder.build();
 
         Retrofit.Builder builder = new Retrofit.Builder();
