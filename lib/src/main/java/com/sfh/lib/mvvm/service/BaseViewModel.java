@@ -49,7 +49,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
     @MainThread
-    public  <T> void setValue(T t) {
+    private  <T> void setValue(T t) {
         this.mLiveData.setValue(t);
     }
 
@@ -87,20 +87,15 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
 
-//    public <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @NonNull IResult<T> observer) {
-//        this.showLoading(cancelDialog);
-//        this.mRetrofit.execute(observable, observer, new IHanderLoading() {
-//            @Override
-//            public void showLoading(boolean cancle) {
-//
-//            }
-//
-//            @Override
-//            public void hideLoading() {
-//
-//            }
-//        });
-//    }
+    public <T> void execute(final boolean cancelDialog, @NonNull Observable<T> observable, @NonNull IResult<T> observer) {
+        this.showLoading(cancelDialog);
+        this.mRetrofit.execute(observable, observer, new IHanderLoading() {
+            @Override
+            public void hideLoading() {
+                BaseViewModel.this.hideLoading();
+            }
+        });
+    }
 
 
     /***

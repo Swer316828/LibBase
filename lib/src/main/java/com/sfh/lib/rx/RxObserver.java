@@ -15,27 +15,38 @@ import io.reactivex.functions.Consumer;
 class RxObserver<T> implements Consumer<T> {
 
     private IResult<T> result;
+    private IHanderLoading loading;
 
     public RxObserver(IResult<T> result) {
         this.result = result;
     }
 
-    @Override
-    public void accept(T o) throws Exception {
-        if (this.result == null) {
-            return;
-        }
-        this.result.onSuccess(o);
+    public RxObserver(IResult<T> result, IHanderLoading loading) {
+        this.result = result;
+        this.loading = loading;
     }
 
-    public Consumer onError =  new Consumer<HandleException>() {
+    @Override
+    public void accept(T o) throws Exception {
+        if (this.loading != null) {
+            this.loading.hideLoading();
+        }
+        if (this.result != null) {
+            this.result.onSuccess(o);
+        }
+
+    }
+
+    public Consumer onError = new Consumer<HandleException>() {
         @Override
         public void accept(HandleException e) throws Exception {
-            UtilLog.e(RxObserver.class, e.toString());
-            if (result == null) {
-                return;
+            if (loading != null) {
+                loading.hideLoading();
             }
-            result.onFail(e);
+            if (result != null) {
+                result.onFail(e);
+            }
+
         }
     };
 
