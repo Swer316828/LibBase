@@ -34,7 +34,7 @@ import io.reactivex.functions.Function;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class LiveDataRegistry<V extends IView> extends ViewModel implements  Function<V, Boolean> {
+public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean> {
 
 
     private final static String TAG = LiveDataRegistry.class.getName();
@@ -52,12 +52,12 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
     public <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity) {
 
         ///对象的直接超类的 Type
-        Type type =  activity.getClass().getGenericSuperclass();
-        if (type == null){
+        Type type = activity.getClass().getGenericSuperclass();
+        if (type == null) {
             return null;
         }
 
-        if (type instanceof ParameterizedType){
+        if (type instanceof ParameterizedType) {
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments();
             if (types != null && types.length > 0) {
@@ -70,12 +70,12 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
     public <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment) {
 
         ///对象的直接超类的 Type
-        Type type =  fragment.getClass().getGenericSuperclass();
-        if (type == null){
+        Type type = fragment.getClass().getGenericSuperclass();
+        if (type == null) {
             return null;
         }
 
-        if (type instanceof ParameterizedType){
+        if (type instanceof ParameterizedType) {
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments();
             if (types != null && types.length > 0) {
@@ -94,7 +94,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
         IViewModel model = listener.getViewModel();
         if (model != null) {
             //LiveData 加入生命周期管理中
-            model.getLiveData().observe(listener.getLifecycleOwner(),listener.getObserver());
+            model.getLiveData().observe(listener.getLifecycleOwner(), listener.getObserver());
             // 注册LiveData监听
             this.mRetrofit.execute(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult());
         }
@@ -128,7 +128,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
     protected void onCleared() {
         super.onCleared();
         UtilLog.d(TAG, "LiveDataRegistry =========== 资源销毁");
-        if (this.mRetrofit != null){
+        if (this.mRetrofit != null) {
             this.mRetrofit.clearAll();
         }
         if (this.mLiveDataMethod != null) {
@@ -147,15 +147,14 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
             return;
         }
         Method method;
-        if (data instanceof UIData){
+        if (data instanceof UIData) {
             UIData uiData = (UIData) data;
-            method = this.getMethod(uiData.getAction(),this.mLiveDataMethod);
+            method = this.getMethod(uiData.getAction(), this.mLiveDataMethod);
             this.invokeMethod(view, method, uiData.getData());
-        }else{
+        } else {
             method = this.getMethod(data, this.mLiveDataMethod);
             this.invokeMethod(view, method, data);
         }
-
 
     }
 
@@ -167,7 +166,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
             Class<?> dataClass;
             if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
 
-                if (dataClass.isInstance(data)){
+                if (dataClass.isInstance(data)) {
                     return entry.getValue();
                 }
             }
@@ -203,7 +202,11 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements  Fun
 
         try {
             UtilLog.d(TAG, "LiveDataRegistry =========== 显示UI 数据");
-            method.invoke(view, args);
+            if (args == null || args.length == 0) {
+                method.invoke(view);
+            } else {
+                method.invoke(view, args);
+            }
         } catch (Exception e) {
             UtilLog.e(TAG, "LiveDataRegistry method:" + method + " e:" + e);
         }

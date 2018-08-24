@@ -11,6 +11,7 @@ import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.IResult;
 import com.sfh.lib.rx.RetrofitManager;
+import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.UtilLog;
 
 import io.reactivex.Flowable;
@@ -47,14 +48,14 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
     @MainThread
-    public <T> void setValue(T t) {
+    private  <T> void setValue(T t) {
         this.mLiveData.setValue(t);
     }
 
 
     @MainThread
     public <T> void setValue(String action, T t) {
-        this.mLiveData.setValue(new UIData(action, t));
+        this.setValue(new UIData(action, t));
     }
 
 
@@ -83,5 +84,37 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
         this.mRetrofit.execute(observable, observer);
     }
+
+    /***
+     * 显示等待对话框
+     * @param cancel true 可以取消默认值 false 不可以取消
+     */
+    public void showLoading(boolean cancel){
+        this.setValue(cancel?NetWorkState.SHOW_LOADING:NetWorkState.SHOW_LOADING_NO_CANCEL);
+    }
+
+    /***
+     *隐藏等待对话框
+     */
+    public void hideLoading(){
+        this.setValue(NetWorkState.HIDE_LOADING);
+    }
+
+    /***
+     * 显示提示对话框
+     * @param dialog 提示信息
+     */
+    public  void showDialog(DialogBuilder dialog){
+        this.setValue(NetWorkState.showDialog(dialog));
+    }
+
+
+    /***
+     * Toast提示(正常提示)
+     */
+    public void showToast(CharSequence msg){
+        this.setValue(NetWorkState.showToast(msg));
+    }
+
 
 }

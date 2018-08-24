@@ -28,7 +28,7 @@ public class NetWorkState {
      * @param toast
      * @return
      */
-    public static NetWorkState showToast(String toast){
+    public static NetWorkState showToast(CharSequence toast){
         return new NetWorkState(TYPE_SHOW_TOAST,toast);
     }
 
@@ -43,14 +43,14 @@ public class NetWorkState {
 
 
     private  int type;
-    private  String showToast;
+    private  CharSequence showToast;
     private DialogBuilder builder;
 
     public NetWorkState(int type) {
         this.type = type;
     }
 
-    public NetWorkState(int type, String toast) {
+    public NetWorkState(int type, CharSequence toast) {
         this.type = type;
         this.showToast = toast;
     }
@@ -67,7 +67,7 @@ public class NetWorkState {
         this.type = type;
     }
 
-    public String getShowToast() {
+    public CharSequence getShowToast() {
         return showToast;
     }
 
