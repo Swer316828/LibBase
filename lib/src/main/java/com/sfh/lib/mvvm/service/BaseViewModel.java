@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.data.UIData;
+import com.sfh.lib.rx.IHanderLoading;
 import com.sfh.lib.rx.IResult;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.dialog.DialogBuilder;
@@ -48,7 +49,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
     @MainThread
-    private  <T> void setValue(T t) {
+    public  <T> void setValue(T t) {
         this.mLiveData.setValue(t);
     }
 
@@ -84,6 +85,23 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
         this.mRetrofit.execute(observable, observer);
     }
+
+
+//    public <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @NonNull IResult<T> observer) {
+//        this.showLoading(cancelDialog);
+//        this.mRetrofit.execute(observable, observer, new IHanderLoading() {
+//            @Override
+//            public void showLoading(boolean cancle) {
+//
+//            }
+//
+//            @Override
+//            public void hideLoading() {
+//
+//            }
+//        });
+//    }
+
 
     /***
      * 显示等待对话框
