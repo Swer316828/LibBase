@@ -26,26 +26,4 @@ public interface IViewModel {
      */
     <T> MutableLiveData<T> getLiveData();
 
-
-    /***
-     * 任务加入管理中
-     * @param disposable
-     */
-    void putDisposable(Disposable disposable);
-
-    /***
-     * 异步处理任务
-     * @param observable
-     * @param observer
-     * @param <T>
-     */
-    <T> void execute(@NonNull Observable<T> observable, @NonNull IResult<T> observer);
-
-    /***
-     * 异步处理任务
-     * @param observable
-     * @param observer
-     * @return
-     */
-    <T> void execute(@NonNull Flowable<T> observable, @Nullable  IResult<T> observer);
 }

@@ -16,55 +16,45 @@ public class NetWorkState {
     public static final int TYPE_SHOW_TOAST = 0x4;
     public static final int TYPE_SHOW_DIALOG = 0x5;
 
-    /**显示加载等待对话框-可取消*/
-    public final static NetWorkState SHOW_LOADING = new NetWorkState(TYPE_SHOW_LOADING);
-    /**显示加载等待对话框-不可取消*/
-    public final static NetWorkState SHOW_LOADING_NO_CANCEL = new NetWorkState(TYPE_SHOW_LOADING_NO_CANCEL);
-    /**取消加载等待对话框*/
-    public final static NetWorkState HIDE_LOADING = new NetWorkState(TYPE_HIDE_LOADING);
+    private final static NetWorkState SHOW_LOADING = new NetWorkState(TYPE_SHOW_LOADING);
+    private final static NetWorkState SHOW_LOADING_NO_CANCEL = new NetWorkState(TYPE_SHOW_LOADING_NO_CANCEL);
+    private final static NetWorkState HIDE_LOADING = new NetWorkState(TYPE_HIDE_LOADING);
+    private final static NetWorkState TOAST = new NetWorkState(TYPE_SHOW_TOAST);
+    private final static NetWorkState DIALOG = new NetWorkState(TYPE_SHOW_DIALOG);
 
-    /***
-     * 显示提示信息
-     * @param toast
-     * @return
-     */
-    public static NetWorkState showToast(CharSequence toast){
-        return new NetWorkState(TYPE_SHOW_TOAST,toast);
+
+    public static NetWorkState showLoading(boolean cancle) {
+        return cancle ? SHOW_LOADING : SHOW_LOADING_NO_CANCEL;
     }
 
 
-    /***
-     * 显示提示对话框
-     * @return
-     */
-    public static NetWorkState showDialog(DialogBuilder builder){
-        return new NetWorkState(TYPE_SHOW_DIALOG,builder);
+    public static NetWorkState hideLoading() {
+        return HIDE_LOADING;
+    }
+
+    public static NetWorkState showToast(CharSequence toast) {
+        TOAST.showToast = toast;
+        return TOAST;
+    }
+
+    public static NetWorkState showDialog(DialogBuilder builder) {
+        DIALOG.builder = builder;
+        return DIALOG;
     }
 
 
-    private  int type;
-    private  CharSequence showToast;
+    private int type;
+    private CharSequence showToast;
     private DialogBuilder builder;
 
-    public NetWorkState(int type) {
+    private NetWorkState(int type) {
         this.type = type;
     }
 
-    public NetWorkState(int type, CharSequence toast) {
-        this.type = type;
-        this.showToast = toast;
-    }
-    public NetWorkState(int type, DialogBuilder toast) {
-        this.type = type;
-        this.builder = toast;
-    }
+
 
     public int getType() {
         return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
     }
 
     public CharSequence getShowToast() {

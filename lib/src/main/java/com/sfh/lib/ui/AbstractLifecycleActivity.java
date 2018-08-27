@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
 import com.sfh.lib.mvvm.IView;
+import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
@@ -119,9 +120,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     @Override
     public void onChanged(@Nullable Object data) {
         if (data instanceof NetWorkState) {
-            this.setNetWorkState((NetWorkState) data);
-        } else {
-            this.mLiveDataRegistry.showLiveData(this, data);
+            this.setNetWorkState((NetWorkState) data );
+        } else if (data instanceof UIData) {
+            this.mLiveDataRegistry.showLiveData(this, (UIData)data);
         }
     }
 

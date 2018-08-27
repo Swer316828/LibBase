@@ -1,13 +1,15 @@
 package com.sfh.lib.mvvm.data;
 
 /**
- * 功能描述: TODO
+ * 功能描述: UI 响应数据
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/8/20
  */
 public class UIData<T> {
+    /**响应此数据的方法名称*/
     String action;
+    /**数据*/
     T data;
 
     public UIData(String action, T data){
@@ -22,15 +24,8 @@ public class UIData<T> {
         return action;
     }
 
-    public void setAction(String action) {
-        this.action = action;
-    }
-
     public T getData() {
         return data;
     }
 
-    public void setData(T data) {
-        this.data = data;
-    }
 }

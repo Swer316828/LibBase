@@ -141,37 +141,30 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      * @param view
      * @param data
      */
-    public void showLiveData(@NonNull Object view, @Nullable Object data) {
+    public void showLiveData(@NonNull Object view, @Nullable UIData data) {
         // LiveData 数据监听
-        if (data == null) {
+        if (view == null || data == null || TextUtils.isEmpty(data.getAction())) {
             return;
         }
-        Method method;
-        if (data instanceof UIData) {
-            UIData uiData = (UIData) data;
-            method = this.getMethod(uiData.getAction(), this.mLiveDataMethod);
-            this.invokeMethod(view, method, uiData.getData());
-        } else {
-            method = this.getMethod(data, this.mLiveDataMethod);
-            this.invokeMethod(view, method, data);
+
+        Method method = this.getMethod(data.getAction(), this.mLiveDataMethod);
+        if (method == null){
+            UtilLog.d(TAG,"未匹配到响应回调方法："+data.getAction());
+            return;
         }
 
-    }
-
-    private Method getMethod(Object data, Map<String, Method> map) {
-
-        for (Map.Entry<String, Method> entry : map.entrySet()) {
-
-            Class<?>[] parameterTypes = entry.getValue().getParameterTypes();
-            Class<?> dataClass;
-            if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-
-                if (dataClass.isInstance(data)) {
-                    return entry.getValue();
-                }
+        try {
+            //方法需要参数
+            Class<?>[] parameter =   method.getParameterTypes();
+            if (parameter == null || parameter.length == 0) {
+                method.invoke(view);
+            } else {
+                method.invoke(view, data.getData());
             }
+        } catch (Exception e) {
+            UtilLog.e(TAG, "LiveDataRegistry method:" + method + " e:" + e);
         }
-        return null;
+
     }
 
     private Method getMethod(String action, Map<String, Method> map) {
@@ -185,31 +178,4 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         return null;
     }
 
-    /***
-     * 调用对象的方法
-     * @param view
-     * @param method
-     * @param args
-     * @return
-     * @throws InvocationTargetException
-     * @throws IllegalAccessException
-     */
-    private void invokeMethod(@NonNull Object view, @Nullable Method method, Object... args) {
-
-        if (view == null || method == null) {
-            return;
-        }
-
-        try {
-            UtilLog.d(TAG, "LiveDataRegistry =========== 显示UI 数据");
-            if (args == null || args.length == 0) {
-                method.invoke(view);
-            } else {
-                method.invoke(view, args);
-            }
-        } catch (Exception e) {
-            UtilLog.e(TAG, "LiveDataRegistry method:" + method + " e:" + e);
-        }
-
-    }
 }

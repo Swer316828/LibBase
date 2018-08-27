@@ -63,7 +63,7 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public  <T> void execute(@NonNull Observable<T> observable, @Nullable final IResult<T> result) {
+    public  <T> void execute(@NonNull Observable<T> observable, @Nullable  IResult<T> result) {
 
         RxObserver<T> subscribe = new RxObserver(result);
         Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
@@ -78,28 +78,6 @@ public final class RetrofitManager {
         }).subscribe(subscribe, subscribe.onError);
         this.put(disposable);
     }
-    /***
-     * 异步请求操作
-     * @param observable
-     * @param <T>
-     * @return
-     */
-    public  <T> void execute(@NonNull Observable<T> observable, @Nullable final IResult<T> result,  @Nullable  IHanderLoading loading) {
-
-        RxObserver<T> subscribe = new RxObserver(result,loading);
-        Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
-
-            @Override
-            public ObservableSource<T> apply(Observable<T> upstream) {
-                return upstream.subscribeOn(Schedulers.io())
-                        .unsubscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .onErrorResumeNext(new ThrowableFunc());
-            }
-        }).subscribe(subscribe, subscribe.onError);
-        this.put(disposable);
-    }
-
 
     /***
      * [背压]异步请求操作
@@ -107,7 +85,7 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public  <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResult<T> result) {
+    public  <T> void execute(@NonNull Flowable<T> observable, @Nullable  IResult<T> result) {
 
         RxObserver<T> subscribe = new RxObserver(result);
         Disposable disposable = observable.compose(new FlowableTransformer<T, T>() {

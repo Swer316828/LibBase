@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.sfh.lib.mvvm.IView;
+import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
@@ -177,8 +178,8 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
                 return;
             }
             activity.setNetWorkState((NetWorkState) data);
-        } else {
-            this.mLiveDataRegistry.showLiveData(this, data);
+        } else if (data instanceof UIData){
+            this.mLiveDataRegistry.showLiveData(this, (UIData)data);
         }
 
     }
