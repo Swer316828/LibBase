@@ -7,6 +7,8 @@ import android.support.annotation.Nullable;
 
 import com.sfh.lib.rx.IResult;
 
+import java.lang.reflect.Method;
+
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
@@ -26,4 +28,5 @@ public interface IViewModel {
      */
     <T> MutableLiveData<T> getLiveData();
 
+    void putLiveDataMethod(Method method);
 }

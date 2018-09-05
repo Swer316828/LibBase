@@ -39,13 +39,9 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
     private final static String TAG = LiveDataRegistry.class.getName();
 
-    private volatile Map<String, Method> mLiveDataMethod;
-
     private RetrofitManager mRetrofit;
 
     public LiveDataRegistry() {
-
-        this.mLiveDataMethod = new HashMap<>(5);
         this.mRetrofit = new RetrofitManager();
     }
 
@@ -116,10 +112,8 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             if (liveEvent == null) {
                 continue;
             }
-
             // 注册LiveData监听
-            this.mLiveDataMethod.put(method.getName(), method);
-
+            viewModel.putLiveDataMethod(method);
         }
         return true;
     }
@@ -130,10 +124,9 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         UtilLog.d(TAG, "LiveDataRegistry =========== 资源销毁");
         if (this.mRetrofit != null) {
             this.mRetrofit.clearAll();
+            this.mRetrofit = null;
         }
-        if (this.mLiveDataMethod != null) {
-            this.mLiveDataMethod.clear();
-        }
+
     }
 
     /***
@@ -143,39 +136,21 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      */
     public void showLiveData(@NonNull Object view, @Nullable UIData data) {
         // LiveData 数据监听
-        if (view == null || data == null || TextUtils.isEmpty(data.getAction())) {
+        if (view == null || data == null) {
             return;
         }
 
-        Method method = this.getMethod(data.getAction(), this.mLiveDataMethod);
-        if (method == null){
-            UtilLog.d(TAG,"未匹配到响应回调方法："+data.getAction());
-            return;
-        }
-
+        Method method = data.getAction();
         try {
             //方法需要参数
-            Class<?>[] parameter =   method.getParameterTypes();
+            Class<?>[] parameter = method.getParameterTypes();
             if (parameter == null || parameter.length == 0) {
                 method.invoke(view);
             } else {
                 method.invoke(view, data.getData());
             }
         } catch (Exception e) {
-            UtilLog.e(TAG, "LiveDataRegistry method:" + method + " e:" + e);
+            UtilLog.e(TAG, "LiveDataRegistry method:" + method.getName() + " e:" + e);
         }
-
     }
-
-    private Method getMethod(String action, Map<String, Method> map) {
-
-        for (Map.Entry<String, Method> entry : map.entrySet()) {
-            String key = entry.getKey();
-            if (TextUtils.equals(action, key)) {
-                return entry.getValue();
-            }
-        }
-        return null;
-    }
-
 }

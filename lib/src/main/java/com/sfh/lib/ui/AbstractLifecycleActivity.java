@@ -123,6 +123,8 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             this.setNetWorkState((NetWorkState) data );
         } else if (data instanceof UIData) {
             this.mLiveDataRegistry.showLiveData(this, (UIData)data);
+        }else{
+            this.showToast("数据类型不匹配");
         }
     }
 

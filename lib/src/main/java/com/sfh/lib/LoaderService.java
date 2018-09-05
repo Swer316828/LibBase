@@ -3,7 +3,6 @@ package com.sfh.lib;
 
 import android.support.annotation.Nullable;
 
-import com.sfh.lib.mvvm.annotation.Service;
 import com.sfh.lib.utils.UtilLog;
 
 /**
@@ -14,22 +13,22 @@ import com.sfh.lib.utils.UtilLog;
  */
 public class LoaderService {
 
-
-    @Nullable
-    public static <T> T getService(Class<T> clz) {
-        Service service = clz.getAnnotation(Service.class);
-        if (service == null || service.achieve() == null) {
-            return null;
-        }
-        try {
-            return (T) service.achieve().newInstance();
-        } catch (InstantiationException e) {
-            UtilLog.e(LoaderService.class, e.toString());
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            UtilLog.e(LoaderService.class, e.toString());
-        }
-        return null;
-    }
+//
+//    @Nullable
+//    public static <T> T getService(Class<T> clz) {
+//        Service service = clz.getAnnotation(Service.class);
+//        if (service == null || service.achieve() == null) {
+//            return null;
+//        }
+//        try {
+//            return (T) service.achieve().newInstance();
+//        } catch (InstantiationException e) {
+//            UtilLog.e(LoaderService.class, e.toString());
+//            e.printStackTrace();
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();
+//            UtilLog.e(LoaderService.class, e.toString());
+//        }
+//        return null;
+//    }
 }

@@ -48,50 +48,17 @@ public class AppCacheManager implements Consumer<String> {
      * 内部静态对象
      * @author SunFeihu 孙飞虎
      */
-    private static class AppCacheHolder {
+    protected static class AppCacheHolder {
 
         public static final AppCacheManager APP_CACHE = new AppCacheManager();
-    }
-
-
-    private AbstractApplication application;
-
-    /*** 缓存文件夹路径*/
-    private String fileCachePath;
-
-    private SharedPreferences preferences;
-
-    /*** 内存缓存数据集合 10M以下Lru 缓存策略算法*/
-    private final LruCache<String, Object> cacheObject = new LruCache<String, Object>((int) Runtime.getRuntime().maxMemory() / 1024 / 50) {
-        @Override
-        protected int sizeOf(String key, Object value) {
-            return String.valueOf(value).getBytes().length / 1024;
-        }
-    };
-
-    private AppCacheManager() {
-    }
-
-
-    /***
-     * 设置AbstractApplication
-     * @param application
-     * @return
-     */
-    private AppCacheManager inject(AbstractApplication application) {
-
-        this.application = application;
-        return this;
     }
 
     /***
      * 清除缓存数据
      */
-    public void onDertory() {
+    public static void onDertory() {
 
-        if (this.cacheObject != null) {
-            this.cacheObject.evictAll();
-        }
+        AppCacheHolder.APP_CACHE.cacheObject.evictAll();
     }
 
     /***
@@ -99,13 +66,18 @@ public class AppCacheManager implements Consumer<String> {
      * @return
      */
     @Nullable
-    public File getFileCache() {
+    public static File getFileCache() {
 
-        if (TextUtils.isEmpty(this.fileCachePath)) {
+        String path = getApplication().getCachePath();
+        if (TextUtils.isEmpty(path)) {
             return null;
         }
 
-        return new File(this.fileCachePath);
+        File file = new File(path);
+        if (!file.exists()) {
+            return null;
+        }
+        return file;
     }
 
     /**
@@ -124,7 +96,6 @@ public class AppCacheManager implements Consumer<String> {
 
             this.application = context;
         }
-
 
         /**
          * 创建缓存
@@ -173,44 +144,24 @@ public class AppCacheManager implements Consumer<String> {
      * @param <T>
      * @return
      */
-    public <T> T getCache(@NonNull  String key,@NonNull  T defaultObject) {
+    public static <T> T getCache(@NonNull String key, @NonNull T defaultObject) {
 
         if (TextUtils.isEmpty(key)) {
             return defaultObject;
         }
 
-        Object temp = this.cacheObject.get(key);
+        //内存查询
+        Object temp = AppCacheHolder.APP_CACHE.cacheObject.get(key);
         if (temp == null) {
-            temp = this.getObject(key, defaultObject);
+            //文件查询
+            temp = AppCacheHolder.APP_CACHE.getObject(key, defaultObject);
             if (temp != null) {
-                this.putCache(true, key, temp);
+                //存在临时缓存
+                AppCacheHolder.APP_CACHE.putCache(key, temp, true);
             }
         }
         return temp == null ? defaultObject : (T) temp;
     }
-
-
-    /**
-     * 保存缓存信息[内存]
-     *
-     * @param key
-     * @param value
-     * @param <T>   class类型
-     * @return
-     */
-    public <T> boolean putMemoryCache(@NonNull  String key,@NonNull  T value) {
-        return this.putCache(false, key, value);
-    }
-
-    /***
-     * 清除缓存信息【内存】
-     * @param key
-     * @return
-     */
-    public void removeMemoryCache(@NonNull  String key) {
-        this.removeCache(false, key);
-    }
-
 
     /***
      * 保存缓存信息
@@ -220,35 +171,59 @@ public class AppCacheManager implements Consumer<String> {
      * @param value
      * @return
      */
-    public <T> boolean putCache(boolean persist,@NonNull  String key,@NonNull  T value) {
-        if (this.cacheObject == null || TextUtils.isEmpty(key)) {
+    public <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
+        if (TextUtils.isEmpty(key)) {
             return false;
         }
 
-        this.cacheObject.put(key, value);
-        if (persist) {
-            this.putObject(key, value);
+        AppCacheHolder.APP_CACHE.cacheObject.put(key, value);
+        if (persist != null && persist[0]) {
+            this.saveObject(key, value);
         }
         return true;
     }
 
     /***
      * 清除缓存信息
-     * @param persist ture 清除持久化数据 false 不清除持久化数据
      * @param key
      * @return
      */
-    public void removeCache(boolean persist,@NonNull  String key) {
-        if (this.cacheObject == null) {
-            return;
-        }
+    public static void removeCache(@NonNull String key) {
 
-        this.cacheObject.remove(key);
-        if (persist) {
-            this.remove(key);
-        }
+        AppCacheHolder.APP_CACHE.cacheObject.remove(key);
+        AppCacheHolder.APP_CACHE.remove(key);
     }
 
+
+
+    /*--------------------------------------------------属性-----------------------------------------------------*/
+
+    private AbstractApplication application;
+
+    private SharedPreferences preferences;
+
+    /*** 内存缓存数据集合 10M以下Lru 缓存策略算法*/
+    private final LruCache<String, Object> cacheObject = new LruCache<String, Object>((int) Runtime.getRuntime().maxMemory() / 1024 / 50) {
+        @Override
+        protected int sizeOf(String key, Object value) {
+            return String.valueOf(value).getBytes().length / 1024;
+        }
+    };
+
+    private AppCacheManager() {
+    }
+
+
+    /***
+     * 设置AbstractApplication
+     * @param application
+     * @return
+     */
+    private AppCacheManager inject(AbstractApplication application) {
+
+        this.application = application;
+        return this;
+    }
 
     /***
      * 保存数据
@@ -257,7 +232,7 @@ public class AppCacheManager implements Consumer<String> {
      * @param <T>
      * @return
      */
-    private <T> boolean putObject(@NonNull String key,@NonNull  T value) {
+    private <T> boolean saveObject(@NonNull String key, @NonNull T value) {
         if (this.preferences == null || TextUtils.isEmpty(key)) {
             return false;
         }
@@ -356,7 +331,6 @@ public class AppCacheManager implements Consumer<String> {
 
     @Override
     public void accept(String path) throws Exception {
-        // 缓存目录成功
-        this.fileCachePath = path;
+
     }
 }

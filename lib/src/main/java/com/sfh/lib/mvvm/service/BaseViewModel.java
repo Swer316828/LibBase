@@ -2,9 +2,10 @@ package com.sfh.lib.mvvm.service;
 
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
+import android.util.SparseArray;
 
 import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.exception.HandleException;
@@ -13,7 +14,8 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.IResult;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.dialog.DialogBuilder;
-import com.sfh.lib.utils.UtilLog;
+
+import java.lang.reflect.Method;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -29,6 +31,8 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     private final static String TAG = BaseViewModel.class.getName();
 
+    private volatile SparseArray<Method> mLiveDataMethod;
+
     private RetrofitManager mRetrofit;
 
     private RxBusRegistry mRxBus;
@@ -37,10 +41,21 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     public BaseViewModel() {
 
+        this.mLiveDataMethod = new SparseArray<>(3);
         this.mRetrofit = new RetrofitManager();
         // 注入ViewModel层之间数据通信
-        this.mRxBus = new RxBusRegistry();
-        this.mRxBus.registry(this);
+        if (this.eventOnOff()) {
+            this.mRxBus = new RxBusRegistry();
+            this.mRxBus.registry(this);
+        }
+    }
+
+    /***
+     * 消息监听开关 【默认关闭】
+     * @return
+     */
+    public boolean eventOnOff() {
+        return false;
     }
 
     @Override
@@ -49,46 +64,53 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
 
-    @UiThread
+    @MainThread
     public <T> void setValue(String action, T t) {
-        this.setValue(new UIData(action, t));
+
+        Method method = this.mLiveDataMethod.get(action.hashCode());
+        if (method == null) {
+            return;
+        }
+        this.mLiveData.setValue(new UIData(method, t));
     }
 
 
-    @UiThread
+    @MainThread
     public void setValue(String action) {
-        this.setValue(new UIData(action));
+        this.setValue(action, null);
     }
 
-
-    private <T> void setValue(T t) {
-        this.mLiveData.setValue(t);
-    }
 
     @Override
     protected void onCleared() {
         super.onCleared();
-        this.mRxBus.onCleared();
+        if (this.mRxBus != null) {
+            this.mRxBus.onCleared();
+            this.mRxBus = null;
+        }
         this.mRetrofit.clearAll();
     }
 
+    @Override
+    public void putLiveDataMethod(Method method) {
+        this.mLiveDataMethod.put(method.getName().hashCode(), method);
+    }
 
-    public void putDisposable(Disposable disposable) {
+    public final void putDisposable(Disposable disposable) {
         this.mRetrofit.put(disposable);
     }
 
 
-    public <T> void execute(@NonNull Observable<T> observable, @Nullable IResult<T> observer) {
+    public final <T> void execute(@NonNull Observable<T> observable, @Nullable IResult<T> observer) {
         this.mRetrofit.execute(observable, observer);
     }
 
 
-    public <T> void execute(@NonNull Flowable<T> observable, @Nullable  IResult<T> observer) {
-
+    public final <T> void execute(@NonNull Flowable<T> observable, @Nullable IResult<T> observer) {
         this.mRetrofit.execute(observable, observer);
     }
 
-    public <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @Nullable final IResult<T> observer) {
+    public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @Nullable final IResult<T> observer) {
         this.showLoading(cancelDialog);
         this.mRetrofit.execute(observable, new IResult<T>() {
             @Override
@@ -109,7 +131,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         });
     }
 
-    public <T> void execute(boolean cancelDialog, @NonNull Flowable<T> observable, @Nullable final IResult<T> observer) {
+    public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> observable, @Nullable final IResult<T> observer) {
         this.showLoading(cancelDialog);
         this.mRetrofit.execute(observable, new IResult<T>() {
             @Override
@@ -134,31 +156,31 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * 显示等待对话框
      * @param cancel true 可以取消默认值 false 不可以取消
      */
-    public void showLoading(boolean cancel) {
-        this.setValue(NetWorkState.showLoading(cancel));
+    public final void showLoading(boolean cancel) {
+        this.mLiveData.setValue(NetWorkState.showLoading(cancel));
     }
 
     /***
      *隐藏等待对话框
      */
-    public void hideLoading() {
-        this.setValue(NetWorkState.hideLoading());
+    public final void hideLoading() {
+        this.mLiveData.setValue(NetWorkState.hideLoading());
     }
 
     /***
      * 显示提示对话框
      * @param dialog 提示信息
      */
-    public void showDialog(DialogBuilder dialog) {
-        this.setValue(NetWorkState.showDialog(dialog));
+    public final void showDialog(DialogBuilder dialog) {
+        this.mLiveData.setValue(NetWorkState.showDialog(dialog));
     }
 
 
     /***
      * Toast提示(正常提示)
      */
-    public void showToast(CharSequence msg) {
-        this.setValue(NetWorkState.showToast(msg));
+    public final void showToast(CharSequence msg) {
+        this.mLiveData.setValue(NetWorkState.showToast(msg));
     }
 
 

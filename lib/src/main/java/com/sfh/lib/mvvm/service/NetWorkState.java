@@ -51,8 +51,6 @@ public class NetWorkState {
         this.type = type;
     }
 
-
-
     public int getType() {
         return type;
     }

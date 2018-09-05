@@ -1,5 +1,7 @@
 package com.sfh.lib.mvvm.data;
 
+import java.lang.reflect.Method;
+
 /**
  * 功能描述: UI 响应数据
  *
@@ -7,20 +9,25 @@ package com.sfh.lib.mvvm.data;
  * @date 2018/8/20
  */
 public class UIData<T> {
-    /**响应此数据的方法名称*/
-    String action;
-    /**数据*/
-    T data;
+    /**
+     * 响应此数据的方法名称
+     */
+    private Method action;
+    /**
+     * 数据
+     */
+    private T data;
 
-    public UIData(String action, T data){
+    public UIData(Method action, T data) {
         this.action = action;
         this.data = data;
     }
-    public UIData(String action){
+
+    public UIData(Method action) {
         this.action = action;
     }
 
-    public String getAction() {
+    public Method getAction() {
         return action;
     }
 
