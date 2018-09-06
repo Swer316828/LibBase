@@ -1,10 +1,10 @@
 package com.sfh.lib.ui;
 
-import android.arch.lifecycle.LifecycleOwner;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 
 import com.sfh.lib.mvvm.IView;
@@ -13,7 +13,6 @@ import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.AppDialog;
-import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
 
@@ -35,120 +34,95 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     private LiveDataRegistry mLiveDataRegistry;
 
     @Override
-    @Nullable
-    public VM getViewModel() {
-        if (this.mViewModel == null) {
-            mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
-        }
-        return this.mViewModel;
-    }
-
-
-    @Override
-    @NonNull
-    public LifecycleOwner getLifecycleOwner() {
-        return this;
-    }
-
-    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         this.mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataRegistry.class);
         this.mLiveDataRegistry.observe(this);
-
     }
 
-    public void showLoading(boolean cancelAble) {
-
-        if (this.isLifeCycle()) {
-            return;
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (this.mDialogBridge != null) {
+            this.mDialogBridge.onDestory();
         }
-
-        this.mDialogBridge.showLoading(cancelAble);
+        this.mDialogBridge = null;
     }
 
-    public void hideLoading() {
 
-        if (this.isLifeCycle()) {
-            return;
+    @Override
+    @Nullable
+    public VM getViewModel() {
+        if (this.mViewModel == null) {
+            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
         }
-        this.mDialogBridge.hideLoading();
+        return this.mViewModel;
     }
-
-    public void showDialog(DialogBuilder dialog) {
-
-        if (this.isLifeCycle()) {
-            return;
-        }
-        this.mDialogBridge.showDialog(dialog);
-    }
-
-    public void hideDialog() {
-
-        if (this.isLifeCycle()) {
-            return;
-        }
-        this.mDialogBridge.hideDialog();
-    }
-
-    public void showToast(CharSequence message) {
-        if (this.isLifeCycle()) {
-            return;
-        }
-        this.mDialogBridge.showToast(message);
-    }
-
-    public void showToast(CharSequence message, int type) {
-        if (this.isLifeCycle()) {
-            return;
-        }
-        this.mDialogBridge.showToast(message, type);
-    }
-
 
     /***
-     * 获取LiveData 监听
+     * 使用其他ViewModel
+     * @param cls
+     * @param <T>
      * @return
      */
+    public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+        T t = ViewModelProviders.of(this).get(cls);
+        if (t != null ) {
+            t.getLiveData().observe(this, this);
+        }
+        return t;
+    }
+
     @Override
-    @NonNull
-    public Observer getObserver() {
-        return this;
+    public <T> void observer(LiveData<T> liveData) {
+        liveData.observe(this, this);
     }
 
     @Override
     public void onChanged(@Nullable Object data) {
         if (data instanceof NetWorkState) {
-            this.setNetWorkState((NetWorkState) data );
+            this.setNetWorkState((NetWorkState) data);
         } else if (data instanceof UIData) {
-            this.mLiveDataRegistry.showLiveData(this, (UIData)data);
-        }else{
-            this.showToast("数据类型不匹配");
+            this.mLiveDataRegistry.showLiveData(this, (UIData) data);
+        } else {
+            this.setNetWorkState(NetWorkState.showToast("数据类型不匹配"));
         }
     }
 
-    public void setNetWorkState(NetWorkState state) {
+
+    /***
+     * 创建对话框句柄【可自定义对话框】
+     * @return
+     */
+    protected IDialog onCreateDialog() {
+        return new AppDialog(this);
+    }
+
+
+    final protected void setNetWorkState(NetWorkState state) {
+        if (this.isLifeCycle()) {
+            return;
+        }
         switch (state.getType()) {
             case NetWorkState.TYPE_SHOW_LOADING: {
-                this.showLoading(true);
+                this.mDialogBridge.showLoading(true);
                 break;
             }
             case NetWorkState.TYPE_SHOW_LOADING_NO_CANCEL: {
-                this.showLoading(false);
+                this.mDialogBridge.showLoading(false);
                 break;
             }
             case NetWorkState.TYPE_HIDE_LOADING: {
-                this.hideLoading();
+                this.mDialogBridge.hideLoading();
                 break;
             }
             case NetWorkState.TYPE_SHOW_TOAST: {
-                this.showToast(state.getShowToast());
+                this.mDialogBridge.showToast(state.getShowToast());
                 break;
             }
             case NetWorkState.TYPE_SHOW_DIALOG: {
-                //  显示对话框
-                showDialog(state.getBuilder());
+                this.mDialogBridge.showDialog(state.getBuilder());
                 break;
             }
             default:
@@ -156,15 +130,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         }
     }
 
-    /***
-     * 创建对话框句柄【可自定义】
-     * @return
-     */
-    protected IDialog onCreateDialog() {
-        return new AppDialog(this);
-    }
-
-    private boolean isLifeCycle() {
+    final private boolean isLifeCycle() {
         if (this.isFinishing()) {
             return true;
         }
@@ -177,13 +143,5 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         }
         return false;
     }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (this.mDialogBridge != null) {
-            this.mDialogBridge.onDestory();
-        }
-        this.mDialogBridge = null;
-    }
 }
+

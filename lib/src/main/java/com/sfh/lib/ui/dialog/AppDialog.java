@@ -72,14 +72,6 @@ public class AppDialog implements IDialog {
     }
 
     @Override
-    public void hideDialog() {
-        if (this.mToastDialog == null) {
-            return;
-        }
-        this.mToastDialog.dismiss();
-    }
-
-    @Override
     public void showToast(CharSequence msg) {
         this.showToast(msg, 0);
     }
@@ -109,11 +101,14 @@ public class AppDialog implements IDialog {
 
     @Override
     public void onDestory() {
-        this.hideDialog();
         this.hideLoading();
         this.mActivity.clear();
         this.mActivity = null;
-        this.mToastDialog = null;
+
+        if (this.mToastDialog != null) {
+            this.mToastDialog.dismiss();
+            this.mToastDialog = null;
+        }
         this.mWaitDialog = null;
     }
 }

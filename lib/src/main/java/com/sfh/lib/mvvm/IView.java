@@ -1,9 +1,7 @@
 package com.sfh.lib.mvvm;
 
 
-import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.Observer;
-import android.support.annotation.NonNull;
+import android.arch.lifecycle.LiveData;
 import android.support.annotation.Nullable;
 
 /**
@@ -15,19 +13,9 @@ import android.support.annotation.Nullable;
 
 public interface IView  {
 
-    @NonNull
-    LifecycleOwner getLifecycleOwner();
-
-
     @Nullable
     <T extends IViewModel> T getViewModel();
 
-
-    /***
-     * 获取LiveData 监听
-     * @return
-     */
-    @NonNull
-    Observer getObserver();
-
+    <T> void observer(LiveData<T> liveData);
+  
 }

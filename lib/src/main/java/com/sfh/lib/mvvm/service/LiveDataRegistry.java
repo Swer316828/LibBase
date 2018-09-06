@@ -3,6 +3,7 @@ package com.sfh.lib.mvvm.service;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 
 import com.sfh.lib.mvvm.data.UIData;
@@ -13,6 +14,7 @@ import com.sfh.lib.mvvm.annotation.LiveDataMatch;
 import com.sfh.lib.rx.EmptyResult;
 import com.sfh.lib.ui.AbstractLifecycleActivity;
 import com.sfh.lib.ui.AbstractLifecycleFragment;
+import com.sfh.lib.ui.AbstractLifecycleView;
 import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.ViewModelProviders;
 
@@ -81,6 +83,24 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         return null;
     }
 
+    public <T extends BaseViewModel> T getViewModel(AbstractLifecycleView view) {
+
+        ///对象的直接超类的 Type
+        Type type = view.getClass().getGenericSuperclass();
+        if (type == null) {
+            return null;
+        }
+
+        if (type instanceof ParameterizedType) {
+            //参数化类型
+            Type[] types = ((ParameterizedType) type).getActualTypeArguments();
+            if (types != null && types.length > 0) {
+                return ViewModelProviders.of((FragmentActivity) view.getContext()).get((Class<T>) types[0]);
+            }
+        }
+        return null;
+    }
+
     /***
      * 绑定UI 数据刷新
      * @param listener
@@ -90,7 +110,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         IViewModel model = listener.getViewModel();
         if (model != null) {
             //LiveData 加入生命周期管理中
-            model.getLiveData().observe(listener.getLifecycleOwner(), listener.getObserver());
+            listener.observer(model.getLiveData());
             // 注册LiveData监听
             this.mRetrofit.execute(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult());
         }

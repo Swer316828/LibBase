@@ -30,11 +30,6 @@ public interface IDialog {
     void showDialog(DialogBuilder dialog);
 
     /***
-     *隐藏提示对话框
-     */
-    void hideDialog();
-
-    /***
      * Toast提示(正常提示)
      */
     void showToast(CharSequence msg);

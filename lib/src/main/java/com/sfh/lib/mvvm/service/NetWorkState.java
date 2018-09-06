@@ -13,6 +13,7 @@ public class NetWorkState {
     public static final int TYPE_SHOW_LOADING = 0x1;
     public static final int TYPE_SHOW_LOADING_NO_CANCEL = 0x2;
     public static final int TYPE_HIDE_LOADING = 0x3;
+
     public static final int TYPE_SHOW_TOAST = 0x4;
     public static final int TYPE_SHOW_DIALOG = 0x5;
 
