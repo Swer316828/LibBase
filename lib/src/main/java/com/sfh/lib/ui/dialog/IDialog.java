@@ -1,7 +1,5 @@
-package com.sfh.lib.ui;
+package com.sfh.lib.ui.dialog;
 
-
-import com.sfh.lib.ui.dialog.DialogBuilder;
 
 /**
  * 功能描述:
@@ -32,14 +30,7 @@ public interface IDialog {
     /***
      * Toast提示(正常提示)
      */
-    void showToast(CharSequence msg);
-
-    /***
-     * Toast提示
-     * @param msg
-     * @param type 0 正常 1 警告 2错误
-     */
-    void showToast(CharSequence msg, int type);
+    void showToast(CharSequence msg,int... duration);
 
     /***
      * 销毁

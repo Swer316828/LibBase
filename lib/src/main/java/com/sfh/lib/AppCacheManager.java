@@ -56,7 +56,7 @@ public class AppCacheManager implements Consumer<String> {
     /***
      * 清除缓存数据
      */
-    public static void onDertory() {
+    public static void onLowMemory() {
 
         AppCacheHolder.APP_CACHE.cacheObject.evictAll();
     }

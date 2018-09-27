@@ -1,20 +1,17 @@
-package com.sfh.lib.http.utils;
+package com.sfh.lib.http;
 
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
 import com.google.gson.Gson;
-import com.sfh.lib.http.ReqBase;
+import com.sfh.lib.http.HttpBase;
 import com.sfh.lib.http.annotation.Lose;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import okhttp3.MediaType;
@@ -43,9 +40,9 @@ public final class UtilRxHttp {
 
         Field[] fields = object.getClass().getDeclaredFields();
         Map<String, String> params;
-        if (object instanceof ReqBase) {
+        if (object instanceof HttpBase) {
             // 公共参数
-            params = ((ReqBase) object).toMap();
+            params = ((HttpBase) object).toMap();
         } else {
             params = new HashMap<>(fields.length);
         }

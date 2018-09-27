@@ -4,7 +4,6 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 
 import com.sfh.lib.mvvm.IView;
@@ -13,6 +12,8 @@ import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.AppDialog;
+import com.sfh.lib.ui.dialog.DialogBuilder;
+import com.sfh.lib.ui.dialog.IDialog;
 import com.sfh.lib.utils.ViewModelProviders;
 
 
@@ -129,6 +130,15 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
                 break;
         }
     }
+
+    public void showDialog(DialogBuilder dialog){
+        this.setNetWorkState(NetWorkState.showDialog(dialog));
+    }
+
+    public void showToast(CharSequence msg){
+        this.setNetWorkState(NetWorkState.showToast(msg));
+    }
+
 
     final private boolean isLifeCycle() {
         if (this.isFinishing()) {

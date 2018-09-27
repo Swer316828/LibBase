@@ -29,20 +29,17 @@ public abstract class AbstractApplication extends Application {
      */
     public abstract void onLoseToken(String exit);
 
-    @Override
-    public void onCreate() {
 
-        super.onCreate();
+    public void init(){
         new AppCacheManager.
                 Builder(this).build();
     }
-
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
         //清理内存缓存
-        AppCacheManager.newInstance().onDertory();
+        AppCacheManager.onLowMemory();
     }
 
 

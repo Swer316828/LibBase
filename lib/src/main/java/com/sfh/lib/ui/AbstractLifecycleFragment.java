@@ -15,6 +15,7 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
+import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
 
@@ -107,6 +108,14 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         return "";
     }
 
+
+    public void showDialog(DialogBuilder dialog){
+        this.setNetWorkState(NetWorkState.showDialog(dialog));
+    }
+
+    public void showToast(CharSequence msg){
+        this.setNetWorkState(NetWorkState.showToast(msg));
+    }
 
     final protected void setNetWorkState(NetWorkState state) {
         FragmentActivity activity = getActivity();

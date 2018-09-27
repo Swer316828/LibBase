@@ -5,7 +5,6 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.sfh.lib.AppCacheManager;
-import com.sfh.lib.ui.IDialog;
 import com.sfh.lib.utils.UtilsToast;
 
 import java.lang.ref.WeakReference;
@@ -72,29 +71,20 @@ public class AppDialog implements IDialog {
     }
 
     @Override
-    public void showToast(CharSequence msg) {
-        this.showToast(msg, 0);
-    }
-
-    @Override
-    public void showToast(CharSequence msg, int type) {
+    public void showToast(CharSequence msg, int... duration) {
         if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }
-        View view = this.mActivity.get().getWindow().getDecorView();
-        this.showToast(view, msg, type, Toast.LENGTH_SHORT);
-    }
 
-
-    private void showToast(View view, CharSequence msg, int type, int duration) {
-
+        int time = (duration == null || duration.length == 0) ? Toast.LENGTH_SHORT : duration[0];
         if (mToast == null) {
-            mToast = Toast.makeText(AppCacheManager.getApplication(), msg, duration);
+
+            mToast = Toast.makeText(AppCacheManager.getApplication(), msg, time);
             UtilsToast.hook(mToast);
         }
 
         mToast.setText(msg);
-        mToast.setDuration(duration);
+        mToast.setDuration(time);
         mToast.show();
     }
 

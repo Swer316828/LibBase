@@ -2,8 +2,8 @@
 <resources>
 
     <style name="dialogAnim" mce_bogus="1" parent="android:Animation">
-        <item name="android:windowEnterAnimation">@anim/modal_in</item>
-        <item name="android:windowExitAnimation">@anim/modal_out</item>
+        <item name="android:windowEnterAnimation">@anim/base_modal_in</item>
+        <item name="android:windowExitAnimation">@anim/base_modal_out</item>
     </style>
 
 </resources>

@@ -17,7 +17,7 @@ public class UtilLog {
         throw new IllegalStateException("you can't instantiate me!");
     }
 
-    public static boolean DEBUG = BuildConfig.DEBUG;
+    public static boolean DEBUG = true;
 
     public static void setDEBUG(boolean bug) {
 

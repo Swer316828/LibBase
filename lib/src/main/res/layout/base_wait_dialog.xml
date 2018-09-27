@@ -4,6 +4,7 @@
     android:id="@+id/ryBG"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:background="@drawable/base_file_wait_dialog"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="20dp">
@@ -14,11 +15,4 @@
         android:layout_height="25dp"
         android:layout_gravity="center" />
 
-    <TextView
-        android:textColor="#666666"
-        android:textSize="12sp"
-        android:layout_marginTop="3dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="正在处理" />
 </LinearLayout>

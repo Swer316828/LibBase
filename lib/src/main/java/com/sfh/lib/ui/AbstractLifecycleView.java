@@ -13,6 +13,7 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
+import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
 import java.util.ArrayList;
@@ -94,22 +95,29 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
         }
     }
 
-    /***
-     * 使用其他ViewModel
-     * @param cls
-     * @param <T>
-     * @return
-     */
-    final public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
-        T t = ViewModelProviders.of((FragmentActivity) this.getContext()).get(cls);
-
-        if (t != null && !mLiveData.contains(t.getLiveData())) {
-            LiveData liveData = t.getLiveData();
-            liveData.observe((FragmentActivity) this.getContext(), this);
-            this.mLiveData.add(liveData);
-        }
-        return t;
+    public void showDialog(DialogBuilder dialog){
+        this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
+
+    public void showToast(CharSequence msg){
+        this.setNetWorkState(NetWorkState.showToast(msg));
+    }
+    /***
+//     * 使用其他ViewModel
+//     * @param cls
+//     * @param <T>
+//     * @return
+//     */
+//    final public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+//        T t = ViewModelProviders.of((FragmentActivity) this.getContext()).get(cls);
+//
+//        if (t != null && !mLiveData.contains(t.getLiveData())) {
+//            LiveData liveData = t.getLiveData();
+//            liveData.observe((FragmentActivity) this.getContext(), this);
+//            this.mLiveData.add(liveData);
+//        }
+//        return t;
+//    }
 
     final public void setNetWorkState(NetWorkState netWorkState) {
         Context activity = this.getContext();
