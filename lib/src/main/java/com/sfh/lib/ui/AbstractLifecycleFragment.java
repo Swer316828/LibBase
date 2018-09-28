@@ -1,5 +1,6 @@
 package com.sfh.lib.ui;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -92,6 +93,12 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         return t;
     }
 
+
+    @Override
+    public <T> void observer(LiveData<T> liveData) {
+        liveData.observe(this, this);
+    }
+
     @Override
     public void onChanged(@Nullable Object data) {
 
@@ -125,6 +132,5 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         AbstractLifecycleActivity abstractLifecycleActivity = (AbstractLifecycleActivity) activity;
         abstractLifecycleActivity.setNetWorkState(state);
     }
-
 
 }

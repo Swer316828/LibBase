@@ -175,6 +175,15 @@ public class AppCacheManager implements Consumer<Boolean> {
         AppCacheHolder.APP_CACHE.remove(key);
     }
 
+    /***
+     * 清除所有信息
+     * @return
+     */
+    public static void onDestroy() {
+
+        AppCacheHolder.APP_CACHE.cacheObject.evictAll();
+        AppCacheHolder.APP_CACHE.preferences.edit().clear().commit();
+    }
 
 
     /*--------------------------------------------------属性-----------------------------------------------------*/
