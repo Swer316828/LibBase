@@ -63,10 +63,54 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
-    public  <T> void execute(@NonNull Observable<T> observable, @Nullable  IResult<T> result) {
+    public <T> void execute(@NonNull Observable<T> observable, @Nullable IResult<T> result) {
 
         RxObserver<T> subscribe = new RxObserver(result);
-        Disposable disposable = observable.compose(new ObservableTransformer<T, T>() {
+        Disposable disposable = compose(observable).subscribe(subscribe, subscribe.onError);
+        this.put(disposable);
+    }
+
+    /***
+     * 异步请求操作
+     * @param observable
+     * @param <T>
+     * @return
+     */
+    public static <T> Disposable executeSigin(@NonNull Observable<T> observable, @Nullable IResult<T> result) {
+
+        RxObserver<T> subscribe = new RxObserver(result);
+        Disposable disposable = compose(observable).subscribe(subscribe, subscribe.onError);
+        return disposable;
+    }
+
+    /***
+     * [背压]异步请求操作
+     * @param flowable
+     * @param <T>
+     * @return
+     */
+    public <T> void execute(@NonNull Flowable<T> flowable, @Nullable IResult<T> result) {
+
+        RxObserver<T> subscribe = new RxObserver(result);
+        Disposable disposable = compose(flowable).subscribe(subscribe, subscribe.onError);
+        this.put(disposable);
+    }
+
+    /***
+     * [背压]异步请求操作
+     * @param flowable
+     * @param <T>
+     * @return
+     */
+    public static <T> Disposable executeSigin(@NonNull Flowable<T> flowable, @Nullable IResult<T> result) {
+
+        RxObserver<T> subscribe = new RxObserver(result);
+        Disposable disposable = compose(flowable).subscribe(subscribe, subscribe.onError);
+        return disposable;
+    }
+
+    public static <T> Observable<T> compose(@NonNull Observable<T> observable) {
+        return observable.compose(new ObservableTransformer<T, T>() {
 
             @Override
             public ObservableSource<T> apply(Observable<T> upstream) {
@@ -75,20 +119,12 @@ public final class RetrofitManager {
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError);
-        this.put(disposable);
+        });
     }
 
-    /***
-     * [背压]异步请求操作
-     * @param observable
-     * @param <T>
-     * @return
-     */
-    public  <T> void execute(@NonNull Flowable<T> observable, @Nullable  IResult<T> result) {
 
-        RxObserver<T> subscribe = new RxObserver(result);
-        Disposable disposable = observable.compose(new FlowableTransformer<T, T>() {
+    public static <T> Flowable<T> compose(@NonNull Flowable<T> observable) {
+        return observable.compose(new FlowableTransformer<T, T>() {
 
             @Override
             public Publisher<T> apply(Flowable<T> upstream) {
@@ -97,16 +133,14 @@ public final class RetrofitManager {
                         .observeOn(AndroidSchedulers.mainThread())
                         .onErrorResumeNext(new ThrowableFunc());
             }
-        }).subscribe(subscribe, subscribe.onError);
-        this.put(disposable);
+        });
     }
-
 
     /***
      * 异常处理类
      * @param <E>
      */
-    static class ThrowableFunc<E extends Throwable> implements Function<E, Observable<HandleException>> {
+    public static class ThrowableFunc<E extends Throwable> implements Function<E, Observable<HandleException>> {
         @Override
         public Observable<HandleException> apply(E throwable) throws Exception {
             // 封装成自定义异常对象

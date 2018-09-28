@@ -2,7 +2,6 @@ package com.sfh.lib;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -12,6 +11,7 @@ import com.google.gson.Gson;
 import com.sfh.lib.exception.HandleException;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
@@ -26,7 +26,7 @@ import io.reactivex.schedulers.Schedulers;
  * @author SunFeihu 孙飞虎
  * @date 2018/3/29
  */
-public class AppCacheManager implements Consumer<String> {
+public class AppCacheManager implements Consumer<Boolean> {
     /***
      * 获取静态对象
      * @return AppCacheManager
@@ -59,25 +59,6 @@ public class AppCacheManager implements Consumer<String> {
     public static void onLowMemory() {
 
         AppCacheHolder.APP_CACHE.cacheObject.evictAll();
-    }
-
-    /***
-     * 返回缓存文件 可能出现NULL
-     * @return
-     */
-    @Nullable
-    public static File getFileCache() {
-
-        String path = getApplication().getCachePath();
-        if (TextUtils.isEmpty(path)) {
-            return null;
-        }
-
-        File file = new File(path);
-        if (!file.exists()) {
-            return null;
-        }
-        return file;
     }
 
     /**
@@ -120,7 +101,7 @@ public class AppCacheManager implements Consumer<String> {
                 String prefFile = this.application.getPreFile();
                 if (!TextUtils.isEmpty(prefFile)) {
                     // 创建sharePrefer 文件
-                    app.preferences = application.getSharedPreferences(prefFile, Context.MODE_PRIVATE);
+                    app.preferences = application.getSharedPreferences(prefFile, Context.MODE_MULTI_PROCESS);
                 }
                 // 防止Disposable 之后出现异常导致应用崩溃
                 RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
@@ -297,40 +278,59 @@ public class AppCacheManager implements Consumer<String> {
     }
 
     /***
+     * 返回缓存文件 可能出现NULL
+     * @return
+     */
+    @Nullable
+    public static File getFileCache() {
+
+        String path = getApplication().getCachePath();
+        if (TextUtils.isEmpty(path)) {
+            return null;
+        }
+
+        File cache =  AppCacheHolder.APP_CACHE.application.getExternalFilesDir(path);
+        if (cache.exists()) {
+            return cache;
+        }
+
+        if (cache.mkdirs()){
+            return cache;
+        }
+        return null;
+    }
+
+    Disposable mTaskdisposable;
+
+    /***
      * 创建缓存文件目录
      * @param path 目录名称
      * @return
      */
-    private Disposable createFile(String path) {
+    private void createFile(final String path) {
         // 背压模式
-        return Flowable.just(path).map(new Function<String, String>() {
+        if (this.mTaskdisposable != null) {
+            this.mTaskdisposable.dispose();
+        }
+        //创建缓存失败，线创建定时30秒检查一次，10次结束
+        this.mTaskdisposable = Flowable.interval(0, 30, TimeUnit.SECONDS).take(10).map(new Function<Long, Boolean>() {
             @Override
-            public String apply(String path) throws Exception {
-
-                File cache;
-                //目录
-                if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-                    //SD
-                    cache = new File(Environment.getExternalStorageDirectory() + File.separator + path);
-                } else {
-                    // 没有内存卡 cache缓存
-                    cache = new File(Environment.getDownloadCacheDirectory() + File.separator + path);
-                    if (!cache.exists()) {
-                        //数据缓存目录
-                        cache = new File(Environment.getDataDirectory() + File.separator + path);
-                    }
+            public Boolean apply(Long aLong) throws Exception {
+                //私有目录
+                File cache = application.getExternalFilesDir(path);
+                if (cache.exists()){
+                    return true;
                 }
-                // 创建目录
-                if (!cache.exists()) {
-                    cache.mkdirs();
-                }
-                return cache.getAbsolutePath();
+                return cache.mkdirs();
             }
-        }).onBackpressureLatest().subscribeOn(Schedulers.io()).subscribe(this);
+        }).onBackpressureLatest().observeOn(Schedulers.newThread()).subscribe(this);
     }
 
-    @Override
-    public void accept(String path) throws Exception {
 
+    @Override
+    public void accept(Boolean result) throws Exception {
+        if (result && mTaskdisposable!= null) {
+            mTaskdisposable.dispose();
+        }
     }
 }
