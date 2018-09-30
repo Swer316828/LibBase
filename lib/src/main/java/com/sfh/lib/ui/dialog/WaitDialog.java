@@ -1,5 +1,6 @@
 package com.sfh.lib.ui.dialog;
 
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
@@ -37,6 +38,9 @@ public class WaitDialog extends DialogFragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
+        ColorDrawable colorDrawable = new ColorDrawable();
+        colorDrawable.setAlpha(10);
+        this.getDialog().getWindow().setBackgroundDrawable(colorDrawable);
     }
 
     public boolean isShowing() {

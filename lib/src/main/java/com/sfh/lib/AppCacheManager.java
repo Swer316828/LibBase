@@ -138,7 +138,7 @@ public class AppCacheManager implements Consumer<Boolean> {
             temp = AppCacheHolder.APP_CACHE.getObject(key, defaultObject);
             if (temp != null) {
                 //存在临时缓存
-                AppCacheHolder.APP_CACHE.putCache(key, temp, true);
+                putCache(key, temp, true);
             }
         }
         return temp == null ? defaultObject : (T) temp;
@@ -152,14 +152,14 @@ public class AppCacheManager implements Consumer<Boolean> {
      * @param value
      * @return
      */
-    public <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
+    public static  <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
         if (TextUtils.isEmpty(key)) {
             return false;
         }
 
         AppCacheHolder.APP_CACHE.cacheObject.put(key, value);
-        if (persist != null && persist[0]) {
-            this.saveObject(key, value);
+        if (persist != null && persist.length > 0 &&  persist[0]) {
+            AppCacheHolder.APP_CACHE.saveObject(key, value);
         }
         return true;
     }
