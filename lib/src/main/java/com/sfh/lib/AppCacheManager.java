@@ -121,27 +121,22 @@ public class AppCacheManager implements Consumer<Boolean> {
      * 获取缓存信息
      * [先从内存查询，存在则返回，否则本地缓存文件查询存在则返回并放入内存 否则返回默认]
      * @param key
-     * @param defaultObject 默认值
      * @param <T>
      * @return
      */
-    public static <T> T getCache(@NonNull String key, @NonNull T defaultObject) {
-
-        if (TextUtils.isEmpty(key)) {
-            return defaultObject;
-        }
+    public static <T> T getCache(@NonNull String key, @NonNull Class<T> cls, Object... defaultObject) {
 
         //内存查询
         Object temp = AppCacheHolder.APP_CACHE.cacheObject.get(key);
         if (temp == null) {
             //文件查询
-            temp = AppCacheHolder.APP_CACHE.getObject(key, defaultObject);
+            temp = AppCacheHolder.APP_CACHE.getObject(key, cls, defaultObject);
             if (temp != null) {
                 //存在临时缓存
                 putCache(key, temp, true);
             }
         }
-        return temp == null ? defaultObject : (T) temp;
+        return (T) temp;
     }
 
     /***
@@ -152,13 +147,13 @@ public class AppCacheManager implements Consumer<Boolean> {
      * @param value
      * @return
      */
-    public static  <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
+    public static <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
         if (TextUtils.isEmpty(key)) {
             return false;
         }
 
         AppCacheHolder.APP_CACHE.cacheObject.put(key, value);
-        if (persist != null && persist.length > 0 &&  persist[0]) {
+        if (persist != null && persist.length > 0 && persist[0]) {
             AppCacheHolder.APP_CACHE.saveObject(key, value);
         }
         return true;
@@ -249,26 +244,28 @@ public class AppCacheManager implements Consumer<Boolean> {
      * @param defaultObject
      * @return
      */
-    private Object getObject(String key, Object defaultObject) {
+    private Object getObject(@NonNull String key, @NonNull Class cls, Object... defaultObject) {
         if (this.preferences == null || TextUtils.isEmpty(key)) {
-            return defaultObject;
+            return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
         }
+
         String value = this.preferences.getString(key, "");
         if (TextUtils.isEmpty(value)) {
-            return defaultObject;
+            return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
         }
-        if (defaultObject instanceof Integer) {
+
+        if (Integer.class.isAssignableFrom(cls)) {
             return Integer.valueOf(value);
-        } else if (defaultObject instanceof Long) {
+        } else if (Long.class.isAssignableFrom(cls)) {
             return Long.valueOf(value);
-        } else if (defaultObject instanceof Float) {
+        } else if (Float.class.isAssignableFrom(cls)) {
             return Float.valueOf(value);
-        } else if (defaultObject instanceof Boolean) {
+        } else if (Boolean.class.isAssignableFrom(cls)) {
             return Boolean.valueOf(value);
-        } else if (defaultObject instanceof String) {
+        } else if (String.class.isAssignableFrom(cls)) {
             return value;
         } else {
-            return new Gson().fromJson(value, defaultObject.getClass());
+            return new Gson().fromJson(value, cls);
         }
 
     }
@@ -298,12 +295,12 @@ public class AppCacheManager implements Consumer<Boolean> {
             return null;
         }
 
-        File cache =  AppCacheHolder.APP_CACHE.application.getExternalFilesDir(path);
+        File cache = AppCacheHolder.APP_CACHE.application.getExternalFilesDir(path);
         if (cache.exists()) {
             return cache;
         }
 
-        if (cache.mkdirs()){
+        if (cache.mkdirs()) {
             return cache;
         }
         return null;
@@ -327,7 +324,7 @@ public class AppCacheManager implements Consumer<Boolean> {
             public Boolean apply(Long aLong) throws Exception {
                 //私有目录
                 File cache = application.getExternalFilesDir(path);
-                if (cache.exists()){
+                if (cache.exists()) {
                     return true;
                 }
                 return cache.mkdirs();
@@ -338,7 +335,7 @@ public class AppCacheManager implements Consumer<Boolean> {
 
     @Override
     public void accept(Boolean result) throws Exception {
-        if (result && mTaskdisposable!= null) {
+        if (result && mTaskdisposable != null) {
             mTaskdisposable.dispose();
         }
     }

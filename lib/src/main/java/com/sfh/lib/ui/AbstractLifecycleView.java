@@ -83,6 +83,11 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
         }
     }
 
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+
+    }
+
 
     @Nullable
     @Override
