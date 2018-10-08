@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.data.UIData;
@@ -26,25 +27,43 @@ import java.util.List;
  * @author SunFeihu 孙飞虎
  * @date 2018/9/6
  */
-public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends View implements IView, Observer {
+public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends ViewGroup implements IView, Observer {
 
 
     protected VM mViewModel;
 
     private LiveDataRegistry mLiveDataRegistry;
 
-    private List<LiveData> mLiveData = new ArrayList<>(3);
+    private LiveData mLiveData;
 
     public AbstractLifecycleView(Context context) {
         super(context);
+        this.setContentView();
     }
 
     public AbstractLifecycleView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        this.setContentView();
     }
 
     public AbstractLifecycleView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        this.setContentView();
+    }
+
+    /***
+     * 获取布局ID
+     * @return
+     */
+    public abstract int layout();
+
+    /***
+     * 初始化
+     */
+    public abstract void initData();
+
+    private void setContentView() {
+        inflate(this.getContext(), this.layout(), this);
     }
 
 
@@ -53,16 +72,15 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
         super.onAttachedToWindow();
         this.mLiveDataRegistry = ViewModelProviders.of((FragmentActivity) this.getContext()).get(LiveDataRegistry.class);
         this.mLiveDataRegistry.observe(this);
+        this.initData();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-
-        for (LiveData liveData : this.mLiveData) {
-            liveData.removeObserver(this);
+        if (this.mLiveData != null) {
+            this.mLiveData.removeObserver(this);
         }
-        this.mLiveData.clear();
     }
 
 
@@ -70,7 +88,6 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
     @Override
     final public VM getViewModel() {
         if (this.mViewModel == null) {
-
             this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
         }
         return this.mViewModel;
@@ -78,9 +95,11 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
 
 
     @Override
-    final  public <T> void observer(LiveData<T> liveData) {
-        liveData.observe((FragmentActivity) this.getContext(), this);
-        this.mLiveData.add(liveData);
+    final public <T> void observer(LiveData<T> liveData) {
+        this.mLiveData = liveData;
+        if (this.mLiveData != null) {
+            this.mLiveData.observe((FragmentActivity) this.getContext(), this);
+        }
     }
 
     @Override
@@ -95,29 +114,13 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
         }
     }
 
-    public void showDialog(DialogBuilder dialog){
+    final public void showDialog(DialogBuilder dialog) {
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
 
-    public void showToast(CharSequence msg){
+    final public void showToast(CharSequence msg) {
         this.setNetWorkState(NetWorkState.showToast(msg));
     }
-    /***
-//     * 使用其他ViewModel
-//     * @param cls
-//     * @param <T>
-//     * @return
-//     */
-//    final public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
-//        T t = ViewModelProviders.of((FragmentActivity) this.getContext()).get(cls);
-//
-//        if (t != null && !mLiveData.contains(t.getLiveData())) {
-//            LiveData liveData = t.getLiveData();
-//            liveData.observe((FragmentActivity) this.getContext(), this);
-//            this.mLiveData.add(liveData);
-//        }
-//        return t;
-//    }
 
     final public void setNetWorkState(NetWorkState netWorkState) {
         Context activity = this.getContext();
