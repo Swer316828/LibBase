@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentActivity;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.data.UIData;
@@ -27,7 +28,7 @@ import java.util.List;
  * @author SunFeihu 孙飞虎
  * @date 2018/9/6
  */
-public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends ViewGroup implements IView, Observer {
+public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends FrameLayout implements IView, Observer {
 
 
     protected VM mViewModel;
@@ -64,6 +65,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
 
     private void setContentView() {
         inflate(this.getContext(), this.layout(), this);
+        this.initData();
     }
 
 
@@ -72,7 +74,6 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
         super.onAttachedToWindow();
         this.mLiveDataRegistry = ViewModelProviders.of((FragmentActivity) this.getContext()).get(LiveDataRegistry.class);
         this.mLiveDataRegistry.observe(this);
-        this.initData();
     }
 
     @Override
@@ -82,12 +83,6 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Vi
             this.mLiveData.removeObserver(this);
         }
     }
-
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-
-    }
-
 
     @Nullable
     @Override
