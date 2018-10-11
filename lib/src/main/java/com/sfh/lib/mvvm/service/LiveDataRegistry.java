@@ -83,7 +83,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         return null;
     }
 
-    public <T extends BaseViewModel> T getViewModel(AbstractLifecycleView view) {
+    public <T extends BaseViewModel> T getViewModel(String managerKey,AbstractLifecycleView view) {
 
         ///对象的直接超类的 Type
         Type type = view.getClass().getGenericSuperclass();
@@ -95,7 +95,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of((FragmentActivity) view.getContext()).get((Class<T>) types[0]);
+                return ViewModelProviders.of((FragmentActivity) view.getContext()).get(managerKey,(Class<T>) types[0]);
             }
         }
         return null;

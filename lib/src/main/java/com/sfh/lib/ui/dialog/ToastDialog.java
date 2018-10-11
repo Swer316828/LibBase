@@ -18,6 +18,8 @@ import android.widget.TextView;
 
 import com.sfh.lib.R;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 
 /**
  * 功能描述:提示类对话框
@@ -122,14 +124,24 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         this.data = data;
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        showAtom.set(false);
+    }
 
-    public void show(FragmentActivity activity) {
+    private AtomicBoolean showAtom = new AtomicBoolean(false);
+    public synchronized  void show(FragmentActivity activity) {
         if (activity == null) {
             return;
         }
         if (this.isAdded()){
             return;
         }
+        if (showAtom.get()){
+            return;
+        }
+        showAtom.set(true);
         super.show(activity.getSupportFragmentManager(), ToastDialog.class.getName());
     }
 

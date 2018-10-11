@@ -20,6 +20,17 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class ViewModelProviders {
 
+    private static long managerKey = 0;
+
+    public static synchronized String createKey() {
+        String str;
+        synchronized (ViewModelProviders.class) {
+            managerKey += System.currentTimeMillis();
+            str = "ViewModelProviders" + String.valueOf(managerKey);
+        }
+        return str;
+    }
+
     private static DefaultFactory sDefaultFactory;
 
     private static void initializeFactoryIfNeeded(Application application) {

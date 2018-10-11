@@ -35,7 +35,7 @@ public class AppDialog implements IDialog {
 
 
     @Override
-    public void showLoading(boolean cancel) {
+    public synchronized void showLoading(boolean cancel) {
         if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }
@@ -58,7 +58,7 @@ public class AppDialog implements IDialog {
     }
 
     @Override
-    public void showDialog(DialogBuilder dialog) {
+    public synchronized void showDialog(DialogBuilder dialog) {
         if (this.mActivity == null || this.mActivity.get() == null) {
             return;
         }

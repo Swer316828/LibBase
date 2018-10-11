@@ -31,6 +31,7 @@ import java.util.List;
 public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends FrameLayout implements IView, Observer {
 
 
+
     protected VM mViewModel;
 
     private LiveDataRegistry mLiveDataRegistry;
@@ -88,11 +89,20 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     @Override
     final public VM getViewModel() {
         if (this.mViewModel == null) {
-            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
+            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this.getManagerKey(),this);
         }
         return this.mViewModel;
     }
 
+    /***
+     * 使用当前ViewModel 独立，如共享数据设置相同key
+     * 不建议重写该方法
+     * @return
+     */
+    protected String getManagerKey(){
+
+        return ViewModelProviders.createKey();
+    }
 
     @Override
     final public <T> void observer(LiveData<T> liveData) {

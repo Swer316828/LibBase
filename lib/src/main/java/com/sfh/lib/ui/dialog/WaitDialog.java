@@ -14,6 +14,8 @@ import android.widget.TextView;
 
 import com.sfh.lib.R;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * 功能描述:等待对话框
  *
@@ -21,7 +23,6 @@ import com.sfh.lib.R;
  * 2018/3/28
  */
 public class WaitDialog extends DialogFragment {
-
 
 
     public static WaitDialog newToastDialog() {
@@ -32,8 +33,9 @@ public class WaitDialog extends DialogFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         getDialog().requestWindowFeature(Window.FEATURE_NO_TITLE);
-        return  inflater.inflate(R.layout.base_wait_dialog, container, false);
+        return inflater.inflate(R.layout.base_wait_dialog, container, false);
     }
+
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -48,15 +50,27 @@ public class WaitDialog extends DialogFragment {
                 && this.getDialog().isShowing();
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        this.showAtom.set(false);
+    }
 
-    public void show(FragmentActivity activity){
-        if (activity == null){
+   private AtomicBoolean showAtom = new AtomicBoolean(false);
+
+    public synchronized void show(FragmentActivity activity) {
+        if (activity == null) {
             return;
         }
-        if (this.isAdded()){
+
+        if (this.isAdded()) {
             return;
         }
-        super.show(activity.getSupportFragmentManager(),WaitDialog.class.getName());
+        if (showAtom.get()){
+            return;
+        }
+        showAtom.set(true);
+        super.show(activity.getSupportFragmentManager(), WaitDialog.class.getName());
 
     }
 
