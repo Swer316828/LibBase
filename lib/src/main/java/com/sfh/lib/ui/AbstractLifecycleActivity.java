@@ -16,6 +16,8 @@ import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.ui.dialog.IDialog;
 import com.sfh.lib.utils.ViewModelProviders;
 
+import io.reactivex.disposables.Disposable;
+
 
 /**
  * 功能描述:UI【不存在任何业务逻辑代码】
@@ -69,7 +71,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
         T t = ViewModelProviders.of(this).get(cls);
-        if (t != null ) {
+        if (t != null) {
             t.getLiveData().observe(this, this);
         }
         return t;
@@ -131,11 +133,11 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         }
     }
 
-    public void showDialog(DialogBuilder dialog){
+    public void showDialog(DialogBuilder dialog) {
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
 
-    public void showToast(CharSequence msg){
+    public void showToast(CharSequence msg) {
         this.setNetWorkState(NetWorkState.showToast(msg));
     }
 
@@ -152,6 +154,15 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             return true;
         }
         return false;
+    }
+
+    /***
+     * 添加RxJava监听
+     * @param disposable
+     */
+    final public void putDisposable(Disposable disposable) {
+
+        this.mLiveDataRegistry.putDisposable(disposable);
     }
 }
 

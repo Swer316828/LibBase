@@ -21,6 +21,8 @@ import com.sfh.lib.utils.ViewModelProviders;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.disposables.Disposable;
+
 
 /**
  * 功能描述: TODO
@@ -140,6 +142,13 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         AbstractLifecycleActivity lifecycleActivity = (AbstractLifecycleActivity) activity;
         lifecycleActivity.setNetWorkState(netWorkState);
     }
+    /***
+     * 添加RxJava监听
+     * @param disposable
+     */
+    final public void putDisposable(Disposable disposable) {
 
+        this.mLiveDataRegistry.putDisposable(disposable);
+    }
 
 }

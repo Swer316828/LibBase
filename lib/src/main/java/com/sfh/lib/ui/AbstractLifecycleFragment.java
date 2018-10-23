@@ -19,6 +19,8 @@ import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
+import io.reactivex.disposables.Disposable;
+
 
 /**
  * 功能描述:UI 不存在任何业务逻辑代码
@@ -132,5 +134,12 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         AbstractLifecycleActivity abstractLifecycleActivity = (AbstractLifecycleActivity) activity;
         abstractLifecycleActivity.setNetWorkState(state);
     }
+    /***
+     * 添加RxJava监听
+     * @param disposable
+     */
+    final public void putDisposable(Disposable disposable) {
 
+        this.mLiveDataRegistry.putDisposable(disposable);
+    }
 }

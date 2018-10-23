@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 
 
@@ -173,4 +174,15 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             UtilLog.e(TAG, "LiveDataRegistry method:" + method.getName() + " e:" + e);
         }
     }
+
+    /***
+     * 添加RxJava监听
+     * @param disposable
+     */
+    public void putDisposable(Disposable disposable) {
+
+        this.mRetrofit.put(disposable);
+    }
+
+
 }
