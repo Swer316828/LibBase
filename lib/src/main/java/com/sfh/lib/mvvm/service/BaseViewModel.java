@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
 
+import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.mvvm.IViewModel;
@@ -183,5 +184,12 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         this.mLiveData.setValue(NetWorkState.showToast(msg));
     }
 
-
+    /***
+     * 发送Rx消息通知
+     * @param t
+     * @param <T>
+     */
+    public final <T> void postEvent(T t){
+        RxBusEventManager.postEvent(t);
+    }
 }

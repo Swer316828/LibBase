@@ -77,7 +77,7 @@ public final class HandleException extends RuntimeException {
         if (crashReportHandler != null) {
             crashReportHandler.accept(e);
         }
-        UtilLog.e(HandleException.class,e.toString());
+        UtilLog.e(HandleException.class, e.toString());
         if (e == null) {
             // bugly会将这个throwable上报
             return new HandleException(CODE_NULL_EXCEPTION, NULL_EXCEPTION);
@@ -147,15 +147,15 @@ public final class HandleException extends RuntimeException {
      */
     private static boolean httpCodeException(Throwable e) {
 
-        final List<Integer> httpCode = Arrays.asList(401, 403, 404, 408, 500, 502, 503, 504);
         HttpException httpException = null;
         if (e instanceof HttpException) {
             httpException = (HttpException) e;
         } else if (e.getCause() instanceof HttpException) {
             httpException = (HttpException) e.getCause();
         }
-        // Http请求错误-参考常见Http错误码如 401，403，404， 500 等
-        if (httpException != null && httpCode.contains(httpException.code())) {
+        // Http请求错误-参考常见Http错误码如 400,401, 403, 404,405,406,407, 408,409,410,411,412,413,414,415,416,417, 500, 502,502, 503, 504,505
+        int code = httpException.code();
+        if (httpException != null && (code >= 400 || code <= 505) ) {
             return true;
         }
         return false;
@@ -223,7 +223,7 @@ public final class HandleException extends RuntimeException {
     private HandleException(int code, String msg) {
         super(msg);
         this.code = String.valueOf(code);
-        this.msg = String.format(msg,this.code);
+        this.msg = String.format(msg, this.code);
     }
 
 
