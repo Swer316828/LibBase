@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="42dp"
@@ -13,22 +14,22 @@
         android:gravity="center"
         android:text="提示"
         android:textColor="#333333"
-        android:textSize="14sp" />
+        android:textSize="17sp" />
 
 
     <TextView
         android:id="@+id/tvContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center|left"
+        android:gravity="center"
         android:lineSpacingExtra="3dp"
         android:maxHeight="300dp"
         android:minHeight="77dp"
         android:paddingBottom="7dp"
         android:paddingLeft="17dp"
         android:paddingRight="17dp"
-        android:textColor="#666666"
-        android:textSize="15sp"
+        android:textColor="#ff333333"
+        android:textSize="16sp"
         android:visibility="gone" />
 
     <FrameLayout
@@ -39,8 +40,8 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="#50999999" />
+        android:layout_height="0.8dp"
+        android:background="#e3e3e3" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -54,14 +55,14 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="取消"
-            android:textColor="#999999"
-            android:textSize="14sp" />
+            android:textColor="#ff5086fc"
+            android:textSize="16sp" />
 
         <View
             android:id="@+id/vLine"
             android:layout_width="0.5dp"
             android:layout_height="match_parent"
-            android:background="#50999999" />
+            android:background="#e3e3e3" />
 
         <TextView
             android:id="@+id/tvRightClick"
@@ -70,8 +71,8 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="确定"
-            android:textColor="#000000"
-            android:textSize="14sp" />
+            android:textColor="#ff5086fc"
+            android:textSize="16sp" />
     </LinearLayout>
 
 </LinearLayout>

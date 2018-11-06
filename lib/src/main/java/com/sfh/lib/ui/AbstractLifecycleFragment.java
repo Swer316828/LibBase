@@ -1,5 +1,7 @@
 package com.sfh.lib.ui;
 
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleRegistry;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.os.Bundle;
@@ -67,9 +69,15 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         return this.mRoot;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
+    /**
+     * 激活一次生命周期监听
+     * @param event
+     */
+    public void handleLifecycleEvent(Lifecycle.Event event){
+        Lifecycle lifecycle = this.getLifecycle();
+        if (lifecycle instanceof LifecycleRegistry){
+            ((LifecycleRegistry)lifecycle).handleLifecycleEvent(event);
+        }
     }
 
     @Override

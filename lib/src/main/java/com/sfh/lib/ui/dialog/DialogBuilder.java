@@ -65,7 +65,7 @@ public class DialogBuilder {
 
     private boolean cancelable = true;
 
-    private int gravity = Gravity.LEFT;
+    private int gravity = Gravity.CENTER;
 
     private View view = null;
 
@@ -73,7 +73,6 @@ public class DialogBuilder {
 
 
     public DialogBuilder() {
-        this.title = "提示";
         this.cancelText = "取消";
         this.okText = "确定";
     }
@@ -196,6 +195,11 @@ public class DialogBuilder {
         return this;
     }
 
+    /***
+     * 隐藏取消按钮
+     * @param hideCancel
+     * @return
+     */
     public DialogBuilder setHideCancel(boolean hideCancel) {
         this.hideCancel = hideCancel;
         return this;

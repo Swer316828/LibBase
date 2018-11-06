@@ -33,7 +33,6 @@ import io.reactivex.disposables.Disposable;
 public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends FrameLayout implements IView, Observer {
 
 
-
     protected VM mViewModel;
 
     private LiveDataRegistry mLiveDataRegistry;
@@ -71,18 +70,38 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         this.initData();
     }
 
+    /***
+     * 不关联 View onDetachedFromWindow()事件,需要使用手动调用onDestoryObserver()解除
+     * 默认 关联
+     * @return true 不关联 View onDetachedFromWindow()事件, false 关联
+     *
+     */
+    public boolean isForever() {
+        return false;
+    }
+
+    public void onDestoryObserver() {
+        if (this.mLiveData != null) {
+            this.mLiveData.removeObserver(this);
+        }
+    }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        this.mLiveDataRegistry = ViewModelProviders.of((FragmentActivity) this.getContext()).get(LiveDataRegistry.class);
-        this.mLiveDataRegistry.observe(this);
+        if (this.mLiveDataRegistry == null) {
+            this.mLiveDataRegistry = ViewModelProviders.of((FragmentActivity) this.getContext()).get(LiveDataRegistry.class);
+            this.mLiveDataRegistry.observe(this);
+        }
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         if (this.mLiveData != null) {
+            if (this.isForever()) {
+                return;
+            }
             this.mLiveData.removeObserver(this);
         }
     }
@@ -91,7 +110,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     @Override
     final public VM getViewModel() {
         if (this.mViewModel == null) {
-            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this.getManagerKey(),this);
+            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this.getManagerKey(), this);
         }
         return this.mViewModel;
     }
@@ -101,7 +120,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      * 不建议重写该方法
      * @return
      */
-    protected String getManagerKey(){
+    protected String getManagerKey() {
 
         return ViewModelProviders.createKey();
     }
@@ -142,6 +161,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         AbstractLifecycleActivity lifecycleActivity = (AbstractLifecycleActivity) activity;
         lifecycleActivity.setNetWorkState(netWorkState);
     }
+
     /***
      * 添加RxJava监听
      * @param disposable
