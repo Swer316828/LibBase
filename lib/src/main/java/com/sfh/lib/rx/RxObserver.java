@@ -33,6 +33,7 @@ class RxObserver<T> implements Consumer<T> {
         @Override
         public void accept(HandleException e) throws Exception {
             if (result != null) {
+                UtilLog.e(IResult.class,e.toString());
                 result.onFail(e);
             }
         }
