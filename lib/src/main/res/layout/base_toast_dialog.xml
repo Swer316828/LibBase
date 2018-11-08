@@ -12,10 +12,10 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:gravity="center"
-        android:text="提示"
         android:textColor="#333333"
         android:textSize="17sp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:textStyle="bold"/>
 
 
     <TextView

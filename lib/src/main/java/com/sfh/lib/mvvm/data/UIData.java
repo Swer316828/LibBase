@@ -21,7 +21,7 @@ public class UIData {
 
 
     /***
-     * 多参数
+     * 参数
      * @param action
      * @param args
      */
@@ -30,6 +30,10 @@ public class UIData {
         this.data = args;
     }
 
+    /***
+     * 无参
+     * @param action
+     */
     public UIData(Method action) {
         this.action = action;
     }

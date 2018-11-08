@@ -86,7 +86,11 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     @MainThread
     public void setValue(String action) {
-        this.setValue(action, null);
+        Method method = this.mLiveDataMethod.get(action.hashCode());
+        if (method == null) {
+            return;
+        }
+        this.mLiveData.setValue(new UIData(method));
     }
 
 
