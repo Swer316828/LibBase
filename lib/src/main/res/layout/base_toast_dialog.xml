@@ -1,34 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="42dp"
-    android:background="@drawable/base_file_toast_dialog"
-    android:orientation="vertical">
+    android:layout_margin="40dp"
+    android:orientation="vertical"
+    android:paddingTop="9dp">
 
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="match_parent"
-        android:layout_height="45dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:gravity="center"
         android:text="提示"
         android:textColor="#333333"
-        android:textSize="17sp" />
+        android:textSize="17sp"
+        android:visibility="gone" />
 
 
     <TextView
         android:id="@+id/tvContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:gravity="center|left"
         android:lineSpacingExtra="3dp"
-        android:maxHeight="300dp"
-        android:minHeight="77dp"
-        android:paddingBottom="7dp"
-        android:paddingLeft="17dp"
-        android:paddingRight="17dp"
-        android:textColor="#ff333333"
+        android:paddingLeft="19dp"
+        android:paddingTop="10dp"
+        android:paddingRight="19dp"
+        android:paddingBottom="19dp"
+        android:textColor="#ff666666"
         android:textSize="16sp"
         android:visibility="gone" />
 
@@ -40,7 +40,7 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="0.8dp"
+        android:layout_height="0.5dp"
         android:background="#e3e3e3" />
 
     <LinearLayout

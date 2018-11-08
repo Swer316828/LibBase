@@ -13,8 +13,11 @@ import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.IResult;
+import com.sfh.lib.rx.IResultSuccess;
+import com.sfh.lib.rx.IResultSuccessNoFail;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.dialog.DialogBuilder;
+import com.sfh.lib.utils.UtilLog;
 
 import java.lang.reflect.Method;
 
@@ -65,14 +68,19 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
 
+    /***
+     * 刷新UI 数据
+     * @param action
+     * @param data
+     */
     @MainThread
-    public <T> void setValue(String action, T t) {
+    public void setValue(String action, Object... data) {
 
         Method method = this.mLiveDataMethod.get(action.hashCode());
         if (method == null) {
             return;
         }
-        this.mLiveData.setValue(new UIData(method, t));
+        this.mLiveData.setValue(new UIData(method, data));
     }
 
 
@@ -102,15 +110,122 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
 
+    /***
+     * 执行异步任务 【无执行对话框】【需处理成功,异常】
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
     public final <T> void execute(@NonNull Observable<T> observable, @Nullable IResult<T> observer) {
         this.mRetrofit.execute(observable, observer);
     }
 
+    /**
+     * 执行异步任务【无遮挡对话框】【只处理成功结果，异常以对话框形式提示】
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(@NonNull Observable<T> observable, @Nullable final IResultSuccess<T> observer) {
+        this.mRetrofit.execute(observable, new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                if (observer != null){
+                    observer.onSuccess(t);
+                }
+            }
 
+            @Override
+            public void onFail(HandleException e) {
+                showDialogToast(e.getMsg());
+            }
+        });
+    }
+
+    /***
+     *  执行异步任务 【无遮挡对话框】【只处理成功结果，异常不提示】
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(@NonNull Observable<T> observable, @Nullable final IResultSuccessNoFail<T> observer) {
+        this.mRetrofit.execute(observable, new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                if (observer != null){
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                UtilLog.e(TAG,e.toString());
+            }
+        });
+    }
+
+    /***
+     * 执行异步任务 【无遮挡对话框】【需处理成功,异常】
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
     public final <T> void execute(@NonNull Flowable<T> observable, @Nullable IResult<T> observer) {
         this.mRetrofit.execute(observable, observer);
     }
 
+    /***
+     * 执行异步任务【无遮挡对话框】【只处理成功结果，异常以对话框形式提示】
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResultSuccess<T> observer) {
+        this.mRetrofit.execute(observable,  new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                if (observer != null){
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                showDialogToast(e.getMsg());
+            }
+        });
+    }
+
+
+    /***
+     * 执行异步任务 【无遮挡对话框】【只处理成功结果，异常不提示】
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(@NonNull Flowable<T> observable, @Nullable final IResultSuccessNoFail<T> observer) {
+        this.mRetrofit.execute(observable,  new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                if (observer != null){
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                UtilLog.e(TAG,e.toString());
+            }
+        });
+    }
+
+    /***
+     * 执行异步任务【有遮挡对话框】【需处理成功,异常】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
     public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @Nullable final IResult<T> observer) {
         this.showLoading(cancelDialog);
         this.mRetrofit.execute(observable, new IResult<T>() {
@@ -132,6 +247,65 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         });
     }
 
+    /***
+     * 执行异步任务 【有遮挡对话框】【只处理成功结果，异常以对话框形式提示】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @Nullable final IResultSuccess<T> observer) {
+        this.showLoading(cancelDialog);
+        this.mRetrofit.execute(observable, new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                showDialogToast(e.getMsg());
+            }
+        });
+    }
+
+    /***
+     * 执行异步任务 【有遮挡对话框】【只处理成功结果，异常不提示】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> observable, @Nullable final IResultSuccessNoFail<T> observer) {
+        this.showLoading(cancelDialog);
+        this.mRetrofit.execute(observable, new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                UtilLog.e(TAG,e.toString());
+            }
+        });
+    }
+
+    /***
+     * 执行异步任务【有遮挡对话框】【需处理成功,异常】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
     public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> observable, @Nullable final IResult<T> observer) {
         this.showLoading(cancelDialog);
         this.mRetrofit.execute(observable, new IResult<T>() {
@@ -149,6 +323,58 @@ public class BaseViewModel extends ViewModel implements IViewModel {
                 if (observer != null) {
                     observer.onFail(e);
                 }
+            }
+        });
+    }
+
+    /***
+     * 执行异步任务【有遮挡对话框】【只处理成功结果，异常以对话框形式提示】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> observable, @Nullable final IResultSuccess<T> observer) {
+        this.showLoading(cancelDialog);
+        this.mRetrofit.execute(observable, new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                showDialogToast(e.getMsg());
+            }
+        });
+    }
+
+    /***
+     * 执行异步任务 【有遮挡对话框】【只处理成功结果，异常不提示】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param observable
+     * @param observer
+     * @param <T>
+     */
+    public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> observable, @Nullable final IResultSuccessNoFail<T> observer) {
+        this.showLoading(cancelDialog);
+        this.mRetrofit.execute(observable, new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                UtilLog.e(TAG,e.toString());
             }
         });
     }
@@ -185,11 +411,22 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
     /***
+     * Toast提示(正常提示)
+     */
+    public final void showDialogToast(CharSequence msg) {
+
+        DialogBuilder dialogBuilder = new DialogBuilder();
+        dialogBuilder.setMessage(msg);
+        dialogBuilder.setHideCancel(true);
+        showDialog(dialogBuilder);
+    }
+
+    /***
      * 发送Rx消息通知
      * @param t
      * @param <T>
      */
-    public final <T> void postEvent(T t){
+    public final <T> void postEvent(T t) {
         RxBusEventManager.postEvent(t);
     }
 }

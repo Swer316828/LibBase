@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
@@ -149,5 +150,14 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     final public void putDisposable(Disposable disposable) {
 
         this.mLiveDataRegistry.putDisposable(disposable);
+    }
+
+    /***
+     * 发送Rx消息通知
+     * @param t
+     * @param <T>
+     */
+    public final <T> void postEvent(T t) {
+        RxBusEventManager.postEvent(t);
     }
 }

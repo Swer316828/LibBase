@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
@@ -25,7 +26,7 @@ import io.reactivex.disposables.Disposable;
 
 
 /**
- * 功能描述: TODO
+ * 功能描述: MVVM 自定义View
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/9/6
@@ -169,6 +170,16 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     final public void putDisposable(Disposable disposable) {
 
         this.mLiveDataRegistry.putDisposable(disposable);
+    }
+
+
+    /***
+     * 发送Rx消息通知
+     * @param t
+     * @param <T>
+     */
+    public final <T> void postEvent(T t) {
+        RxBusEventManager.postEvent(t);
     }
 
 }

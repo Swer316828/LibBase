@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 
+import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
@@ -163,6 +164,16 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     final public void putDisposable(Disposable disposable) {
 
         this.mLiveDataRegistry.putDisposable(disposable);
+    }
+
+
+    /***
+     * 发送Rx消息通知
+     * @param t
+     * @param <T>
+     */
+    public final <T> void postEvent(T t) {
+        RxBusEventManager.postEvent(t);
     }
 }
 

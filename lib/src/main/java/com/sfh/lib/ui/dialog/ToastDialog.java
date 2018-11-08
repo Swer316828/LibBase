@@ -1,5 +1,6 @@
 package com.sfh.lib.ui.dialog;
 
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
@@ -63,7 +64,7 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         this.tvRightClick.setOnClickListener(this);
         this.tvContent.setMovementMethod(ScrollingMovementMethod.getInstance());
         this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
-
+        this.getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(this.getContext(),R.drawable.base_file_toast_dialog));
         if (this.data == null) {
             return;
         }

@@ -8,30 +8,45 @@ import java.lang.reflect.Method;
  * @author SunFeihu 孙飞虎
  * @date 2018/8/20
  */
-public class UIData<T> {
+public class UIData {
     /**
      * 响应此数据的方法名称
      */
     private Method action;
-    /**
+
+    /***
      * 数据
      */
-    private T data;
+    private Object[] data;
 
-    public UIData(Method action, T data) {
+
+    /***
+     * 多参数
+     * @param action
+     * @param args
+     */
+    public UIData(Method action, Object... args) {
         this.action = action;
-        this.data = data;
+        this.data = args;
     }
 
     public UIData(Method action) {
         this.action = action;
     }
 
+    /***
+     * UI响应方法
+     * @return
+     */
     public Method getAction() {
         return action;
     }
 
-    public T getData() {
+    /***
+     * 数据
+     * @return
+     */
+    public Object[] getData() {
         return data;
     }
 
