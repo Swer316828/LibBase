@@ -2,6 +2,7 @@ package com.sfh.lib;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -11,6 +12,9 @@ import com.google.gson.Gson;
 import com.sfh.lib.exception.HandleException;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Flowable;
@@ -164,10 +168,18 @@ public class AppCacheManager implements Consumer<Boolean> {
      * @param key
      * @return
      */
-    public static void removeCache(@NonNull String key) {
+    public static void removeCache(@NonNull String... key) {
 
-        AppCacheHolder.APP_CACHE.cacheObject.remove(key);
-        AppCacheHolder.APP_CACHE.remove(key);
+        if (key == null) {
+            return;
+        }
+        AppCacheManager app = AppCacheHolder.APP_CACHE;
+        SharedPreferences.Editor editor = app.preferences.edit();
+        for (String k : key) {
+            app.cacheObject.remove(k);
+            editor.remove(k);
+        }
+        editor.apply();
     }
 
     /***
@@ -179,7 +191,6 @@ public class AppCacheManager implements Consumer<Boolean> {
         AppCacheHolder.APP_CACHE.cacheObject.evictAll();
         AppCacheHolder.APP_CACHE.preferences.edit().clear().commit();
     }
-
 
     /*--------------------------------------------------属性-----------------------------------------------------*/
 
@@ -322,12 +333,35 @@ public class AppCacheManager implements Consumer<Boolean> {
         this.mTaskdisposable = Flowable.interval(0, 30, TimeUnit.SECONDS).take(10).map(new Function<Long, Boolean>() {
             @Override
             public Boolean apply(Long aLong) throws Exception {
-                //私有目录
-                File cache = application.getExternalFilesDir(path);
+                File cache;
+                //SD目录
+                if (android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState())) {
+                    cache = new File(Environment.getExternalStorageDirectory() + File.separator + path);
+                } else {
+                    // 没有内存卡 /cache
+                    cache = new File(android.os.Environment.getDownloadCacheDirectory() + File.separator + path);
+                    if (!cache.exists()) {
+                        cache = new File(android.os.Environment.getDataDirectory() + File.separator + path);
+                    }
+                }
+
                 if (cache.exists()) {
+                    //创建目录存在
                     return true;
                 }
-                return cache.mkdirs();
+
+                // 创建目录 成功
+                if (cache.mkdirs()) {
+                    return true;
+                } else {
+                    //使用 APP 私有目录
+                    cache = new File(application.getExternalCacheDir() + File.separator + path);
+                    if (cache.exists()) {
+                        return true;
+                    } else {
+                        return cache.mkdirs();
+                    }
+                }
             }
         }).onBackpressureLatest().observeOn(Schedulers.newThread()).subscribe(this);
     }
