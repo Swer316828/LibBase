@@ -127,11 +127,18 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     }
 
 
-    public void showDialog(DialogBuilder dialog){
+    final  public void showDialog(DialogBuilder dialog){
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
 
-    public void showToast(CharSequence msg){
+    final public void showDialogToast(CharSequence msg){
+        DialogBuilder dialog = new DialogBuilder();
+        dialog.setTitle("提示");
+        dialog.setHideCancel(true);
+        dialog.setMessage(msg);
+        this.setNetWorkState(NetWorkState.showDialog(dialog));
+    }
+    final public void showToast(CharSequence msg){
         this.setNetWorkState(NetWorkState.showToast(msg));
     }
 

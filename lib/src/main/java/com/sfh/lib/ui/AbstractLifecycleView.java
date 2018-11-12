@@ -67,6 +67,9 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     public abstract void initData();
 
     private void setContentView() {
+        if (this.layout() <= 0){
+           return;
+        }
         inflate(this.getContext(), this.layout(), this);
         this.initData();
     }
