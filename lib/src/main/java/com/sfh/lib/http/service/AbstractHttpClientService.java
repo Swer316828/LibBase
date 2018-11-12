@@ -2,7 +2,6 @@ package com.sfh.lib.http.service;
 
 import android.text.TextUtils;
 
-
 import com.sfh.lib.http.IRxHttpClient;
 import com.sfh.lib.http.IRxHttpConfig;
 
@@ -18,7 +17,7 @@ import retrofit2.Retrofit;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public abstract class AbstractHttpClientService implements IRxHttpClient, IRxHttpConfig {
+public  abstract class AbstractHttpClientService implements IRxHttpClient, IRxHttpConfig {
 
     private Retrofit retrofit;
 
@@ -31,11 +30,9 @@ public abstract class AbstractHttpClientService implements IRxHttpClient, IRxHtt
         }
 
         if (this.retrofit == null) {
-            this.retrofit = new OkHttpClientBuilder(config.getHots())
-                    .setTimeout(config.getReadTimeout(), config.getConnectTimeout(), config.getWriteTimeout())
-                    .setLog(config.log()).build();
-
+            this.retrofit = new OkHttpClientBuilder(config).build();
         }
+
         return this.retrofit.create(service);
     }
     @Override
@@ -43,6 +40,8 @@ public abstract class AbstractHttpClientService implements IRxHttpClient, IRxHtt
         // 网络配置
         return this;
     }
+
+
     @Override
     public long getReadTimeout() {
         return 15 * 1000L;
@@ -50,12 +49,12 @@ public abstract class AbstractHttpClientService implements IRxHttpClient, IRxHtt
 
     @Override
     public long getConnectTimeout() {
-        return 45 * 1000L;
+        return 15 * 1000L;
     }
 
     @Override
     public long getWriteTimeout() {
-        return 45 * 1000L;
+        return 15 * 1000L;
     }
 
 }

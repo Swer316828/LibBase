@@ -134,7 +134,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     final public void showDialogToast(CharSequence msg){
         DialogBuilder dialog = new DialogBuilder();
         dialog.setTitle("提示");
-        dialog.setHideCancel(true);
+        dialog.setHideCancel(false);
         dialog.setMessage(msg);
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }

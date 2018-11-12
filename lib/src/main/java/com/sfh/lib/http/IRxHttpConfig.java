@@ -1,5 +1,7 @@
 package com.sfh.lib.http;
 
+import java.util.Map;
+
 /**
  * 功能描述:通用网络配置
  *
@@ -38,5 +40,11 @@ public interface IRxHttpConfig {
      * @return
      */
     long getWriteTimeout();
+
+    /***
+     * 获取请求头
+     * @return
+     */
+    Map<String,String> getHeader();
 
 }

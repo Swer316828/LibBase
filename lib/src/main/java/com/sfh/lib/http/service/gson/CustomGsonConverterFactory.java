@@ -3,6 +3,7 @@ package com.sfh.lib.http.service.gson;
 import android.support.annotation.Nullable;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
 
@@ -15,20 +16,23 @@ import retrofit2.Converter;
 import retrofit2.Retrofit;
 
 
-public class CustomGsonConverterFactory extends Converter.Factory{
+public class CustomGsonConverterFactory extends Converter.Factory {
     private final Gson gson;
 
-    public static CustomGsonConverterFactory create(){
-        return create(new Gson());
+    public static CustomGsonConverterFactory create() {
+        Gson gson = new GsonBuilder().registerTypeAdapterFactory(new NullStringToEmptyAdapterFactory()).create();
+        return create(gson);
     }
 
 
-    private CustomGsonConverterFactory(Gson gson){
+    private CustomGsonConverterFactory(Gson gson) {
         this.gson = gson;
     }
 
     public static CustomGsonConverterFactory create(Gson gson) {
-        if (gson == null) throw new NullPointerException("gson == null");
+        if (gson == null) {
+            throw new NullPointerException("gson == null");
+        }
         return new CustomGsonConverterFactory(gson);
     }
 

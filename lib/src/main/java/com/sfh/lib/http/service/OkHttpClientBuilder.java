@@ -2,11 +2,13 @@ package com.sfh.lib.http.service;
 
 import android.os.Build;
 
+import com.sfh.lib.http.IRxHttpConfig;
 import com.sfh.lib.http.service.gson.CustomGsonConverterFactory;
 import com.sfh.lib.utils.UtilLog;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
@@ -25,49 +27,19 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  */
 class OkHttpClientBuilder implements Interceptor {
 
-    private String host;
+    IRxHttpConfig mConfig;
 
-    private long readTimeout = 10 * 1000L;
-
-    private long connectTimeout = 10 * 1000L;
-
-    private long writeTimeout = 10 * 1000L;
-
-    private boolean log = false;
 
     /***
      * 构造
-     * @param host IP 地址
+     * @param config IP 地址
      */
-    public OkHttpClientBuilder(String host) {
+    public OkHttpClientBuilder(IRxHttpConfig config) {
 
-        this.host = host;
+        this.mConfig = config;
+        UtilLog.setDEBUG(config.log());
     }
 
-    /***
-     *
-     * @param log true 打开日志 false 关闭日志
-     * @return
-     */
-    public OkHttpClientBuilder setLog(boolean log) {
-        UtilLog.setDEBUG(log);
-        this.log = log;
-        return this;
-    }
-
-    /***
-     * 设置超时时间
-     * @param readTimeout
-     * @param connectTimeout
-     * @param writeTimeout
-     * @return
-     */
-    public OkHttpClientBuilder setTimeout(long readTimeout, long connectTimeout, long writeTimeout) {
-        this.readTimeout = readTimeout;
-        this.connectTimeout = connectTimeout;
-        this.writeTimeout = writeTimeout;
-        return this;
-    }
 
     /***
      * 创建Retrofit
@@ -80,10 +52,10 @@ class OkHttpClientBuilder implements Interceptor {
         httpBuilder.addInterceptor(this);
         //失败重连
         httpBuilder.retryOnConnectionFailure(true);
-        httpBuilder.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
-        httpBuilder.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS);
-        httpBuilder.writeTimeout(writeTimeout, TimeUnit.MILLISECONDS);
-        if (log) {
+        httpBuilder.readTimeout(this.mConfig.getReadTimeout(), TimeUnit.MILLISECONDS);
+        httpBuilder.connectTimeout(this.mConfig.getConnectTimeout(), TimeUnit.MILLISECONDS);
+        httpBuilder.writeTimeout(this.mConfig.getWriteTimeout(), TimeUnit.MILLISECONDS);
+        if (this.mConfig.log()) {
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
             httpBuilder.addNetworkInterceptor(loggingInterceptor);
@@ -95,7 +67,7 @@ class OkHttpClientBuilder implements Interceptor {
         builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
         //请求的结果转为实体类
         builder.addConverterFactory(CustomGsonConverterFactory.create());
-        builder.baseUrl(this.host);
+        builder.baseUrl(this.mConfig.getHots());
         builder.client(okHttpClient);
         return builder.build();
     }
@@ -104,18 +76,31 @@ class OkHttpClientBuilder implements Interceptor {
     public Response intercept(Chain chain) throws IOException {
 
         Request request;
-        //增加关闭连接，不让它保持连接,防止出现Caused by: java.io.EOFException: \n not found: size=0 content=
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB_MR2) {
-            request = chain.request()
-                    .newBuilder()
-                    .addHeader("Connection", "close")
-                    .build();
-        } else {
+
+        Map<String, String> head = this.mConfig.getHeader();
+        if (head != null && head.size() > 0) {
+            Request.Builder builder = chain.request()
+                    .newBuilder();
+            for (Map.Entry<String, String> entry : head.entrySet()) {
+                builder.addHeader(entry.getKey(),entry.getValue());
+            }
+            request = builder.build();
+        }else{
             request = chain.request();
         }
+
+//        //增加关闭连接，不让它保持连接,防止出现Caused by: java.io.EOFException: \n not found: size=0 content=
+//        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB_MR2) {
+//            request = chain.request()
+//                    .newBuilder()
+//                    .addHeader("Connection", "close")
+//                    .build();
+//        } else {
+//            request = chain.request();
+//        }
         try {
             return chain.proceed(request);
-        }catch (SocketTimeoutException e){
+        } catch (SocketTimeoutException e) {
             throw new IOException(e);
         }
     }
