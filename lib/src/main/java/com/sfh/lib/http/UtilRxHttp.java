@@ -4,8 +4,7 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
 import com.google.gson.Gson;
-import com.sfh.lib.http.HttpBase;
-import com.sfh.lib.http.annotation.Lose;
+import com.sfh.lib.http.annotation.LoseParameter;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -39,14 +38,7 @@ public final class UtilRxHttp {
     public static Map<String, String> buildParams(Object object) throws IllegalAccessException {
 
         Field[] fields = object.getClass().getDeclaredFields();
-        Map<String, String> params;
-        if (object instanceof HttpBase) {
-            // 公共参数
-            params = ((HttpBase) object).toMap();
-        } else {
-            params = new HashMap<>(fields.length);
-        }
-
+        Map<String, String> params = new HashMap<>(fields.length);
         for (Field field : fields) {
             field.setAccessible(true);
             if (isLose(object, field)) {
@@ -75,7 +67,7 @@ public final class UtilRxHttp {
                 || Modifier.isTransient(field.getModifiers())) {
             return true;
         }
-        Lose lose = field.getAnnotation(Lose.class);
+        LoseParameter lose = field.getAnnotation(LoseParameter.class);
         if (lose != null) {
             // 忽略参数
             return true;

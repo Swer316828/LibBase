@@ -114,7 +114,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     @Override
     final public VM getViewModel() {
         if (this.mViewModel == null) {
-            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this.getManagerKey(), this);
+            this.mViewModel = LiveDataRegistry.getViewModel(this.getManagerKey(), this);
         }
         return this.mViewModel;
     }
@@ -130,7 +130,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     }
 
     @Override
-    final public <T> void observer(LiveData<T> liveData) {
+     public final <T> void observer(LiveData<T> liveData) {
         this.mLiveData = liveData;
         if (this.mLiveData != null) {
             this.mLiveData.observe((FragmentActivity) this.getContext(), this);
@@ -138,7 +138,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     }
 
     @Override
-    final public void onChanged(@Nullable Object data) {
+     public final void onChanged(@Nullable Object data) {
 
         if (data instanceof NetWorkState) {
             this.setNetWorkState((NetWorkState) data);
@@ -149,15 +149,15 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         }
     }
 
-    final public void showDialog(DialogBuilder dialog) {
+     public final void showDialog(DialogBuilder dialog) {
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
 
-    final public void showToast(CharSequence msg) {
+     public final void showToast(CharSequence msg) {
         this.setNetWorkState(NetWorkState.showToast(msg));
     }
 
-    final public void setNetWorkState(NetWorkState netWorkState) {
+     public final void setNetWorkState(NetWorkState netWorkState) {
         Context activity = this.getContext();
         if (activity == null || !(activity instanceof AbstractLifecycleActivity)) {
             return;
@@ -170,7 +170,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      * 添加RxJava监听
      * @param disposable
      */
-    final public void putDisposable(Disposable disposable) {
+     public final void putDisposable(Disposable disposable) {
 
         this.mLiveDataRegistry.putDisposable(disposable);
     }

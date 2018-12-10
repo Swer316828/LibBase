@@ -43,7 +43,7 @@ public class UIData {
      * @return
      */
     public Method getAction() {
-        return action;
+        return this.action;
     }
 
     /***
@@ -51,7 +51,14 @@ public class UIData {
      * @return
      */
     public Object[] getData() {
-        return data;
+        return this.data;
     }
 
+    /***
+     * 数据个数
+     * @return
+     */
+    public int getDataLength(){
+        return this.data == null? 0: this.data.length;
+    }
 }

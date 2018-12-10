@@ -222,6 +222,24 @@ public final class UtilTool {
         }
     }
 
+    /**
+     * 获取版本号code
+     *
+     * @return 当前应用的版本号
+     */
+    public static String getVersionCode(Context context) {
+
+        try {
+            PackageManager manager = context.getPackageManager();
+            PackageInfo info = manager.getPackageInfo(context.getPackageName(), 0);
+            String version = String.valueOf (info.versionCode);
+            return version;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
     /***
      * 获取当前进程名
      * @param cxt

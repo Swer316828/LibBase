@@ -34,8 +34,16 @@ import io.reactivex.disposables.Disposable;
 public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extends Fragment implements IView, Observer {
 
 
+    /***
+     * 布局
+     * @return
+     */
     public abstract int getLayout();
 
+    /***
+     * 初始化
+     * @param view
+     */
     public abstract void initData(View view);
 
     private LiveDataRegistry mLiveDataRegistry;
@@ -85,7 +93,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     @Nullable
     public VM getViewModel() {
         if (this.mViewModel == null) {
-            this.mViewModel = (VM) this.mLiveDataRegistry.getViewModel(this);
+            this.mViewModel = LiveDataRegistry.getViewModel(this);
         }
         return this.mViewModel;
     }
@@ -127,22 +135,27 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     }
 
 
-    final  public void showDialog(DialogBuilder dialog){
+    public final void showDialog(DialogBuilder dialog){
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
 
-    final public void showDialogToast(CharSequence msg){
+     public final void showDialogToast(CharSequence msg){
         DialogBuilder dialog = new DialogBuilder();
         dialog.setTitle("提示");
         dialog.setHideCancel(false);
         dialog.setMessage(msg);
         this.setNetWorkState(NetWorkState.showDialog(dialog));
     }
-    final public void showToast(CharSequence msg){
+
+     public final void showToast(CharSequence msg){
         this.setNetWorkState(NetWorkState.showToast(msg));
     }
 
-    final protected void setNetWorkState(NetWorkState state) {
+    /***
+     * 显示UI 基础操作
+     * @param state
+     */
+     protected final void setNetWorkState(NetWorkState state) {
         FragmentActivity activity = getActivity();
         if (activity == null || activity.isFinishing() || !(activity instanceof AbstractLifecycleActivity)) {
             return;
