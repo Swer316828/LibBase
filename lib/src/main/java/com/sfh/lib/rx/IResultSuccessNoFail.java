@@ -6,6 +6,5 @@ package com.sfh.lib.rx;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/23
  */
-public interface IResultSuccessNoFail<T> {
-    void onSuccess(T t)  throws Exception ;
+public interface IResultSuccessNoFail<T> extends IResultSuccess<T>  {
 }

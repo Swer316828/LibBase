@@ -60,7 +60,7 @@ public final class UtilRxHttp {
      * @param field
      * @return
      */
-    private static boolean isLose(Object object, Field field) throws IllegalAccessException {
+    public static boolean isLose(Object object, Field field) throws IllegalAccessException {
         //静态属性被忽略
         if (Modifier.isStatic(field.getModifiers())
                 || Modifier.isFinal(field.getModifiers())
@@ -86,7 +86,7 @@ public final class UtilRxHttp {
      * @param object
      * @return
      */
-    private static boolean isBaseType(Object object) {
+    public static boolean isBaseType(Object object) {
         if (object instanceof Integer) {
             return true;
         }

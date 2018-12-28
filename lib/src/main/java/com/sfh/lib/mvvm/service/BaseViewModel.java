@@ -10,6 +10,8 @@ import android.util.SparseArray;
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.http.transaction.OutreachRequest;
+import com.sfh.lib.http.transaction.OutreachResponse;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.IResult;
@@ -111,6 +113,16 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     public final void putDisposable(Disposable disposable) {
         this.mRetrofit.put(disposable);
+    }
+
+
+    /***
+     * 执行异步任务 【无执行对话框】【只请求，不处理结果】
+     * @param observable
+     * @param <T>
+     */
+    public final <T> void execute(@NonNull Observable<T> observable) {
+        this.mRetrofit.execute(observable, null);
     }
 
 
@@ -382,6 +394,159 @@ public class BaseViewModel extends ViewModel implements IViewModel {
             }
         });
     }
+
+    /*-----------------新的请求方式 start---------------*/
+    /***
+     * 执行异步任务 【无遮挡对话框】【只请求，不处理结果】
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request) {
+        Disposable disposable = request.sendRequest (null);
+        this.putDisposable (disposable);
+    }
+
+    /***
+     * 执行异步任务 【无遮挡对话框】【需处理成功,异常】
+     * @param observer
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request, @Nullable IResult<T> observer) {
+       Disposable disposable = request.sendRequest (observer);
+       this.putDisposable (disposable);
+    }
+
+    /**
+     * 执行异步任务【无遮挡对话框】【只处理成功结果，异常以对话框形式提示】
+     * @param request
+     * @param observer
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> observer) {
+
+        Disposable disposable = request.sendRequest (new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                if (observer != null){
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                showDialogToast(e.getMsg());
+            }
+        });
+        this.putDisposable (disposable);
+    }
+
+    /***
+     *  执行异步任务 【无遮挡对话框】【只处理成功结果，异常不提示】
+     * @param request
+     * @param observer
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> observer) {
+
+        Disposable disposable = request.sendRequest ( new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                if (observer != null){
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                UtilLog.e(TAG,e.toString());
+            }
+        });
+        this.putDisposable (disposable);
+    }
+
+    /***
+     * 执行异步任务【有遮挡对话框】【需处理成功,异常】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param request
+     * @param observer
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResult<T> observer) {
+        this.showLoading(cancelDialog);
+        Disposable disposable = request.sendRequest (new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onFail(e);
+                }
+            }
+        });
+        this.putDisposable (disposable);
+    }
+
+    /***
+     * 执行异步任务 【有遮挡对话框】【只处理成功结果，异常以对话框形式提示】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param request
+     * @param observer
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> observer) {
+        this.showLoading(cancelDialog);
+        Disposable disposable = request.sendRequest ( new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                showDialogToast(e.getMsg());
+            }
+        });
+        this.putDisposable (disposable);
+    }
+
+    /***
+     * 执行异步任务 【有遮挡对话框】【只处理成功结果，异常不提示】
+     * @param cancelDialog true 遮挡对话框可取消，false 遮挡对话框不可取消
+     * @param request
+     * @param observer
+     * @param <T>
+     */
+    public final <T extends OutreachResponse> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> observer) {
+        this.showLoading(cancelDialog);
+        Disposable disposable = request.sendRequest ( new IResult<T>() {
+            @Override
+            public void onSuccess(T t) throws Exception {
+                BaseViewModel.this.hideLoading();
+                if (observer != null) {
+                    observer.onSuccess(t);
+                }
+            }
+
+            @Override
+            public void onFail(HandleException e) {
+                BaseViewModel.this.hideLoading();
+                UtilLog.e(TAG,e.toString());
+            }
+        });
+        this.putDisposable (disposable);
+    }
+
+    /*--------------------------------*/
 
     /***
      * 显示等待对话框

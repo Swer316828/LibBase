@@ -17,24 +17,27 @@ class RxObserver<T> implements Consumer<T> {
     private IResult<T> result;
 
     public RxObserver(IResult<T> result) {
+
         this.result = result;
     }
 
-
     @Override
     public void accept(T o) throws Exception {
+
         if (this.result != null) {
-            this.result.onSuccess(o);
+            this.result.onSuccess (o);
         }
 
     }
 
-    public Consumer onError = new Consumer<HandleException>() {
+    public Consumer onError = new Consumer<HandleException> () {
+
         @Override
         public void accept(HandleException e) throws Exception {
+
             if (result != null) {
-                UtilLog.e(IResult.class,e.toString());
-                result.onFail(e);
+                UtilLog.e (IResult.class, e.toString ());
+                result.onFail (e);
             }
         }
     };

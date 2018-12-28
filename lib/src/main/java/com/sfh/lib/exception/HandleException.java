@@ -10,8 +10,6 @@ import org.json.JSONException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.List;
 
 import javax.net.ssl.SSLException;
 
@@ -80,6 +78,10 @@ public final class HandleException extends RuntimeException {
         if (e == null) {
             // bugly会将这个throwable上报
             return new HandleException(CODE_NULL_EXCEPTION, NULL_EXCEPTION,e);
+        }
+
+        if (e instanceof HandleException){
+            return (HandleException)e;
         }
 
         // 服务器请求超时 or 服务器响应超时
@@ -224,8 +226,14 @@ public final class HandleException extends RuntimeException {
      */
     private String msg;
 
-    private HandleException(int code, String msg,Throwable throwable) {
+    public HandleException(int code, String msg,Throwable throwable) {
         super(msg,throwable);
+        this.code = String.valueOf(code);
+        this.msg = String.format(msg, this.code);
+    }
+
+    public HandleException(int code, String msg) {
+        super(msg);
         this.code = String.valueOf(code);
         this.msg = String.format(msg, this.code);
     }
@@ -250,7 +258,7 @@ public final class HandleException extends RuntimeException {
         return "HandleException{" +
                 "code='" + code + '\'' +
                 ", msg='" + msg + '\'' +
-                ", throwable='" + getCause().toString() +
+                ", throwable='" + getCause() +
                 '}';
     }
 }

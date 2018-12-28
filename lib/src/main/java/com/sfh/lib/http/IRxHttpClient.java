@@ -9,12 +9,6 @@ package com.sfh.lib.http;
 public interface IRxHttpClient {
 
 
-    /***
-     * 获取网络配置
-     * @return
-     */
-    IRxHttpConfig getRxHttpConfig();
-
     /****
      * 获取网络调用接口
      * @param service

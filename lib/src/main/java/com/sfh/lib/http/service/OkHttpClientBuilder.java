@@ -1,7 +1,5 @@
 package com.sfh.lib.http.service;
 
-import android.os.Build;
-
 import com.sfh.lib.http.IRxHttpConfig;
 import com.sfh.lib.http.service.gson.CustomGsonConverterFactory;
 import com.sfh.lib.utils.UtilLog;
@@ -25,7 +23,7 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-class OkHttpClientBuilder implements Interceptor {
+public class OkHttpClientBuilder implements Interceptor {
 
     IRxHttpConfig mConfig;
 
@@ -47,6 +45,20 @@ class OkHttpClientBuilder implements Interceptor {
      */
     public Retrofit build() {
 
+        OkHttpClient okHttpClient = this.httpBuilder();
+
+        Retrofit.Builder builder = new Retrofit.Builder();
+        //适配RxJava2.0
+        builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
+        //请求的结果转为实体类
+        builder.addConverterFactory(CustomGsonConverterFactory.create());
+        builder.baseUrl(this.mConfig.getHots());
+        builder.client(okHttpClient);
+        return builder.build();
+    }
+
+    public OkHttpClient httpBuilder() {
+
         OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
 
         httpBuilder.addInterceptor(this);
@@ -60,18 +72,8 @@ class OkHttpClientBuilder implements Interceptor {
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
             httpBuilder.addNetworkInterceptor(loggingInterceptor);
         }
-        OkHttpClient okHttpClient = httpBuilder.build();
-
-        Retrofit.Builder builder = new Retrofit.Builder();
-        //适配RxJava2.0
-        builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
-        //请求的结果转为实体类
-        builder.addConverterFactory(CustomGsonConverterFactory.create());
-        builder.baseUrl(this.mConfig.getHots());
-        builder.client(okHttpClient);
-        return builder.build();
+        return httpBuilder.build();
     }
-
     @Override
     public Response intercept(Chain chain) throws IOException {
 
@@ -103,5 +105,10 @@ class OkHttpClientBuilder implements Interceptor {
         } catch (SocketTimeoutException e) {
             throw new IOException(e);
         }
+    }
+
+    public IRxHttpConfig getConfig() {
+
+        return mConfig;
     }
 }
