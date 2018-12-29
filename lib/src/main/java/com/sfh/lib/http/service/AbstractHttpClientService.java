@@ -3,9 +3,8 @@ package com.sfh.lib.http.service;
 import android.text.TextUtils;
 
 import com.sfh.lib.http.IRxHttpClient;
-import com.sfh.lib.http.IRxHttpConfig;
 
-import retrofit2.Retrofit;
+import okhttp3.OkHttpClient;
 
 /**
  * 功能描述:网络服务[单列模式]
@@ -17,9 +16,9 @@ import retrofit2.Retrofit;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public  abstract class AbstractHttpClientService implements IRxHttpClient, IRxHttpConfig {
+public  abstract class AbstractHttpClientService implements IRxHttpClient {
 
-    private Retrofit retrofit;
+    private volatile OkHttpClientBuilder mClientBuilder;
 
     @Override
     public <T> T getRxHttpService(Class<T> service) {
@@ -28,13 +27,22 @@ public  abstract class AbstractHttpClientService implements IRxHttpClient, IRxHt
             throw new RuntimeException("AbstractHttpClientService's host can't be empty");
         }
 
-        if (this.retrofit == null) {
-            this.retrofit = new OkHttpClientBuilder(this).build();
+        if (this.mClientBuilder == null) {
+            this.mClientBuilder = new OkHttpClientBuilder(this);
         }
 
-        return this.retrofit.create(service);
+        return this.mClientBuilder.builderRetrofit().create (service);
     }
 
+
+    @Override
+    public OkHttpClient getHttpClientService() {
+
+        if (mClientBuilder == null) {
+            mClientBuilder = new OkHttpClientBuilder (this);
+        }
+        return mClientBuilder.builderOKHttp ();
+    }
 
     @Override
     public long getReadTimeout() {

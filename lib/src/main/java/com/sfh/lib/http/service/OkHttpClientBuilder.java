@@ -23,10 +23,13 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-public class OkHttpClientBuilder implements Interceptor {
+class OkHttpClientBuilder implements Interceptor {
 
-    IRxHttpConfig mConfig;
+    private IRxHttpConfig mConfig;
 
+    private Retrofit mRetrofit;
+
+    private OkHttpClient mOkHttpClient;
 
     /***
      * 构造
@@ -35,60 +38,68 @@ public class OkHttpClientBuilder implements Interceptor {
     public OkHttpClientBuilder(IRxHttpConfig config) {
 
         this.mConfig = config;
-        UtilLog.setDEBUG(config.log());
+        UtilLog.setDEBUG (config.log ());
     }
-
 
     /***
      * 创建Retrofit
      * @return
      */
-    public Retrofit build() {
+    public Retrofit builderRetrofit() {
 
-        OkHttpClient okHttpClient = this.httpBuilder();
+        if (this.mRetrofit == null) {
 
-        Retrofit.Builder builder = new Retrofit.Builder();
-        //适配RxJava2.0
-        builder.addCallAdapterFactory(RxJava2CallAdapterFactory.create());
-        //请求的结果转为实体类
-        builder.addConverterFactory(CustomGsonConverterFactory.create());
-        builder.baseUrl(this.mConfig.getHots());
-        builder.client(okHttpClient);
-        return builder.build();
-    }
+            Retrofit.Builder builder = new Retrofit.Builder ();
+            //适配RxJava2.0
+            builder.addCallAdapterFactory (RxJava2CallAdapterFactory.create ());
+            //请求的结果转为实体类
+            builder.addConverterFactory (CustomGsonConverterFactory.create ());
+            //地址base url
+            builder.baseUrl (this.mConfig.getHots ());
 
-    public OkHttpClient httpBuilder() {
-
-        OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
-
-        httpBuilder.addInterceptor(this);
-        //失败重连
-        httpBuilder.retryOnConnectionFailure(true);
-        httpBuilder.readTimeout(this.mConfig.getReadTimeout(), TimeUnit.MILLISECONDS);
-        httpBuilder.connectTimeout(this.mConfig.getConnectTimeout(), TimeUnit.MILLISECONDS);
-        httpBuilder.writeTimeout(this.mConfig.getWriteTimeout(), TimeUnit.MILLISECONDS);
-        if (this.mConfig.log()) {
-            HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-            loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-            httpBuilder.addNetworkInterceptor(loggingInterceptor);
+            OkHttpClient okHttpClient = this.builderOKHttp ();
+            builder.client (okHttpClient);
+            this.mRetrofit = builder.build ();
         }
-        return httpBuilder.build();
+        return this.mRetrofit;
     }
+
+    public OkHttpClient builderOKHttp() {
+
+        if (this.mOkHttpClient == null) {
+            OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder ();
+            httpBuilder.addInterceptor (this);
+            //失败重连
+            httpBuilder.retryOnConnectionFailure (true);
+            httpBuilder.readTimeout (this.mConfig.getReadTimeout (), TimeUnit.MILLISECONDS);
+            httpBuilder.connectTimeout (this.mConfig.getConnectTimeout (), TimeUnit.MILLISECONDS);
+            httpBuilder.writeTimeout (this.mConfig.getWriteTimeout (), TimeUnit.MILLISECONDS);
+            if (this.mConfig.log ()) {
+                HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor ();
+                loggingInterceptor.setLevel (HttpLoggingInterceptor.Level.BODY);
+                httpBuilder.addNetworkInterceptor (loggingInterceptor);
+            }
+            this.mOkHttpClient = httpBuilder.build ();
+        }
+
+        return this.mOkHttpClient;
+    }
+
     @Override
     public Response intercept(Chain chain) throws IOException {
 
         Request request;
 
-        Map<String, String> head = this.mConfig.getHeader();
-        if (head != null && head.size() > 0) {
-            Request.Builder builder = chain.request()
-                    .newBuilder();
-            for (Map.Entry<String, String> entry : head.entrySet()) {
-                builder.addHeader(entry.getKey(),entry.getValue());
+        Map<String, String> head = this.mConfig.getHeader ();
+        if (head != null && head.size () > 0) {
+            Request.Builder builder = chain.request ()
+                    .newBuilder ();
+            for (Map.Entry<String, String> entry : head.entrySet ()) {
+                builder.addHeader (entry.getKey (), entry.getValue ());
             }
-            request = builder.build();
-        }else{
-            request = chain.request();
+            request = builder.build ();
+        } else {
+            request = chain.request ();
         }
 
 //        //增加关闭连接，不让它保持连接,防止出现Caused by: java.io.EOFException: \n not found: size=0 content=
@@ -101,14 +112,10 @@ public class OkHttpClientBuilder implements Interceptor {
 //            request = chain.request();
 //        }
         try {
-            return chain.proceed(request);
+            return chain.proceed (request);
         } catch (SocketTimeoutException e) {
-            throw new IOException(e);
+            throw new IOException (e);
         }
     }
 
-    public IRxHttpConfig getConfig() {
-
-        return mConfig;
-    }
 }

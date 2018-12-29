@@ -1,7 +1,7 @@
 package com.sfh.lib.http.transaction;
 
 import com.sfh.lib.exception.HandleException;
-import com.sfh.lib.http.service.AbstractOkHttpClientService;
+import com.sfh.lib.http.IRxHttpClient;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -91,7 +91,7 @@ public abstract class BaseRequest<T> extends ParseResult {
 
     public abstract String buildParam();
 
-    public abstract AbstractOkHttpClientService getHttpService();
+    public abstract IRxHttpClient getHttpService();
 
     /**
      * 发起请求
@@ -105,7 +105,7 @@ public abstract class BaseRequest<T> extends ParseResult {
         String cotent = this.buildParam ();
         builder.method (this.method, RequestBody.create (MediaType.parse (mediaType), cotent));
 
-        OkHttpClient httpClient = this.getHttpService().getHttpService ();
+        OkHttpClient httpClient = this.getHttpService().getHttpClientService ();
 
         try {
 
