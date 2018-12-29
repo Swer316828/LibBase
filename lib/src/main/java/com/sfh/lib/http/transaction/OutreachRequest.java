@@ -23,7 +23,6 @@ import io.reactivex.functions.Function;
  */
 public abstract class OutreachRequest<T extends OutreachResponse> extends BaseRequest<T> {
 
-
     /***
      * 异步任务
      * @param result

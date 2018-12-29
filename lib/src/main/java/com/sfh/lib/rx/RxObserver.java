@@ -27,16 +27,22 @@ class RxObserver<T> implements Consumer<T> {
         if (this.result != null) {
             this.result.onSuccess (o);
         }
-
     }
 
-    public Consumer onError = new Consumer<HandleException> () {
+
+    public Consumer getOnError() {
+
+        return this.onError;
+    }
+
+    private Consumer onError = new Consumer<HandleException> () {
 
         @Override
         public void accept(HandleException e) throws Exception {
 
+            UtilLog.e (IResult.class, e.toString ());
+
             if (result != null) {
-                UtilLog.e (IResult.class, e.toString ());
                 result.onFail (e);
             }
         }
