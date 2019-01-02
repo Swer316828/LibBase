@@ -1,6 +1,5 @@
 package com.sfh.lib.utils;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import android.widget.Toast;
@@ -8,7 +7,7 @@ import android.widget.Toast;
 import java.lang.reflect.Field;
 
 /**
- * 功能描述: TODO
+ * 功能描述: Toast 控制
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/8/6

@@ -21,7 +21,7 @@ import io.reactivex.functions.Function;
  * @author SunFeihu 孙飞虎
  * @date 2018/12/17
  */
-public abstract class OutreachRequest<T extends OutreachResponse> extends BaseRequest<T> {
+public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
 
     /***
      * 异步任务

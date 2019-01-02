@@ -12,7 +12,6 @@ import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.IRxHttpClient;
 import com.sfh.lib.http.transaction.OutreachRequest;
-import com.sfh.lib.http.transaction.OutreachResponse;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.EmptyResult;
@@ -49,7 +48,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     public BaseViewModel() {
 
-        this.mLiveDataMethod = new SparseArray<> (3);
+        this.mLiveDataMethod = new SparseArray<> (5);
         this.mRetrofit = new RetrofitManager ();
         // 注入ViewModel层之间数据通信
         if (this.eventOnOff ()) {
@@ -301,7 +300,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * 执行异步任务，任务执行无回调
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request) {
+    public final <T> void execute(@NonNull OutreachRequest<T> request) {
 
         request.sendRequest (new EmptyResult<T> ());
     }
@@ -311,7 +310,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param listener
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request, @Nullable IResult<T> listener) {
+    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable IResult<T> listener) {
 
         request.sendRequest (listener);
     }
@@ -323,7 +322,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param listener
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
+    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
         this.executeTask (request,new Task<> (listener));
     }
 
@@ -333,7 +332,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param listener
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
+    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
 
         this.executeTask (request,new Task<> (listener));
     }
@@ -345,7 +344,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param listener
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResult<T> listener) {
+    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResult<T> listener) {
 
         this.executeTask (request,new TaskLoading<> (cancelDialog,listener));
     }
@@ -357,7 +356,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param listener
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
+    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
 
         this.executeTask (request,new TaskLoading<> (cancelDialog,listener));
     }
@@ -369,12 +368,12 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param listener
      * @param <T>
      */
-    public final <T extends OutreachResponse> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
+    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
         this.executeTask (request,new TaskLoading<> (cancelDialog,listener));
     }
 
 
-   private <T extends OutreachResponse> void executeTask( @NonNull OutreachRequest<T> request, Task<T> task) {
+   private <T> void executeTask(@NonNull OutreachRequest<T> request, Task<T> task) {
 
         this.putDisposable (request.sendRequest (task));
     }

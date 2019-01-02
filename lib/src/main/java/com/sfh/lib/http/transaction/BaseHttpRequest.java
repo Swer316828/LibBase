@@ -19,7 +19,7 @@ import okhttp3.Response;
  * @author SunFeihu 孙飞虎
  * @date 2018/12/28
  */
-public abstract class BaseRequest<T> extends ParseResult {
+public abstract class BaseHttpRequest<T> extends ParseResult {
 
     /**
      * "application/x-www-form-urlencoded"，是默认的MIME内容编码类型，一般可以用于所有的情况，但是在传输比较大的二进制或者文本数据时效率低。

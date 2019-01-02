@@ -13,7 +13,7 @@ import android.support.v4.app.FragmentActivity;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * 功能描述: TODO
+ * 功能描述: ViewModel 对象生产器
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/7/24
