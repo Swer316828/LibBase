@@ -2,6 +2,8 @@ package com.sfh.lib.http;
 
 import java.util.Map;
 
+import okhttp3.Interceptor;
+
 /**
  * 功能描述:通用网络配置
  *
@@ -21,7 +23,6 @@ public interface IRxHttpConfig {
      * @return
      */
     boolean log();
-
 
     /**
      * 网络数据读取超时
@@ -47,4 +48,15 @@ public interface IRxHttpConfig {
      */
     Map<String,String> getHeader();
 
+    /***
+     * 请求和响应拦截器
+     * @return
+     */
+    Interceptor getInterceptor();
+
+    /***
+     * 网络请求和响应拦截器
+     * @return
+     */
+    Interceptor getNetworkInterceptor();
 }

@@ -16,6 +16,7 @@ public interface IRxHttpClient extends IRxHttpConfig{
      * @param service
      * @return
      */
+    @Deprecated
     <T> T getRxHttpService(Class<T> service);
 
     /***
