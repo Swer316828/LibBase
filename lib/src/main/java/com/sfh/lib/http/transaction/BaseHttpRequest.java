@@ -36,6 +36,8 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
 
     protected transient String path;
 
+    protected transient String code;
+
     protected transient String method = POST;
 
 
@@ -83,9 +85,23 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         this.method = method;
     }
 
+    /***
+     * 获取url的KEY
+     * @param code
+     */
+    public void setCode(String code) {
+
+        this.code = code;
+    }
+
     public abstract Object buildParam();
 
     public abstract IRxHttpClient getHttpService();
+
+    public String getBaseUrl(String code) {
+
+        return "";
+    }
 
     /**
      * 发起请求
@@ -98,11 +114,15 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         }
 
         String url = httpClient.getHots () + this.path;
-        Request.Builder builder = new Request.Builder ();
+        if (!TextUtils.isEmpty (this.getBaseUrl (this.code))) {
+            url = this.getBaseUrl (this.code) + this.path;
+        }
+
+        final Request.Builder builder = new Request.Builder ();
         //请求头
         this.buildHeader (httpClient, builder);
 
-        Object params = this.buildParam ();
+        final Object params = this.buildParam ();
 
         if (TextUtils.equals (POST, this.method)) {
 
@@ -121,7 +141,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
             builder.url (url).get ();
         }
 
-        Call call = httpClient.getHttpClientService ().newCall (builder.build ());
+        final Call call = httpClient.getHttpClientService ().newCall (builder.build ());
         try {
 
             Response response = call.execute ();

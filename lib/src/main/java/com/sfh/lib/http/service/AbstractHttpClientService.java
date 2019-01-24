@@ -31,17 +31,9 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
     private OkHttpClientBuilder mClientBuilder;
 
     protected AbstractHttpClientService() {
-
         //构建网络连接
         this.mClientBuilder = new OkHttpClientBuilder (this);
         UtilLog.setDEBUG (this.log ());
-    }
-
-
-    @Override
-    public <T> T getRxHttpService(Class<T> service) {
-
-        return this.mClientBuilder.builder (service);
     }
 
 

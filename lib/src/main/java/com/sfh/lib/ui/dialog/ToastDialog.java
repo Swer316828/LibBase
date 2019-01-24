@@ -31,13 +31,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ToastDialog extends DialogFragment implements View.OnClickListener, DialogBuilder.DialogInterface {
 
 
-    private TextView tvTitle;
-    private TextView tvContent;
-    private TextView tvLeftClick;
-    private TextView tvRightClick;
-    private View vLine;
+    public TextView tvTitle;
+    public TextView tvContent;
+    public TextView tvLeftClick;
+    public TextView tvRightClick;
+    public View vLine;
     private DialogBuilder data;
-    private FrameLayout fyContent;
+    public FrameLayout fyContent;
 
     public static ToastDialog newToastDialog() {
         return new ToastDialog();

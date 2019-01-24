@@ -256,7 +256,7 @@ public class AppCacheManager implements Consumer<Boolean> {
      * @return
      */
     private Object getObject(@NonNull String key, @NonNull Class cls, Object... defaultObject) {
-        if (this.preferences == null || TextUtils.isEmpty(key)) {
+        if (this.preferences == null || TextUtils.isEmpty(key) || cls == null) {
             return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
         }
 

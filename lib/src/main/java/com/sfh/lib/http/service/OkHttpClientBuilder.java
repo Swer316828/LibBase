@@ -21,7 +21,7 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-class OkHttpClientBuilder implements Interceptor {
+class OkHttpClientBuilder  {
 
     private IRxHttpConfig mConfig;
 
@@ -84,25 +84,4 @@ class OkHttpClientBuilder implements Interceptor {
         }
         return this.mOkHttpClient;
     }
-
-    @Override
-    public Response intercept(Interceptor.Chain chain) throws IOException {
-
-        return null;
-//        //增加关闭连接，不让它保持连接,防止出现Caused by: java.io.EOFException: \n not found: size=0 content=
-//        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.HONEYCOMB_MR2) {
-//            request = chain.request()
-//                    .newBuilder()
-//                    .addHeader("Connection", "close")
-//                    .build();
-//        } else {
-//            request = chain.request();
-//        }
-//        try {
-//            return chain.proceed (request);
-//        } catch (SocketTimeoutException e) {
-//            throw new IOException (e);
-//        }
-    }
-
 }
