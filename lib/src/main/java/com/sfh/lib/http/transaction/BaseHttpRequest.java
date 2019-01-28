@@ -112,7 +112,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
             throw new HandleException (HandleException.CODE_NULL_EXCEPTION, HandleException.NULL_EXCEPTION, new Throwable ("IRxHttpClient Cannot be NULL !"));
         }
 
-        String url = this.getUrl (this.code);
+        String url = this.getUrl (this.code) + this.path;
 
         final Request.Builder builder = new Request.Builder ();
         //请求头
