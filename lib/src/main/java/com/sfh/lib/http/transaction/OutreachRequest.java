@@ -79,6 +79,11 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
         return super.sendRequest ();
     }
 
+    @Override
+    public String getUrl(String code) {
+
+        return this.getHttpService ().getHots ();
+    }
 
     @Override
     public Object buildParam() {
@@ -98,6 +103,7 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
 
     /**
      * 文件上传
+     *
      * @param object
      * @param builder
      */

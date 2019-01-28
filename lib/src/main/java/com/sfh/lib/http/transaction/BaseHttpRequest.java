@@ -41,6 +41,13 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
     protected transient String method = POST;
 
 
+    public abstract Object buildParam();
+
+    public abstract IRxHttpClient getHttpService();
+
+    public abstract String getUrl(String code);
+
+
     public BaseHttpRequest(String path) {
 
         this.path = path;
@@ -94,14 +101,6 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         this.code = code;
     }
 
-    public abstract Object buildParam();
-
-    public abstract IRxHttpClient getHttpService();
-
-    public String getBaseUrl(String code) {
-
-        return "";
-    }
 
     /**
      * 发起请求
@@ -113,10 +112,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
             throw new HandleException (HandleException.CODE_NULL_EXCEPTION, HandleException.NULL_EXCEPTION, new Throwable ("IRxHttpClient Cannot be NULL !"));
         }
 
-        String url = httpClient.getHots () + this.path;
-        if (!TextUtils.isEmpty (this.getBaseUrl (this.code))) {
-            url = this.getBaseUrl (this.code) + this.path;
-        }
+        String url = this.getUrl (this.code);
 
         final Request.Builder builder = new Request.Builder ();
         //请求头
