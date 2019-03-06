@@ -118,6 +118,19 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         }
         return this.mViewModel;
     }
+    /***
+     * 使用其他ViewModel
+     * @param cls
+     * @param <T>
+     * @return
+     */
+    public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+        T t = ViewModelProviders.of((FragmentActivity) this.getContext()).get(cls);
+        if (t != null) {
+            this.mLiveDataRegistry.observeOther (this, t);
+        }
+        return t;
+    }
 
     /***
      * 使用当前ViewModel 独立，如共享数据设置相同key

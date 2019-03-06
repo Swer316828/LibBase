@@ -159,7 +159,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
      *
      * @param builder
      */
-    private void buildHeader(IRxHttpClient client, Request.Builder builder) {
+    public void buildHeader(IRxHttpClient client, Request.Builder builder) {
 
         Map<String, String> header = client.getHeader ();
         if (header != null && header.size () > 0) {

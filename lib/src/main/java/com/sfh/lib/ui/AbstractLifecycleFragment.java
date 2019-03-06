@@ -107,7 +107,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
         T t = ViewModelProviders.of(this).get(cls);
         if (t != null) {
-            t.getLiveData().observe(this, this);
+            this.mLiveDataRegistry.observeOther (this, t);
         }
         return t;
     }

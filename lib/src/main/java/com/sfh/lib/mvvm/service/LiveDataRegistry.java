@@ -125,6 +125,39 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         }
 
     }
+    /***
+     * 绑定UI 数据刷新
+     * @param listener
+     */
+    final public <T extends BaseViewModel> void observeOther(@NonNull V listener, T t ) {
+
+        UtilLog.d (TAG, "LiveDataRegistry =========== 注册监听");
+        final IViewModel viewModel = t;
+        if (viewModel != null) {
+            //LiveData 加入当前生命周期管理中
+            listener.observer (viewModel.getLiveData ());
+
+            // 解析响应方法
+            this.mRetrofit.execute (Flowable.just (listener).map (new Function<V, Object> () {
+
+                @Override
+                public Boolean apply(V listener) throws Exception {
+                    final Method[] methods = listener.getClass ().getDeclaredMethods ();
+                    for (Method method : methods) {
+
+                        LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
+                        if (liveEvent == null) {
+                            continue;
+                        }
+                        // 注册LiveData监听
+                        viewModel.putLiveDataMethod (method);
+                    }
+                    return true;
+                }
+            }).onBackpressureLatest (), new EmptyResult ());
+        }
+    }
+
 
     @Override
     public Boolean apply(V listener) throws Exception {

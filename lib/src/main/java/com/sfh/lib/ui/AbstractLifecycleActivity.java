@@ -53,6 +53,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             this.mDialogBridge.onDestory ();
         }
         this.mDialogBridge = null;
+        this.mLiveDataRegistry = null;
     }
 
 
@@ -76,7 +77,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
         T t = ViewModelProviders.of (this).get (cls);
         if (t != null) {
-            t.getLiveData ().observe (this, this);
+            this.mLiveDataRegistry.observeOther (this, t);
         }
         return t;
     }
@@ -95,7 +96,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         } else if (data instanceof UIData) {
             this.mLiveDataRegistry.showLiveData (this, (UIData) data);
         } else {
-            this.setNetWorkState (NetWorkState.showToast ("数据类型不匹配"));
+            this.showDialogToast ("数据类型不匹配:" + data);
         }
     }
 
@@ -109,8 +110,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         return new AppDialog (this);
     }
 
-
-    final protected void setNetWorkState(NetWorkState state) {
+    protected void setNetWorkState(NetWorkState state) {
 
         if (this.isLifeCycle ()) {
             return;
@@ -141,26 +141,41 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         }
     }
 
-    /***
-     * 显示对话框
-     * @param dialog
-     */
-     public final void showDialog(DialogBuilder dialog) {
+    public final void showLoading(boolean cancel) {
 
-        this.setNetWorkState (NetWorkState.showDialog (dialog));
+        if (this.isLifeCycle ()) {
+            return;
+        }
+        this.mDialogBridge.showLoading (cancel);
     }
 
-    /***
-     * 显示提示对话框
-     * @param msg
-     */
-     public final void showDialogToast(CharSequence msg) {
+    public final void hideLoading() {
 
+        if (this.isLifeCycle ()) {
+            return;
+        }
+        this.mDialogBridge.hideLoading ();
+
+    }
+
+    public final void showDialog(DialogBuilder dialog) {
+
+        if (this.isLifeCycle ()) {
+            return;
+        }
+        this.mDialogBridge.showDialog (dialog);
+    }
+
+    public final void showDialogToast(CharSequence msg) {
+
+        if (this.isLifeCycle ()) {
+            return;
+        }
         DialogBuilder dialog = new DialogBuilder ();
         dialog.setTitle ("提示");
         dialog.setHideCancel (false);
         dialog.setMessage (msg);
-        this.setNetWorkState (NetWorkState.showDialog (dialog));
+        this.mDialogBridge.showDialog (dialog);
     }
 
     /***
@@ -168,9 +183,13 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      * <p>建议使用{@link #showDialog(DialogBuilder)} 因在部分android手机对Toast信息进行系统优化导致信息不显示</p>
      * @param msg
      */
+    @Deprecated
     public final void showToast(CharSequence msg) {
 
-        this.setNetWorkState (NetWorkState.showToast (msg));
+        if (this.isLifeCycle ()) {
+            return;
+        }
+        this.mDialogBridge.showToast (msg);
     }
 
     private final boolean isLifeCycle() {
@@ -189,7 +208,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     }
 
     /***
-     * 添加RxJava监听
+     * 添加RxJava任务关联
      * @param disposable
      */
     public final void putDisposable(Disposable disposable) {
