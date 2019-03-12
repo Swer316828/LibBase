@@ -44,7 +44,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     private RxBusRegistry mRxBus;
 
-    private final MutableLiveData mLiveData = new MutableLiveData ();
+    private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
 
     public BaseViewModel() {
 
