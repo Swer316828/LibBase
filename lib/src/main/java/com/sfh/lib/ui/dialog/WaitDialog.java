@@ -1,8 +1,6 @@
 package com.sfh.lib.ui.dialog;
 
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
@@ -10,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.TextView;
 
 import com.sfh.lib.R;
 
@@ -40,9 +37,12 @@ public class WaitDialog extends DialogFragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
-        ColorDrawable colorDrawable = new ColorDrawable();
-        colorDrawable.setAlpha(10);
-        this.getDialog().getWindow().setBackgroundDrawable(colorDrawable);
+    }
+
+    @Override
+    public int getTheme() {
+
+        return R.style.dialogTransparent;
     }
 
     public boolean isShowing() {
@@ -56,7 +56,7 @@ public class WaitDialog extends DialogFragment {
         this.showAtom.set(false);
     }
 
-   private AtomicBoolean showAtom = new AtomicBoolean(false);
+   private  volatile  AtomicBoolean showAtom = new AtomicBoolean(false);
 
     public synchronized void show(FragmentActivity activity) {
         if (activity == null) {

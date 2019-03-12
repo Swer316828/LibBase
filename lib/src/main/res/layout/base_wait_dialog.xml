@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ryBG"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -8,11 +8,12 @@
     android:gravity="center"
     android:orientation="vertical">
 
+
     <ProgressBar
-        android:layout_margin="30dp"
+        android:layout_margin="25dp"
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center" />
 
-</LinearLayout>
+</FrameLayout>

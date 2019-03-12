@@ -173,7 +173,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         }
         DialogBuilder dialog = new DialogBuilder ();
         dialog.setTitle ("提示");
-        dialog.setHideCancel (false);
+        dialog.setHideCancel (true);
         dialog.setMessage (msg);
         this.mDialogBridge.showDialog (dialog);
     }

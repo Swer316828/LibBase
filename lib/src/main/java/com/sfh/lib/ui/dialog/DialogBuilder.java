@@ -2,10 +2,6 @@ package com.sfh.lib.ui.dialog;
 
 import android.support.annotation.ColorRes;
 import android.support.annotation.DimenRes;
-import android.support.annotation.Dimension;
-import android.support.annotation.IntegerRes;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentActivity;
 import android.view.Gravity;
 import android.view.View;
 
@@ -76,7 +72,7 @@ public class DialogBuilder {
         this.cancelText = "取消";
         this.okText = "确定";
     }
-
+    /* -------------------------------------------------------------------标题----------------------------------------------------------------------------- */
     public DialogBuilder setTitle(CharSequence title) {
         this.title = title;
         return this;
@@ -100,7 +96,7 @@ public class DialogBuilder {
         this.titleTextSize = titleTextSize;
         return this;
     }
-
+    /* -------------------------------------------------------------------取消按钮----------------------------------------------------------------------------- */
     public DialogBuilder setCancelText(CharSequence cancelText) {
         this.cancelText = cancelText;
         return this;
@@ -125,7 +121,12 @@ public class DialogBuilder {
         return this;
     }
 
-
+    public DialogBuilder setCancelTextListener(CharSequence cancelText,DialogInterface.OnClickListener cancelListener) {
+        this.cancelText = cancelText;
+        this.cancelListener = cancelListener;
+        return this;
+    }
+    /* -------------------------------------------------------------------确定按钮----------------------------------------------------------------------------- */
     public DialogBuilder setOKText(CharSequence okText) {
         this.okText = okText;
         return this;
@@ -150,6 +151,13 @@ public class DialogBuilder {
         return this;
     }
 
+    public DialogBuilder  setOKTextListener(CharSequence okText,DialogInterface.OnClickListener okListener) {
+        this.okText = okText;
+        this.okListener = okListener;
+        return this;
+    }
+
+    /* -------------------------------------------------------------------消息----------------------------------------------------------------------------- */
     public DialogBuilder setMessage(CharSequence message) {
         this.message = message;
         return this;
@@ -161,10 +169,6 @@ public class DialogBuilder {
         return this;
     }
 
-    public DialogBuilder setGravity(int gravity) {
-        this.gravity = gravity;
-        return this;
-    }
 
     public DialogBuilder setMessageTextColor(CharSequence message, @ColorRes int messageTextColor) {
         this.message = message;
@@ -185,11 +189,20 @@ public class DialogBuilder {
         return this;
     }
 
+    public DialogBuilder setGravity(int gravity) {
+        this.gravity = gravity;
+        return this;
+    }
     public DialogBuilder setCancelable(boolean cancelable) {
         this.cancelable = cancelable;
         return this;
     }
 
+    /***
+     * 自定义View
+     * @param view
+     * @return
+     */
     public DialogBuilder setView(View view) {
         this.view = view;
         return this;
