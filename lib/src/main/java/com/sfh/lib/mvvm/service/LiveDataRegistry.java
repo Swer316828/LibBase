@@ -3,8 +3,10 @@ package com.sfh.lib.mvvm.service;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
+import android.util.SparseArray;
 
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.RetrofitManager;
@@ -42,12 +44,13 @@ import static java.util.Arrays.asList;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean> {
+public class LiveDataRegistry<V extends IView> extends ViewModel  {
 
 
     private final static String TAG = LiveDataRegistry.class.getName ();
 
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity) {
+
+    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity, String managerKey) {
 
         ///对象的直接超类的 Type
         Type type = activity.getClass ().getGenericSuperclass ();
@@ -59,13 +62,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of (activity).get ((Class<T>) types[0]);
+                return ViewModelProviders.of (activity).get (managerKey, (Class<T>) types[0]);
             }
         }
         return null;
     }
 
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment) {
+    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment, String managerKey) {
 
         ///对象的直接超类的 Type
         Type type = fragment.getClass ().getGenericSuperclass ();
@@ -77,16 +80,16 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of (fragment).get ((Class<T>) types[0]);
+                return ViewModelProviders.of (fragment).get (managerKey, (Class<T>) types[0]);
             }
         }
         return null;
     }
 
-    public static <T extends BaseViewModel> T getViewModel(String managerKey, AbstractLifecycleView view) {
+    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleView lifecycleView, String managerKey) {
 
         ///对象的直接超类的 Type
-        Type type = view.getClass ().getGenericSuperclass ();
+        Type type = lifecycleView.getClass ().getGenericSuperclass ();
         if (type == null) {
             return null;
         }
@@ -95,7 +98,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of ((FragmentActivity) view.getContext ()).get (managerKey, (Class<T>) types[0]);
+                return ViewModelProviders.of ((FragmentActivity) lifecycleView.getContext ()).get (managerKey, (Class<T>) types[0]);
             }
         }
         return null;
@@ -103,11 +106,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
     private volatile RetrofitManager mRetrofit;
 
+    private SparseArray<String> mBindViewModelRecord;
+
     public LiveDataRegistry() {
 
         this.mRetrofit = new RetrofitManager ();
+        this.mBindViewModelRecord = new SparseArray<> (3);
     }
-
 
     /***
      * 绑定UI 数据刷新
@@ -115,33 +120,31 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      */
     final public void observe(@NonNull V listener) {
 
-        UtilLog.d (TAG, "LiveDataRegistry =========== 注册监听");
-        IViewModel model = listener.getViewModel ();
-        if (model != null) {
-            //LiveData 加入生命周期管理中
-            listener.observer (model.getLiveData ());
-            // 注册LiveData监听
-            this.mRetrofit.execute (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ());
-        }
-
+        UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
+        final IViewModel model = listener.getViewModel ();
+        this.observe (listener, model);
     }
+
     /***
      * 绑定UI 数据刷新
      * @param listener
      */
-    final public <T extends BaseViewModel> void observeOther(@NonNull V listener, T t ) {
+    final public <T extends IViewModel> void observe(@NonNull V listener, @NonNull T t) {
 
-        UtilLog.d (TAG, "LiveDataRegistry =========== 注册监听");
         final IViewModel viewModel = t;
-        if (viewModel != null) {
+        if (viewModel == null){
+            return;
+        }
+        final int key = viewModel.getClass ().getName ().hashCode ();
+        if (TextUtils.isEmpty (mBindViewModelRecord.get (key))) {
             //LiveData 加入当前生命周期管理中
             listener.observer (viewModel.getLiveData ());
-
             // 解析响应方法
             this.mRetrofit.execute (Flowable.just (listener).map (new Function<V, Object> () {
 
                 @Override
                 public Boolean apply(V listener) throws Exception {
+
                     final Method[] methods = listener.getClass ().getDeclaredMethods ();
                     for (Method method : methods) {
 
@@ -152,6 +155,8 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
                         // 注册LiveData监听
                         viewModel.putLiveDataMethod (method);
                     }
+                    //记录已绑定状态
+                    mBindViewModelRecord.put (key, viewModel.getClass ().getName ());
                     return true;
                 }
             }).onBackpressureLatest (), new EmptyResult ());
@@ -160,36 +165,19 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
 
     @Override
-    public Boolean apply(V listener) throws Exception {
-
-        final IViewModel viewModel = listener.getViewModel ();
-        if (viewModel == null) {
-            return false;
-        }
-
-        final Method[] methods = listener.getClass ().getDeclaredMethods ();
-        for (Method method : methods) {
-
-            LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
-            if (liveEvent == null) {
-                continue;
-            }
-            // 注册LiveData监听
-            viewModel.putLiveDataMethod (method);
-        }
-        return true;
-    }
-
-    @Override
     protected void onCleared() {
 
         super.onCleared ();
-        UtilLog.d (TAG, "LiveDataRegistry =========== 资源销毁");
+        UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
         if (this.mRetrofit != null) {
             this.mRetrofit.clearAll ();
             this.mRetrofit = null;
         }
 
+        if (this.mBindViewModelRecord != null) {
+            this.mBindViewModelRecord.clear ();
+            this.mBindViewModelRecord = null;
+        }
     }
 
     /***
@@ -206,7 +194,6 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         Method method = data.getAction ();
         //方法需要参数
         final Class<?>[] parameter = method.getParameterTypes ();
-
 
         try {
 
@@ -229,19 +216,19 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
             //需要一个参数
             if (originalLength == 1 && dataLength == 0) {
-                method.invoke (view, new Object[]{this.getNullObject(parameter[0])});
+                method.invoke (view, new Object[]{this.getNullObject (parameter[0])});
                 return;
             }
 
             //补齐参数
-            List<Object> list =  new ArrayList<> (originalLength);
+            List<Object> list = new ArrayList<> (originalLength);
 
             final Object[] temp = data.getData ();
             for (int i = 0; i < originalLength; i++) {
-                if (i < dataLength){
+                if (i < dataLength) {
                     list.add (temp[i]);
-                }else{
-                    list.add (this.getNullObject(parameter[i]));
+                } else {
+                    list.add (this.getNullObject (parameter[i]));
                 }
             }
             method.invoke (view, list.toArray ());
@@ -251,16 +238,17 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         }
     }
 
-    private Object getNullObject(Class<?> parameter){
-        if(long.class.isAssignableFrom (parameter) || Long.class.isAssignableFrom (parameter)){
+    private Object getNullObject(Class<?> parameter) {
+
+        if (long.class.isAssignableFrom (parameter) || Long.class.isAssignableFrom (parameter)) {
             return 0L;
-        }else if (boolean.class.isAssignableFrom (parameter) || Boolean.class.isAssignableFrom (parameter) ){
+        } else if (boolean.class.isAssignableFrom (parameter) || Boolean.class.isAssignableFrom (parameter)) {
             return false;
-        }else if (int.class.isAssignableFrom (parameter) || Integer.class.isAssignableFrom (parameter) ){
+        } else if (int.class.isAssignableFrom (parameter) || Integer.class.isAssignableFrom (parameter)) {
             return 0;
-        }else if (float.class.isAssignableFrom (parameter) || Float.class.isAssignableFrom (parameter) ){
+        } else if (float.class.isAssignableFrom (parameter) || Float.class.isAssignableFrom (parameter)) {
             return 0.0f;
-        } else{
+        } else {
             return null;
         }
     }

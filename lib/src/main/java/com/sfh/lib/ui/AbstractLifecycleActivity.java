@@ -5,7 +5,7 @@ import android.arch.lifecycle.Observer;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
@@ -38,6 +38,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
     private LiveDataRegistry mLiveDataRegistry;
 
+    /*** 共享KEY*/
+    private String shareModelKey;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
@@ -63,7 +66,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     public VM getViewModel() {
 
         if (this.mViewModel == null) {
-            this.mViewModel = LiveDataRegistry.getViewModel (this);
+            this.mViewModel = LiveDataRegistry.getViewModel (this, this.getManagerKey ());
         }
         return this.mViewModel;
     }
@@ -78,9 +81,37 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
         T t = ViewModelProviders.of (this).get (cls);
         if (t != null) {
-            this.mLiveDataRegistry.observeOther (this, t);
+            this.mLiveDataRegistry.observe (this, t);
         }
         return t;
+    }
+
+    /***
+     * 使用共享ViewModel,使用已创建的ViewModel 对象
+     * @param cls
+     * @param <T>
+     * @return
+     */
+    public <T extends BaseViewModel> T getViewShareModel(String managerKey, Class<T> cls) {
+
+        T t = ViewModelProviders.of (this).get (managerKey, cls);
+        if (t != null) {
+            this.mLiveDataRegistry.observe (this, t);
+        }
+        return t;
+    }
+
+
+    /***
+     * 共享ViewModel的key
+     * @return
+     */
+    protected final String getManagerKey() {
+
+        if (TextUtils.isEmpty (this.shareModelKey)) {
+            this.shareModelKey = ViewModelProviders.createKey ();
+        }
+        return this.shareModelKey;
     }
 
     @Override

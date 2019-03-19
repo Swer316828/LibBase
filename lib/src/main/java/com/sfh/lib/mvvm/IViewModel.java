@@ -23,10 +23,14 @@ import io.reactivex.disposables.Disposable;
 public interface IViewModel {
 
     /***
-     * 数据持有者
+     * 数据响应
      * @return
      */
     <T> MutableLiveData<T> getLiveData();
 
+    /***
+     * 存储响应方法
+     * @param method
+     */
     void putLiveDataMethod(Method method);
 }

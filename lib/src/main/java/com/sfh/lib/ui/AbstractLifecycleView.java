@@ -5,9 +5,8 @@ import android.arch.lifecycle.Observer;
 import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
+import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.sfh.lib.event.RxBusEventManager;
@@ -18,9 +17,6 @@ import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import io.reactivex.disposables.Disposable;
 
@@ -41,18 +37,21 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     private LiveData mLiveData;
 
     public AbstractLifecycleView(Context context) {
-        super(context);
-        this.setContentView();
+
+        super (context);
+        this.setContentView ();
     }
 
     public AbstractLifecycleView(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        this.setContentView();
+
+        super (context, attrs);
+        this.setContentView ();
     }
 
     public AbstractLifecycleView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        this.setContentView();
+
+        super (context, attrs, defStyleAttr);
+        this.setContentView ();
     }
 
     /***
@@ -67,11 +66,12 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     public abstract void initData();
 
     private void setContentView() {
-        if (this.layout() <= 0){
-           return;
+
+        if (this.layout () <= 0) {
+            return;
         }
-        inflate(this.getContext(), this.layout(), this);
-        this.initData();
+        inflate (this.getContext (), this.layout (), this);
+        this.initData ();
     }
 
     /***
@@ -81,43 +81,49 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      *
      */
     public boolean isForever() {
+
         return false;
     }
 
     public void onDestoryObserver() {
+
         if (this.mLiveData != null) {
-            this.mLiveData.removeObserver(this);
+            this.mLiveData.removeObserver (this);
         }
     }
 
     @Override
     protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
+
+        super.onAttachedToWindow ();
         if (this.mLiveDataRegistry == null) {
-            this.mLiveDataRegistry = ViewModelProviders.of((FragmentActivity) this.getContext()).get(LiveDataRegistry.class);
-            this.mLiveDataRegistry.observe(this);
+            this.mLiveDataRegistry = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (LiveDataRegistry.class);
+            this.mLiveDataRegistry.observe (this);
         }
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
+
+        super.onDetachedFromWindow ();
         if (this.mLiveData != null) {
-            if (this.isForever()) {
+            if (this.isForever ()) {
                 return;
             }
-            this.mLiveData.removeObserver(this);
+            this.mLiveData.removeObserver (this);
         }
     }
 
     @Nullable
     @Override
     final public VM getViewModel() {
+
         if (this.mViewModel == null) {
-            this.mViewModel = LiveDataRegistry.getViewModel(this.getManagerKey(), this);
+            this.mViewModel = LiveDataRegistry.getViewModel (this,this.getManagerKey ());
         }
         return this.mViewModel;
     }
+
     /***
      * 使用其他ViewModel
      * @param cls
@@ -125,67 +131,92 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      * @return
      */
     public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
-        T t = ViewModelProviders.of((FragmentActivity) this.getContext()).get(cls);
+
+        T t = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (cls);
         if (t != null) {
-            this.mLiveDataRegistry.observeOther (this, t);
+            this.mLiveDataRegistry.observe (this, t);
         }
         return t;
     }
 
     /***
-     * 使用当前ViewModel 独立，如共享数据设置相同key
-     * 不建议重写该方法
+     * 使用共享ViewModel,使用已创建的ViewModel 对象
+     * @param cls
+     * @param <T>
      * @return
      */
-    protected String getManagerKey() {
+    public <T extends BaseViewModel> T getViewShareModel(String viewModelKey, Class<T> cls) {
 
-        return ViewModelProviders.createKey();
+        T t = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (viewModelKey, cls);
+        if (t != null) {
+            this.mLiveDataRegistry.observe (this, t);
+        }
+        return t;
+    }
+
+    /*** 共享KEY*/
+    private String shareModelKey;
+
+    /***
+     * 共享ViewModel的key
+     * @return
+     */
+    protected final String getManagerKey() {
+
+        if (TextUtils.isEmpty (this.shareModelKey)) {
+            this.shareModelKey = ViewModelProviders.createKey ();
+        }
+        return this.shareModelKey;
     }
 
     @Override
-     public final <T> void observer(LiveData<T> liveData) {
+    public final <T> void observer(LiveData<T> liveData) {
+
         this.mLiveData = liveData;
         if (this.mLiveData != null) {
-            this.mLiveData.observe((FragmentActivity) this.getContext(), this);
+            this.mLiveData.observe ((FragmentActivity) this.getContext (), this);
         }
     }
 
     @Override
-     public final void onChanged(@Nullable Object data) {
+    public final void onChanged(@Nullable Object data) {
 
         if (data instanceof NetWorkState) {
-            this.setNetWorkState((NetWorkState) data);
+            this.setNetWorkState ((NetWorkState) data);
         } else if (data instanceof UIData) {
-            this.mLiveDataRegistry.showLiveData(this, (UIData) data);
+            this.mLiveDataRegistry.showLiveData (this, (UIData) data);
         } else {
-            this.setNetWorkState(NetWorkState.showToast("数据类型不匹配"));
+            this.setNetWorkState (NetWorkState.showToast ("数据类型不匹配"));
         }
     }
 
-     public final void showDialog(DialogBuilder dialog) {
-        this.setNetWorkState(NetWorkState.showDialog(dialog));
+    public final void showDialog(DialogBuilder dialog) {
+
+        this.setNetWorkState (NetWorkState.showDialog (dialog));
     }
 
-     public final void showToast(CharSequence msg) {
-        this.setNetWorkState(NetWorkState.showToast(msg));
+    public final void showToast(CharSequence msg) {
+
+        this.setNetWorkState (NetWorkState.showToast (msg));
     }
 
-     public final void setNetWorkState(NetWorkState netWorkState) {
-        Context activity = this.getContext();
+    public final void setNetWorkState(NetWorkState netWorkState) {
+
+        Context activity = this.getContext ();
         if (activity == null || !(activity instanceof AbstractLifecycleActivity)) {
             return;
         }
         AbstractLifecycleActivity lifecycleActivity = (AbstractLifecycleActivity) activity;
-        lifecycleActivity.setNetWorkState(netWorkState);
+        lifecycleActivity.setNetWorkState (netWorkState);
     }
 
     /***
      * 添加RxJava监听
      * @param disposable
      */
-     public final void putDisposable(Disposable disposable) {
+    public final void putDisposable(Disposable disposable) {
 
-        this.mLiveDataRegistry.putDisposable(disposable);
+        this.mLiveDataRegistry.putDisposable (disposable);
     }
 
 
@@ -195,7 +226,8 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      * @param <T>
      */
     public final <T> void postEvent(T t) {
-        RxBusEventManager.postEvent(t);
+
+        RxBusEventManager.postEvent (t);
     }
 
 }
