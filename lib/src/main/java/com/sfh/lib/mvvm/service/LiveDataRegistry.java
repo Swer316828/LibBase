@@ -8,7 +8,10 @@ import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
+import com.sfh.lib.event.IEventResult;
 import com.sfh.lib.event.RxBusEvent;
+import com.sfh.lib.event.RxBusEventManager;
+import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.mvvm.IViewModel;
@@ -28,6 +31,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,9 +51,7 @@ import static java.util.Arrays.asList;
  */
 public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean> {
 
-
     private final static String TAG = LiveDataRegistry.class.getName ();
-
 
     public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity) {
 
@@ -125,28 +127,33 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
         // 解析业务响应方法,消息监听方法
         this.mRetrofit.execute (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ());
-
     }
+
 
     @Override
     public Boolean apply(V iView) throws Exception {
 
+        final IViewModel viewModel = iView.getViewModel ();
+        if (viewModel == null) {
+            return false;
+        }
         final Method[] methods = iView.getClass ().getDeclaredMethods ();
+
         for (Method method : methods) {
 
             LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
             RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
             if (liveEvent != null) {
                 // 注册LiveData监听
-                mLiveDataMethod.put (method.getName ().hashCode (), method);
+                this.mLiveDataMethod.put (method.getName ().hashCode (), method);
             }
-            if (rxBusEvent != null) {
-                //TODO 注册RxEvent消息监听
+            if (rxBusEvent != null && viewModel != null) {
+                // 注册RxEvent消息监听
+                viewModel.putEventMethod (method);
             }
         }
         return true;
     }
-
 
     @Override
     protected void onCleared() {
@@ -164,7 +171,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      * @param view
      * @param data
      */
-    final public void showLiveData(@NonNull Object view, @Nullable UIData data) {
+    public final void showLiveData(@NonNull Object view, @Nullable UIData data) {
         // LiveData 数据监听
         if (view == null || data == null) {
             UtilLog.e (TAG, "LiveDataRegistry method: null");
@@ -242,7 +249,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      * 添加RxJava监听
      * @param disposable
      */
-    final public void putDisposable(Disposable disposable) {
+    public final void putDisposable(Disposable disposable) {
 
         this.mRetrofit.put (disposable);
     }

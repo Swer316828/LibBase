@@ -80,6 +80,15 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         return this.mRoot;
     }
 
+    @Override
+    public void onDestroy() {
+
+        super.onDestroy ();
+        this.mLiveDataRegistry = null;
+        this.mViewModel = null;
+        this.mRoot = null;
+    }
+
     /**
      * 激活一次生命周期监听
      *
@@ -99,7 +108,10 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
-            this.mViewModel.getLiveData ().observe (this, this);
+            if (this.mViewModel != null) {
+                this.mViewModel.getLiveData ().observe (this, this);
+            }
+
         }
         return this.mViewModel;
     }

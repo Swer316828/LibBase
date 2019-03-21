@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
 
+import com.sfh.lib.event.EventMethod;
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.exception.HandleException;
@@ -49,8 +50,8 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         this.mRetrofit = new RetrofitManager ();
         // 注入ViewModel层之间数据通信
         if (this.eventOnOff ()) {
-            this.mRxBus = new RxBusRegistry ();
-            this.mRxBus.registry (this);
+            this.mRxBus = new RxBusRegistry (this);
+            this.mRxBus.init ();
         }
     }
 
@@ -69,6 +70,14 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         return this.mLiveData;
     }
 
+    @Override
+    public void putEventMethod(Method method) {
+
+        if (this.mRxBus == null) {
+            this.mRxBus = new RxBusRegistry (this);
+        }
+        this.mRxBus.putEventMethod (EventMethod.TYPE_UI,method);
+    }
 
     /***
      * 刷新UI 数据
@@ -76,14 +85,14 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param data
      */
     @MainThread
-    public void setValue(String action, Object... data) {
+    public final void setValue(String action, Object... data) {
 
         this.mLiveData.setValue (new UIData (action, data));
     }
 
 
     @MainThread
-    public void setValue(String action) {
+    public final void setValue(String action) {
 
         this.mLiveData.setValue (new UIData (action));
     }
@@ -100,6 +109,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         this.mRetrofit.clearAll ();
     }
 
+    @Override
     public final void putDisposable(Disposable disposable) {
 
         this.mRetrofit.put (disposable);
@@ -111,6 +121,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param task
      * @param <T>
      */
+    @Override
     public final <T> void execute(@NonNull Observable<T> task) {
 
         this.mRetrofit.execute (task, new EmptyResult ());
@@ -136,7 +147,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(@NonNull Observable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask(task, new Task<> (listener));
+        this.executeTask (task, new Task<> (listener));
     }
 
     /***
@@ -147,7 +158,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(@NonNull Observable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
 
-        this.executeTask(task, new Task<> (listener));
+        this.executeTask (task, new Task<> (listener));
     }
 
     /***
@@ -159,7 +170,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> task, @Nullable final IResult<T> listener) {
 
-        this.executeTask(task, new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
     }
 
     /***
@@ -171,7 +182,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask(task, new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
     }
 
     /***
@@ -183,15 +194,16 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
 
-        this.executeTask(task, new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
     }
 
-    private <T> void executeTask( @NonNull Observable<T> observable, Task<T> listener) {
+    private <T> void executeTask(@NonNull Observable<T> observable, Task<T> listener) {
 
         this.mRetrofit.execute (observable, listener);
     }
 
     /*------------------------------------Flowable 模式任务 start-------------------------------------------------------------------------------*/
+
     /***
      * 执行背压异步任务，任务回调成功/异常方法
      * @param task
@@ -211,7 +223,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(@NonNull Flowable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask(task, new Task<> (listener));
+        this.executeTask (task, new Task<> (listener));
     }
 
 
@@ -223,7 +235,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(@NonNull Flowable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
 
-        this.executeTask(task, new Task<> (listener));
+        this.executeTask (task, new Task<> (listener));
     }
 
     /***
@@ -235,7 +247,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResult<T> listener) {
 
-        this.executeTask(task, new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
     }
 
     /***
@@ -247,7 +259,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask(task, new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
     }
 
     /***
@@ -259,14 +271,15 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
 
-        this.executeTask(task, new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
     }
 
-    private <T> void executeTask( @NonNull Flowable<T> flowable, Task<T> listener) {
+    private <T> void executeTask(@NonNull Flowable<T> flowable, Task<T> listener) {
 
         this.mRetrofit.execute (flowable, listener);
     }
     /*------------------------------------新的请求方式 start-------------------------------------------------------------------------------*/
+
     /***
      * 执行异步任务，任务执行无回调
      * @param <T>
@@ -294,7 +307,8 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param <T>
      */
     public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
-        this.executeTask (request,new Task<> (listener));
+
+        this.executeTask (request, new Task<> (listener));
     }
 
     /***
@@ -305,7 +319,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
 
-        this.executeTask (request,new Task<> (listener));
+        this.executeTask (request, new Task<> (listener));
     }
 
     /***
@@ -317,7 +331,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResult<T> listener) {
 
-        this.executeTask (request,new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (request, new TaskLoading<> (cancelDialog, listener));
     }
 
     /***
@@ -329,7 +343,7 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask (request,new TaskLoading<> (cancelDialog,listener));
+        this.executeTask (request, new TaskLoading<> (cancelDialog, listener));
     }
 
     /***
@@ -340,26 +354,28 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      * @param <T>
      */
     public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
-        this.executeTask (request,new TaskLoading<> (cancelDialog,listener));
+
+        this.executeTask (request, new TaskLoading<> (cancelDialog, listener));
     }
 
 
-   private <T> void executeTask(@NonNull OutreachRequest<T> request, Task<T> task) {
+    private <T> void executeTask(@NonNull OutreachRequest<T> request, Task<T> task) {
 
         this.putDisposable (request.sendRequest (task));
     }
 
 
-    class TaskLoading<T> extends Task<T>  {
+    class TaskLoading<T> extends Task<T> {
 
         public TaskLoading(boolean cancelDialog, IResultSuccess<T> listener) {
 
-            super(listener);
+            super (listener);
             BaseViewModel.this.showLoading (cancelDialog);
         }
 
         @Override
         public void onFail(HandleException e) {
+
             BaseViewModel.this.hideLoading ();
             super.onFail (e);
         }
@@ -400,11 +416,13 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
         @Override
         public void onSuccess(T t) throws Exception {
+
             if (this.listener != null) {
                 this.listener.onSuccess (t);
             }
         }
     }
+
     /***
      * 显示等待对话框
      * @param cancel true 可以取消默认值 false 不可以取消

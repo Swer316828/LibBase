@@ -113,6 +113,9 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
                 return;
             }
             this.mLiveData.removeObserver (this);
+            this.mViewModel = null;
+            this.mLiveDataRegistry = null;
+            this.mLiveData = null;
         }
     }
 
@@ -122,7 +125,9 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
-            this.mViewModel.getLiveData ().observe ((FragmentActivity) this.getContext (), this);
+            if (this.mViewModel != null){
+                this.mViewModel.getLiveData ().observe ((FragmentActivity) this.getContext (), this);
+            }
         }
         return this.mViewModel;
     }

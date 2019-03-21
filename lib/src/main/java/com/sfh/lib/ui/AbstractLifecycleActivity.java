@@ -5,7 +5,6 @@ import android.arch.lifecycle.Observer;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
-import android.text.TextUtils;
 
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
@@ -55,6 +54,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         }
         this.mDialogBridge = null;
         this.mLiveDataRegistry = null;
+        this.mViewModel = null;
     }
 
 
@@ -64,7 +64,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
-            this.mViewModel.getLiveData ().observe (this,this);
+            if (this.mViewModel != null) {
+                this.mViewModel.getLiveData ().observe (this, this);
+            }
         }
         return this.mViewModel;
     }
@@ -80,7 +82,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         T t = ViewModelProviders.of (this).get (cls);
         if (t != null) {
             //是否已经绑定
-            t.getLiveData ().observe (this,this);
+            t.getLiveData ().observe (this, this);
         }
         return t;
     }

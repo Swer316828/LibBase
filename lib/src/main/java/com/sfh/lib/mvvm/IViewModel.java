@@ -28,4 +28,13 @@ public interface IViewModel {
      */
     <T> MutableLiveData<T> getLiveData();
 
+    /***
+     * 消息方法
+     * @param method
+     */
+    void putEventMethod(Method method);
+
+    void putDisposable(Disposable disposable);
+
+    <T> void execute(@NonNull Observable<T> task);
 }
