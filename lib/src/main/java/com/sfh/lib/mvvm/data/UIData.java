@@ -12,7 +12,7 @@ public class UIData {
     /**
      * 响应此数据的方法名称
      */
-    private Method action;
+    private String action;
 
     /***
      * 数据
@@ -25,7 +25,7 @@ public class UIData {
      * @param action
      * @param args
      */
-    public UIData(Method action, Object... args) {
+    public UIData(String action, Object... args) {
         this.action = action;
         this.data = args;
     }
@@ -34,7 +34,7 @@ public class UIData {
      * 无参
      * @param action
      */
-    public UIData(Method action) {
+    public UIData(String action) {
         this.action = action;
     }
 
@@ -42,7 +42,7 @@ public class UIData {
      * UI响应方法
      * @return
      */
-    public Method getAction() {
+    public String getAction() {
         return this.action;
     }
 

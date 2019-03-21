@@ -29,7 +29,6 @@ import io.reactivex.disposables.Disposable;
  */
 public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends FrameLayout implements IView, Observer {
 
-
     protected VM mViewModel;
 
     private LiveDataRegistry mLiveDataRegistry;
@@ -85,6 +84,9 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         return false;
     }
 
+    /***
+     * 解除响应
+     */
     public void onDestoryObserver() {
 
         if (this.mLiveData != null) {
@@ -98,7 +100,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         super.onAttachedToWindow ();
         if (this.mLiveDataRegistry == null) {
             this.mLiveDataRegistry = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (LiveDataRegistry.class);
-            this.mLiveDataRegistry.observe (this);
+            this.mLiveDataRegistry.handerMethod (this);
         }
     }
 
@@ -119,7 +121,8 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     final public VM getViewModel() {
 
         if (this.mViewModel == null) {
-            this.mViewModel = LiveDataRegistry.getViewModel (this,this.getManagerKey ());
+            this.mViewModel = LiveDataRegistry.getViewModel (this);
+            this.mViewModel.getLiveData ().observe ((FragmentActivity) this.getContext (), this);
         }
         return this.mViewModel;
     }
@@ -134,48 +137,17 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
 
         T t = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (cls);
         if (t != null) {
-            this.mLiveDataRegistry.observe (this, t);
+            t.getLiveData ().observe ((FragmentActivity) this.getContext (), this);
         }
         return t;
     }
 
-    /***
-     * 使用共享ViewModel,使用已创建的ViewModel 对象
-     * @param cls
-     * @param <T>
-     * @return
-     */
-    public <T extends BaseViewModel> T getViewShareModel(String viewModelKey, Class<T> cls) {
-
-        T t = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (viewModelKey, cls);
-        if (t != null) {
-            this.mLiveDataRegistry.observe (this, t);
-        }
-        return t;
-    }
-
-    /*** 共享KEY*/
-    private String shareModelKey;
-
-    /***
-     * 共享ViewModel的key
-     * @return
-     */
-    protected final String getManagerKey() {
-
-        if (TextUtils.isEmpty (this.shareModelKey)) {
-            this.shareModelKey = ViewModelProviders.createKey ();
-        }
-        return this.shareModelKey;
-    }
 
     @Override
     public final <T> void observer(LiveData<T> liveData) {
 
         this.mLiveData = liveData;
-        if (this.mLiveData != null) {
-            this.mLiveData.observe ((FragmentActivity) this.getContext (), this);
-        }
+        this.mLiveData.observe ((FragmentActivity) this.getContext (), this);
     }
 
     @Override
@@ -190,6 +162,15 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         }
     }
 
+    public final void showDialogToast(CharSequence msg) {
+
+        DialogBuilder dialog = new DialogBuilder ();
+        dialog.setTitle ("提示");
+        dialog.setHideCancel (true);
+        dialog.setMessage (msg);
+        this.showDialog (dialog);
+    }
+
     public final void showDialog(DialogBuilder dialog) {
 
         this.setNetWorkState (NetWorkState.showDialog (dialog));
@@ -200,7 +181,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         this.setNetWorkState (NetWorkState.showToast (msg));
     }
 
-    public final void setNetWorkState(NetWorkState netWorkState) {
+    private final void setNetWorkState(NetWorkState netWorkState) {
 
         Context activity = this.getContext ();
         if (activity == null || !(activity instanceof AbstractLifecycleActivity)) {
@@ -218,7 +199,6 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
 
         this.mLiveDataRegistry.putDisposable (disposable);
     }
-
 
     /***
      * 发送Rx消息通知

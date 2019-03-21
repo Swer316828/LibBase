@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
+import com.sfh.lib.event.RxBusEvent;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.mvvm.IViewModel;
@@ -44,13 +45,13 @@ import static java.util.Arrays.asList;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class LiveDataRegistry<V extends IView> extends ViewModel  {
+public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean> {
 
 
     private final static String TAG = LiveDataRegistry.class.getName ();
 
 
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity, String managerKey) {
+    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity) {
 
         ///对象的直接超类的 Type
         Type type = activity.getClass ().getGenericSuperclass ();
@@ -62,13 +63,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel  {
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of (activity).get (managerKey, (Class<T>) types[0]);
+                return ViewModelProviders.of (activity).get ((Class<T>) types[0]);
             }
         }
         return null;
     }
 
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment, String managerKey) {
+    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment) {
 
         ///对象的直接超类的 Type
         Type type = fragment.getClass ().getGenericSuperclass ();
@@ -80,13 +81,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel  {
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of (fragment).get (managerKey, (Class<T>) types[0]);
+                return ViewModelProviders.of (fragment).get ((Class<T>) types[0]);
             }
         }
         return null;
     }
 
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleView lifecycleView, String managerKey) {
+    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleView lifecycleView) {
 
         ///对象的直接超类的 Type
         Type type = lifecycleView.getClass ().getGenericSuperclass ();
@@ -98,7 +99,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel  {
             //参数化类型
             Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
             if (types != null && types.length > 0) {
-                return ViewModelProviders.of ((FragmentActivity) lifecycleView.getContext ()).get (managerKey, (Class<T>) types[0]);
+                return ViewModelProviders.of ((FragmentActivity) lifecycleView.getContext ()).get ((Class<T>) types[0]);
             }
         }
         return null;
@@ -106,61 +107,44 @@ public class LiveDataRegistry<V extends IView> extends ViewModel  {
 
     private volatile RetrofitManager mRetrofit;
 
-    private SparseArray<String> mBindViewModelRecord;
+    /*** 响应方法集合*/
+    private volatile SparseArray<Method> mLiveDataMethod;
 
     public LiveDataRegistry() {
 
+        this.mLiveDataMethod = new SparseArray<> (5);
         this.mRetrofit = new RetrofitManager ();
-        this.mBindViewModelRecord = new SparseArray<> (3);
     }
 
     /***
-     * 绑定UI 数据刷新
+     * 解析业务响应方法,消息监听方法
      * @param listener
      */
-    final public void observe(@NonNull V listener) {
+    public final void handerMethod(@NonNull V listener) {
 
         UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
-        final IViewModel model = listener.getViewModel ();
-        this.observe (listener, model);
+        // 解析业务响应方法,消息监听方法
+        this.mRetrofit.execute (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ());
+
     }
 
-    /***
-     * 绑定UI 数据刷新
-     * @param listener
-     */
-    final public <T extends IViewModel> void observe(@NonNull V listener, @NonNull T t) {
+    @Override
+    public Boolean apply(V iView) throws Exception {
 
-        final IViewModel viewModel = t;
-        if (viewModel == null){
-            return;
+        final Method[] methods = iView.getClass ().getDeclaredMethods ();
+        for (Method method : methods) {
+
+            LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
+            RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
+            if (liveEvent != null) {
+                // 注册LiveData监听
+                mLiveDataMethod.put (method.getName ().hashCode (), method);
+            }
+            if (rxBusEvent != null) {
+                //TODO 注册RxEvent消息监听
+            }
         }
-        final int key = viewModel.getClass ().getName ().hashCode ();
-        if (TextUtils.isEmpty (mBindViewModelRecord.get (key))) {
-            //LiveData 加入当前生命周期管理中
-            listener.observer (viewModel.getLiveData ());
-            // 解析响应方法
-            this.mRetrofit.execute (Flowable.just (listener).map (new Function<V, Object> () {
-
-                @Override
-                public Boolean apply(V listener) throws Exception {
-
-                    final Method[] methods = listener.getClass ().getDeclaredMethods ();
-                    for (Method method : methods) {
-
-                        LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
-                        if (liveEvent == null) {
-                            continue;
-                        }
-                        // 注册LiveData监听
-                        viewModel.putLiveDataMethod (method);
-                    }
-                    //记录已绑定状态
-                    mBindViewModelRecord.put (key, viewModel.getClass ().getName ());
-                    return true;
-                }
-            }).onBackpressureLatest (), new EmptyResult ());
-        }
+        return true;
     }
 
 
@@ -169,15 +153,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel  {
 
         super.onCleared ();
         UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
-        if (this.mRetrofit != null) {
-            this.mRetrofit.clearAll ();
-            this.mRetrofit = null;
-        }
-
-        if (this.mBindViewModelRecord != null) {
-            this.mBindViewModelRecord.clear ();
-            this.mBindViewModelRecord = null;
-        }
+        this.mRetrofit.clearAll ();
+        this.mRetrofit = null;
+        this.mLiveDataMethod.clear ();
+        this.mLiveDataMethod = null;
     }
 
     /***
@@ -191,7 +170,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel  {
             UtilLog.e (TAG, "LiveDataRegistry method: null");
             return;
         }
-        Method method = data.getAction ();
+
+        Method method = this.mLiveDataMethod.get (data.getAction ().hashCode ());
+        if (method == null) {
+            UtilLog.e (TAG, "LiveDataRegistry not find method: " + data.getAction ());
+            return;
+        }
+
         //方法需要参数
         final Class<?>[] parameter = method.getParameterTypes ();
 

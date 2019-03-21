@@ -19,6 +19,7 @@ import retrofit2.http.QueryMap;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
+@Deprecated
 public interface IRxHttpService {
 
 

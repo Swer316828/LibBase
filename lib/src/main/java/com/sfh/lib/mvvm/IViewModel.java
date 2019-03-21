@@ -28,9 +28,4 @@ public interface IViewModel {
      */
     <T> MutableLiveData<T> getLiveData();
 
-    /***
-     * 存储响应方法
-     * @param method
-     */
-    void putLiveDataMethod(Method method);
 }

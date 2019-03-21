@@ -56,45 +56,50 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+
         boolean initCreateView;
         //在Fragment onCreateView方法中缓存View
         //FragmentTab切换Fragment时避免重复加载UI
         if (this.mRoot != null) {
-            ViewGroup parent = (ViewGroup) mRoot.getParent();
+            ViewGroup parent = (ViewGroup) mRoot.getParent ();
             if (parent != null) {
-                parent.removeView(mRoot);
+                parent.removeView (mRoot);
             }
             initCreateView = false;
         } else {
-            this.mRoot = inflater.inflate(this.getLayout(), container, false);
+            this.mRoot = inflater.inflate (this.getLayout (), container, false);
             initCreateView = true;
         }
 
         if (initCreateView) {
             // 视图代理类-ViewModel
-            this.mLiveDataRegistry = ViewModelProviders.of(this).get(LiveDataRegistry.class);
-            this.mLiveDataRegistry.observe(this);
-            this.initData(this.mRoot);
+            this.mLiveDataRegistry = ViewModelProviders.of (this).get (LiveDataRegistry.class);
+            this.mLiveDataRegistry.handerMethod (this);
+            this.initData (this.mRoot);
         }
         return this.mRoot;
     }
 
     /**
      * 激活一次生命周期监听
+     *
      * @param event
      */
-    public void handleLifecycleEvent(Lifecycle.Event event){
-        Lifecycle lifecycle = this.getLifecycle();
-        if (lifecycle instanceof LifecycleRegistry){
-            ((LifecycleRegistry)lifecycle).handleLifecycleEvent(event);
+    public void handleLifecycleEvent(Lifecycle.Event event) {
+
+        Lifecycle lifecycle = this.getLifecycle ();
+        if (lifecycle instanceof LifecycleRegistry) {
+            ((LifecycleRegistry) lifecycle).handleLifecycleEvent (event);
         }
     }
 
     @Override
     @Nullable
     public VM getViewModel() {
+
         if (this.mViewModel == null) {
-            this.mViewModel = LiveDataRegistry.getViewModel(this,this.getManagerKey ());
+            this.mViewModel = LiveDataRegistry.getViewModel (this);
+            this.mViewModel.getLiveData ().observe (this, this);
         }
         return this.mViewModel;
     }
@@ -106,99 +111,78 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
      * @return
      */
     public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
-        T t = ViewModelProviders.of(this).get(cls);
+
+        T t = ViewModelProviders.of (this).get (cls);
         if (t != null) {
-            this.mLiveDataRegistry.observe (this, t);
+            t.getLiveData ().observe (this, this);
         }
         return t;
-    }
-    /***
-     * 使用共享ViewModel,使用已创建的ViewModel 对象
-     * @param cls
-     * @param <T>
-     * @return
-     */
-    public <T extends BaseViewModel> T getViewShareModel(String viewModelKey, Class<T> cls) {
-
-        T t = ViewModelProviders.of (this).get (viewModelKey, cls);
-        if (t != null) {
-            this.mLiveDataRegistry.observe (this, t);
-        }
-        return t;
-    }
-
-    /*** 共享KEY*/
-    private String shareModelKey;
-
-    /***
-     * 共享ViewModel的key
-     * @return
-     */
-    protected final String getManagerKey() {
-
-        if (TextUtils.isEmpty (this.shareModelKey)) {
-            this.shareModelKey = ViewModelProviders.createKey ();
-        }
-        return this.shareModelKey;
     }
 
     @Override
     public <T> void observer(LiveData<T> liveData) {
-        liveData.observe(this, this);
+
+        liveData.observe (this, this);
     }
 
     @Override
     public void onChanged(@Nullable Object data) {
 
         if (data instanceof NetWorkState) {
-            this.setNetWorkState((NetWorkState) data);
+            this.setNetWorkState ((NetWorkState) data);
         } else if (data instanceof UIData) {
-            this.mLiveDataRegistry.showLiveData(this, (UIData) data);
+            this.mLiveDataRegistry.showLiveData (this, (UIData) data);
         } else {
-            this.setNetWorkState(NetWorkState.showToast("数据类型不匹配"));
+            this.setNetWorkState (NetWorkState.showToast ("数据类型不匹配"));
         }
     }
 
     public String getName() {
+
         return "";
     }
 
 
-    public final void showDialog(DialogBuilder dialog){
-        this.setNetWorkState(NetWorkState.showDialog(dialog));
+    public final void showDialog(DialogBuilder dialog) {
+
+        this.setNetWorkState (NetWorkState.showDialog (dialog));
     }
 
-     public final void showDialogToast(CharSequence msg){
-        DialogBuilder dialog = new DialogBuilder();
-        dialog.setTitle("提示");
-        dialog.setHideCancel(false);
-        dialog.setMessage(msg);
-        this.setNetWorkState(NetWorkState.showDialog(dialog));
+    public final void showDialogToast(CharSequence msg) {
+
+        DialogBuilder dialog = new DialogBuilder ();
+        dialog.setTitle ("提示");
+        dialog.setHideCancel (false);
+        dialog.setMessage (msg);
+        this.setNetWorkState (NetWorkState.showDialog (dialog));
     }
 
-     public final void showToast(CharSequence msg){
-        this.setNetWorkState(NetWorkState.showToast(msg));
+    public final void showToast(CharSequence msg) {
+
+        this.setNetWorkState (NetWorkState.showToast (msg));
     }
 
     /***
      * 显示UI 基础操作
      * @param state
      */
-     protected final void setNetWorkState(NetWorkState state) {
-        FragmentActivity activity = getActivity();
-        if (activity == null || activity.isFinishing() || !(activity instanceof AbstractLifecycleActivity)) {
+    protected final void setNetWorkState(NetWorkState state) {
+
+        FragmentActivity activity = getActivity ();
+        if (activity == null || activity.isFinishing () || !(activity instanceof AbstractLifecycleActivity)) {
             return;
         }
         AbstractLifecycleActivity abstractLifecycleActivity = (AbstractLifecycleActivity) activity;
-        abstractLifecycleActivity.setNetWorkState(state);
+        abstractLifecycleActivity.setNetWorkState (state);
     }
+
     /***
      * 添加RxJava监听
      * @param disposable
      */
     final public void putDisposable(Disposable disposable) {
 
-        this.mLiveDataRegistry.putDisposable(disposable);
+        this.mLiveDataRegistry.putDisposable (disposable);
     }
 
     /***
@@ -207,6 +191,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
      * @param <T>
      */
     public final <T> void postEvent(T t) {
-        RxBusEventManager.postEvent(t);
+
+        RxBusEventManager.postEvent (t);
     }
 }

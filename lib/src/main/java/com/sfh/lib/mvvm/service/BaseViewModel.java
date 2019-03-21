@@ -38,8 +38,6 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     private final static String TAG = BaseViewModel.class.getName ();
 
-    private volatile SparseArray<Method> mLiveDataMethod;
-
     private RetrofitManager mRetrofit;
 
     private RxBusRegistry mRxBus;
@@ -48,7 +46,6 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     public BaseViewModel() {
 
-        this.mLiveDataMethod = new SparseArray<> (5);
         this.mRetrofit = new RetrofitManager ();
         // 注入ViewModel层之间数据通信
         if (this.eventOnOff ()) {
@@ -81,22 +78,14 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     @MainThread
     public void setValue(String action, Object... data) {
 
-        Method method = this.mLiveDataMethod.get (action.hashCode ());
-        if (method == null) {
-            return;
-        }
-        this.mLiveData.setValue (new UIData (method, data));
+        this.mLiveData.setValue (new UIData (action, data));
     }
 
 
     @MainThread
     public void setValue(String action) {
 
-        Method method = this.mLiveDataMethod.get (action.hashCode ());
-        if (method == null) {
-            return;
-        }
-        this.mLiveData.setValue (new UIData (method));
+        this.mLiveData.setValue (new UIData (action));
     }
 
 
@@ -111,29 +100,11 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         this.mRetrofit.clearAll ();
     }
 
-    @Override
-    public void putLiveDataMethod(Method method) {
-
-        this.mLiveDataMethod.put (method.getName ().hashCode (), method);
-    }
-
     public final void putDisposable(Disposable disposable) {
 
         this.mRetrofit.put (disposable);
     }
 
-
-    /***
-     * 创建Retrofit 请求接口
-     * @param client 网络连接服务
-     * @param cls 接口类
-     * @param <T>
-     * @return
-     */
-    public <T> T builderRetrofitHttpClient(IRxHttpClient client, Class<T> cls) {
-
-        return client.getRxHttpService (cls);
-    }
 
     /***
      * 执行异步任务，任务执行无回调
