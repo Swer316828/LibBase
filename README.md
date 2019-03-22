@@ -1,44 +1,50 @@
-# LibBase
-快速开发3.0.0MVVM 使用
-步骤一：在项目根build.gradle中
+快速开发框架之MVVM设计模式，框架中使用一些主流第三方框架okHttp3，rxjava2，retrofit2（后期会废弃），gson,google的MVVM库
 
+步骤一
+1.1 在项目根build.gradle中
 allprojects {
     repositories {
- 
         maven { url 'https://jitpack.io' }
     }
 }
 
-ext {
-    //依赖包
-    libs = [
-            android_supportV7: 'com.android.support:appcompat-v7:27.1.0',
-
-            comm_rxjava      : 'io.reactivex.rxjava2:rxjava:2.1.12',
-            comm_rxandroid   : 'io.reactivex.rxjava2:rxandroid:2.0.2',
-
-            comm_rft         : 'com.squareup.retrofit2:retrofit:2.4.0',
-            comm_rftJson     : 'com.squareup.retrofit2:converter-gson:2.4.0',
-            comm_rftAdapter  : 'com.squareup.retrofit2:adapter-rxjava2:2.4.0',
-            comm_rftConverter: 'com.squareup.retrofit2:converter-scalars:2.4.0',
-
-            comm_okhttp      : 'com.squareup.okhttp3:okhttp:3.10.0',
-            comm_okhttpLog   : 'com.squareup.okhttp3:logging-interceptor:3.10.0',
-
-            comm_gson        : 'com.google.code.gson:gson:2.8.2',
-    ]
+1.2 项目(Module:app)的build.gradle 中添加依赖
+dependencies {
+   implementation: 'com.android.support:appcompat-v7:27.1.0',
+   implementation  'io.reactivex.rxjava2:rxjava:2.1.12',
+   implementation  'io.reactivex.rxjava2:rxandroid:2.0.2',
+   implementation  'com.squareup.retrofit2:retrofit:2.4.0',
+   implementation  'com.squareup.retrofit2:converter-gson:2.4.0',
+   implementation  'com.squareup.retrofit2:adapter-rxjava2:2.4.0',
+   implementation: 'com.squareup.retrofit2:converter-scalars:2.4.0',
+   implementation  'com.squareup.okhttp3:okhttp:3.10.0',
+   implementation  'com.squareup.okhttp3:logging-interceptor:3.10.0',
+   implementation  'com.google.code.gson:gson:2.8.2',
+   implementation 'com.github.Swer316828:LibBase:xxxx'
 }
 
-步骤二：在项目module的build.gradle 中添加依赖
- implementation 'com.github.Swer316828:LibBase:3.0.0'
- 
-步骤三：在使用Activity，Fragment分别需要继承 AbstractLifecycleActivity<T>,AbstractLifecycleFragment<T>.T是需要处理业务逻辑ViewMode类，在activty
- or Fragment 中通过LiveDataMatch 注解方式响应ViewMode中对应数据类型响应到UI 界面上，其中action用于标识是ViewMode中那个方法触发的
- 
-    @LiveDataMatch(action = "getFileExtMht")
+
+步骤二：MVVM 框架的使用
+3.1 全局唯一Application 必须继承AbstractApplication，调用init()方法一些初始化操作。AppCacheManager 作为全局缓存类使用，永久保存与临时存储。
+
+3.2 在Activity，Fragment，View 中存在业务需求分别对应继承 AbstractLifecycleActivity<T>,AbstractLifecycleFragment<T>,AbstractLifecycleView<T>。T是需要处理业务逻辑ViewModel类。
+业务ViewModel需继承BaseViewModel。
+
+3.3 在activty, Fragment,View 中通过使用LiveDataMatch关键字进行方法注解，使方法响应业务层（ViewMode）中数据回调。其中tag用于说明是ViewMode中那个方法触发的进行说明方便以后查询。
+
+    @LiveDataMatch(tag = "任务说明")
     public void onSuccess(List<File> data) {
-        adapter = new ItemAdapter(this, data);
-        lv.setAdapter(adapter);
+        //TODO 数据
     }
- 步骤四：自定义AppContent 需要继承AbstractApplication，需要进行一些初始化操作。AppCacheManager 作为全局缓存类使用，RxBusEventManager用于发送消息通知
+
+3.4 RxBusEvent关键字进行方法注解，使方法响应消息传递功能。可以在BaseViewModel，AbstractLifecycleActivity，AbstractLifecycleFragment，AbstractLifecycleView 的子类中使用。
+
+    @RxBusEvent (from = "消息接受说明")
+    public void onSuccess(User data) {
+        //TODO 数据
+    }
+3.5 在AbstractLifecycleActivity，AbstractLifecycleFragment，AbstractLifecycleView 中获取自身关联业务ViewModel调用getViewModel()，使用其他业务ViewModel，调用getViewModel(Class<T> cls)即可
+
+3.6 在BaseViewModel 子类的通过setValue(String action, Object... data)方法，使其UI层进行数据显示刷新。
+    参数说明 action:UI层响应方法名，data：响应方法的参数（响应方法的参数顺序一一对应）
  
