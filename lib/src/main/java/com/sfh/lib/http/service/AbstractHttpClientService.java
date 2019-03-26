@@ -37,11 +37,6 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
     }
 
     @Override
-    public <T> T getRxHttpService(Class<T> service){
-        return this.mClientBuilder.builder (service);
-    }
-
-    @Override
     public OkHttpClient getHttpClientService() {
 
         return this.mClientBuilder.builder ();

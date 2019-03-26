@@ -1,5 +1,8 @@
 package com.sfh.lib.ui.dialog;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.IdRes;
 import android.support.annotation.Nullable;
@@ -26,8 +29,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author SunFeihu 孙飞虎
  * 2018/3/28
  */
-public class ToastDialog extends DialogFragment implements View.OnClickListener, DialogBuilder.DialogInterface {
+public class ToastDialog extends AlertDialog implements View.OnClickListener, DialogBuilder.DialogInterface {
 
+
+    public static ToastDialog newToastDialog(Context context) {
+
+        return new ToastDialog (context);
+    }
 
     public TextView tvTitle;
 
@@ -43,35 +51,28 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
 
     public FrameLayout fyContent;
 
-    public static ToastDialog newToastDialog() {
 
-        return new ToastDialog ();
+    protected ToastDialog(Context context) {
+
+        super (context,R.style.dialogToast);
+        this.getWindow ().setWindowAnimations (R.style.dialogAnim);
     }
-
-    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
 
-        getDialog ().requestWindowFeature (Window.FEATURE_NO_TITLE);
-        View view = inflater.inflate (R.layout.base_toast_dialog, container, false);
-        tvTitle = findView (view, R.id.tvTitle);
-        tvContent = findView (view, R.id.tvContent);
-        tvLeftClick = findView (view, R.id.tvLeftClick);
-        tvRightClick = findView (view, R.id.tvRightClick);
-        fyContent = findView (view, R.id.fyContent);
-        vLine = findView (view, R.id.vLine);
-        return view;
-    }
+        super.onCreate (savedInstanceState);
+        this.setContentView (R.layout.base_toast_dialog);
+        this.tvTitle = findViewById (R.id.tvTitle);
+        this.tvContent = findViewById (R.id.tvContent);
+        this.tvLeftClick = findViewById (R.id.tvLeftClick);
+        this.tvRightClick = findViewById (R.id.tvRightClick);
+        this.fyContent = findViewById (R.id.fyContent);
+        this.vLine = findViewById (R.id.vLine);
 
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-
-        super.onViewCreated (view, savedInstanceState);
         this.tvLeftClick.setOnClickListener (this);
         this.tvRightClick.setOnClickListener (this);
         this.tvContent.setMovementMethod (ScrollingMovementMethod.getInstance ());
-        this.getDialog ().getWindow ().setWindowAnimations (R.style.dialogAnim);
-        this.getDialog ().getWindow ().setBackgroundDrawable (ContextCompat.getDrawable (this.getContext (), R.drawable.base_file_toast_dialog));
+
         if (this.data == null) {
             return;
         }
@@ -109,6 +110,7 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
         this.setTextViewStyle (this.tvRightClick, data.getOkText (), data.getOkTextColor (), data.getOkTextSize ());
     }
 
+
     private void setTextViewStyle(TextView tv, CharSequence msg, int color, int size) {
 
         if (TextUtils.isEmpty (msg)) {
@@ -121,42 +123,30 @@ public class ToastDialog extends DialogFragment implements View.OnClickListener,
             tv.setTextColor (ContextCompat.getColor (this.getContext (), color));
         }
         if (size > 0) {
-            tv.setTextSize (getResources ().getDimensionPixelSize (size));
+            tv.setTextSize (this.getContext ().getResources ().getDimensionPixelSize (size));
         }
     }
 
-    public <T extends View> T findView(View view, @IdRes int resId) {
-
-        return (T) view.findViewById (resId);
-    }
 
     public void setData(DialogBuilder data) {
 
         this.data = data;
     }
 
+
     @Override
-    public void onPause() {
+    public void show() {
 
-        super.onPause ();
-        showAtom.set (false);
-    }
-
-    private volatile AtomicBoolean showAtom = new AtomicBoolean (false);
-
-    public synchronized void show(FragmentActivity activity) {
-
-        if (activity == null) {
+        Context context = this.getContext ();
+        if (context == null) {
             return;
         }
-        if (this.isAdded ()) {
-            return;
+        if (context instanceof Activity) {
+            if (((Activity) context).isFinishing ()) {
+                return;
+            }
         }
-        if (showAtom.get ()) {
-            return;
-        }
-        showAtom.set (true);
-        super.show (activity.getSupportFragmentManager (), ToastDialog.class.getName ());
+        super.show ();
     }
 
     @Override

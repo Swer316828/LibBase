@@ -64,6 +64,7 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
             public void subscribe(ObservableEmitter<T> emitter) throws Exception {
 
                 emitter.onNext (OutreachRequest.this.sendRequest ());
+                emitter.onComplete ();
 
             }
         });

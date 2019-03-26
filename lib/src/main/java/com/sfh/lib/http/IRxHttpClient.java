@@ -10,15 +10,6 @@ import okhttp3.OkHttpClient;
  */
 public interface IRxHttpClient extends IRxHttpConfig{
 
-
-    /****
-     * 获取Retrofit 形式网络调用接口
-     * @param service
-     * @return
-     */
-    @Deprecated
-    <T> T getRxHttpService(Class<T> service);
-
     /***
      * 获取OkHttp 网络连接对象
      * @return

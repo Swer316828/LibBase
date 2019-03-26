@@ -40,10 +40,10 @@ public class AppDialog implements IDialog {
             return;
         }
         if (this.mWaitDialog == null) {
-            this.mWaitDialog = WaitDialog.newToastDialog();
+            this.mWaitDialog = WaitDialog.newToastDialog(this.mActivity.get());
         }
         this.mWaitDialog.setCancelable(cancel);
-        this.mWaitDialog.show(this.mActivity.get());
+        this.mWaitDialog.show();
     }
 
     @Override
@@ -63,11 +63,11 @@ public class AppDialog implements IDialog {
             return;
         }
         if (this.mToastDialog == null) {
-            this.mToastDialog = ToastDialog.newToastDialog();
+            this.mToastDialog = ToastDialog.newToastDialog(this.mActivity.get());
         }
 
         this.mToastDialog.setData(dialog);
-        this.mToastDialog.show(this.mActivity.get());
+        this.mToastDialog.show();
     }
 
     @Override

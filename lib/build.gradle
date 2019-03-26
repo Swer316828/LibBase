@@ -29,11 +29,6 @@ dependencies {
     compile libs.comm_rxandroid
     compile libs.comm_rxjava
 
-    compile libs.comm_rft
-    compile libs.comm_rftJson
-    compile libs.comm_rftAdapter
-    compile libs.comm_rftConverter
-
     compile libs.comm_okhttp
     compile libs.comm_okhttpLog
 

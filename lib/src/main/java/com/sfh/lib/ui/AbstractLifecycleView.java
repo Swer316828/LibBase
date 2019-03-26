@@ -71,6 +71,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         }
         inflate (this.getContext (), this.layout (), this);
         this.initData ();
+
     }
 
     /***

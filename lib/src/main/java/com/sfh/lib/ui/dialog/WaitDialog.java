@@ -1,5 +1,8 @@
 package com.sfh.lib.ui.dialog;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -19,59 +22,39 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author SunFeihu 孙飞虎
  * 2018/3/28
  */
-public class WaitDialog extends DialogFragment {
+public class WaitDialog extends AlertDialog {
 
+    public static WaitDialog newToastDialog(Context context) {
 
-    public static WaitDialog newToastDialog() {
-        return new WaitDialog();
+        return new WaitDialog (context);
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        getDialog().requestWindowFeature(Window.FEATURE_NO_TITLE);
-        return inflater.inflate(R.layout.base_wait_dialog, container, false);
-    }
 
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        this.getDialog().getWindow().setWindowAnimations(R.style.dialogAnim);
+    protected WaitDialog(Context context) {
+
+        super (context, R.style.dialogTransparent);
+        this.getWindow ().setWindowAnimations (R.style.dialogAnim);
     }
 
     @Override
-    public int getTheme() {
+    protected void onCreate(Bundle savedInstanceState) {
 
-        return R.style.dialogTransparent;
-    }
-
-    public boolean isShowing() {
-        return this.getDialog() != null
-                && this.getDialog().isShowing();
+        super.onCreate (savedInstanceState);
+        this.setContentView (R.layout.base_wait_dialog);
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        this.showAtom.set(false);
-    }
+    public void show() {
 
-   private  volatile  AtomicBoolean showAtom = new AtomicBoolean(false);
-
-    public synchronized void show(FragmentActivity activity) {
-        if (activity == null) {
+        Context context = this.getContext ();
+        if (context == null) {
             return;
         }
-
-        if (this.isAdded()) {
-            return;
+        if (context instanceof Activity) {
+            if (((Activity) context).isFinishing ()) {
+                return;
+            }
         }
-        if (showAtom.get()){
-            return;
-        }
-        showAtom.set(true);
-        super.show(activity.getSupportFragmentManager(), WaitDialog.class.getName());
-
+        super.show ();
     }
-
 }

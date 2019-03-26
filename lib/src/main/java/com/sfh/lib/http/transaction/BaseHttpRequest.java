@@ -146,6 +146,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
                 return this.parseResult (response.body ().charStream (), this.getClassType ());
 
             } else {
+                //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
                 throw new HandleException (HandleException.CODE_HTTP_EXCEPTION, HandleException.HTTP_EXCEPTION, new Throwable ("code:" + response.code () + ",msg:" + response.message ()));
             }
         } catch (Exception e) {
