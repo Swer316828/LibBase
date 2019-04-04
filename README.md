@@ -1,4 +1,4 @@
-快速开发框架之MVVM设计模式，框架中使用一些主流第三方框架okHttp3，rxjava2，retrofit2（后期会废弃），gson,google的MVVM库
+快速开发框架之MVVM设计模式，框架中使用一些主流第三方框架okHttp3，rxjava2，gson,google的MVVM库
 
 步骤一
 1.1 在项目根build.gradle中
@@ -9,19 +9,16 @@ allprojects {
 }
 
 1.2 项目(Module:app)的build.gradle 中添加依赖
-dependencies {
-   implementation: 'com.android.support:appcompat-v7:27.1.0',
-   implementation  'io.reactivex.rxjava2:rxjava:2.1.12',
-   implementation  'io.reactivex.rxjava2:rxandroid:2.0.2',
-   implementation  'com.squareup.retrofit2:retrofit:2.4.0',
-   implementation  'com.squareup.retrofit2:converter-gson:2.4.0',
-   implementation  'com.squareup.retrofit2:adapter-rxjava2:2.4.0',
-   implementation: 'com.squareup.retrofit2:converter-scalars:2.4.0',
-   implementation  'com.squareup.okhttp3:okhttp:3.10.0',
-   implementation  'com.squareup.okhttp3:logging-interceptor:3.10.0',
-   implementation  'com.google.code.gson:gson:2.8.2',
-   implementation 'com.github.Swer316828:LibBase:xxxx'
-}
+    dependencies {
+       implementation: 'com.android.support:appcompat-v7:27.1.1',
+       implementation  'io.reactivex.rxjava2:rxjava:2.2.8',
+       implementation  'io.reactivex.rxjava2:rxandroid:2.1.1',
+
+       implementation  'com.squareup.okhttp3:okhttp:3.14.0',
+       implementation  'com.squareup.okhttp3:logging-interceptor:3.14.0',
+       implementation  'com.google.code.gson:gson:2.8.5',
+       implementation 'com.github.Swer316828:LibBase:xxxx'
+    }
 
 
 步骤二：MVVM 框架的使用
