@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion config.compileSdkVersion
     defaultConfig {
         applicationId "com.sfh.base"
-        minSdkVersion 15
-        targetSdkVersion 27
+        minSdkVersion config.minSdkVersion
+        targetSdkVersion config.targetSdkVersion
         versionCode 1
         versionName "1.0"
     }
@@ -14,6 +14,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {//使用JAVA8语法解析
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
