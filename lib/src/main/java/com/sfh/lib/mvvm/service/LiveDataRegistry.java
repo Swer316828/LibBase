@@ -3,43 +3,32 @@ package com.sfh.lib.mvvm.service;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.text.TextUtils;
 import android.util.SparseArray;
 
-import com.sfh.lib.event.IEventResult;
 import com.sfh.lib.event.RxBusEvent;
-import com.sfh.lib.event.RxBusEventManager;
-import com.sfh.lib.event.RxBusRegistry;
-import com.sfh.lib.mvvm.data.UIData;
-import com.sfh.lib.rx.RetrofitManager;
-import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.IView;
+import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
+import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.EmptyResult;
+import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.AbstractLifecycleActivity;
 import com.sfh.lib.ui.AbstractLifecycleFragment;
 import com.sfh.lib.ui.AbstractLifecycleView;
 import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.ViewModelProviders;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import io.reactivex.Flowable;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
-
-import static java.util.Arrays.asList;
 
 
 /**
@@ -107,16 +96,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         return null;
     }
 
-    private volatile RetrofitManager mRetrofit;
+//    private volatile RetrofitManager mRetrofit;
 
     /*** 响应方法集合*/
-    private volatile SparseArray<Method> mLiveDataMethod;
+    private volatile SparseArray<Method> mLiveDataMethod = new SparseArray<> (5);
 
-    public LiveDataRegistry() {
+    private volatile CompositeDisposable mDisposableList = new CompositeDisposable ();
 
-        this.mLiveDataMethod = new SparseArray<> (5);
-        this.mRetrofit = new RetrofitManager ();
-    }
 
     /***
      * 解析业务响应方法,消息监听方法
@@ -126,7 +112,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
         UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
         // 解析业务响应方法,消息监听方法
-        this.mRetrofit.execute (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ());
+//        this.mRetrofit.execute (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ());
+        EmptyResult result = new EmptyResult ();
+        Disposable disposable = RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), result);
+        result.addDisposable (disposable);
     }
 
 
@@ -160,8 +149,9 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
         super.onCleared ();
         UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
-        this.mRetrofit.clearAll ();
-        this.mRetrofit = null;
+        this.mDisposableList.clear ();
+        this.mDisposableList = null;
+
         this.mLiveDataMethod.clear ();
         this.mLiveDataMethod = null;
     }
@@ -251,7 +241,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      */
     public final void putDisposable(Disposable disposable) {
 
-        this.mRetrofit.put (disposable);
+        this.mDisposableList.add (disposable);
     }
 
 

@@ -1,7 +1,5 @@
 package com.sfh.lib.mvvm.data;
 
-import java.lang.reflect.Method;
-
 /**
  * 功能描述: UI 响应数据
  *

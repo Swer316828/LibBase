@@ -1,5 +1,6 @@
 package com.sfh.lib.rx;
 
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -30,11 +31,11 @@ public final class RetrofitManager {
 
     private volatile CompositeDisposable serverList = new CompositeDisposable ();
 
-
     /***
      * 添加业务层控制监听
      * @param disposable
      */
+    @Deprecated
     public void put(Disposable disposable) {
 
         this.serverList.add (disposable);
@@ -43,6 +44,7 @@ public final class RetrofitManager {
     /***
      *  取消业务层控制监听
      */
+    @Deprecated
     public void remove(Disposable disposable) {
 
         this.serverList.remove (disposable);
@@ -51,6 +53,7 @@ public final class RetrofitManager {
     /***
      * 取消全部业务层监听
      */
+    @Deprecated
     public void clearAll() {
 
         this.serverList.clear ();
@@ -63,6 +66,7 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
+    @Deprecated
     public <T> void execute(@NonNull Observable<T> observable, @Nullable IResult<T> result) {
 
         this.put (executeSigin (observable, result));
@@ -74,6 +78,7 @@ public final class RetrofitManager {
      * @param <T>
      * @return
      */
+    @Deprecated
     public <T> void execute(@NonNull Flowable<T> flowable, @Nullable IResult<T> result) {
 
         this.put (executeSigin(flowable,result));

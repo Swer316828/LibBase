@@ -16,7 +16,7 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
 
     private boolean mOnActive = true;
 
-    private Set<T> mNetWorkState = new HashSet<> (7,0.75f);
+    private Set<T> mNetWorkState = new HashSet<> (7, 0.75f);
 
     @Override
     public void setValue(T value) {
@@ -27,6 +27,12 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
             //应用在后台,暂存数据，防止丢失。
             this.mNetWorkState.add (value);
         }
+    }
+
+    protected void onCleared() {
+
+        this.mNetWorkState.clear ();
+        this.mNetWorkState = null;
     }
 
     @Override

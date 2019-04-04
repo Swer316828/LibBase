@@ -4,6 +4,7 @@ package com.sfh.lib.rx;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.utils.UtilLog;
 
+import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -12,7 +13,7 @@ import io.reactivex.functions.Consumer;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-class RxObserver<T> implements Consumer<T> {
+class RxObserver<T> implements Consumer<T> , Action {
 
     private IResult<T> result;
 
@@ -49,4 +50,8 @@ class RxObserver<T> implements Consumer<T> {
     };
 
 
+    @Override
+    public void run() throws Exception {
+
+    }
 }

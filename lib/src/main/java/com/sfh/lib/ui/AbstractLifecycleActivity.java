@@ -51,8 +51,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         super.onDestroy ();
         if (this.mDialogBridge != null) {
             this.mDialogBridge.onDestory ();
+            this.mDialogBridge = null;
         }
-        this.mDialogBridge = null;
+
         this.mLiveDataRegistry = null;
         this.mViewModel = null;
     }

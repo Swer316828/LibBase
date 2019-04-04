@@ -7,11 +7,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.SparseArray;
 
-import com.sfh.lib.event.EventMethod;
+import com.sfh.lib.event.IEventResult;
+import com.sfh.lib.event.RxBusEvent;
 import com.sfh.lib.event.RxBusEventManager;
-import com.sfh.lib.event.RxBusRegistry;
 import com.sfh.lib.exception.HandleException;
-import com.sfh.lib.http.IRxHttpClient;
 import com.sfh.lib.http.transaction.OutreachRequest;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.data.UIData;
@@ -24,10 +23,13 @@ import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.UtilLog;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 
 /**
  * 功能描述: 业务Model
@@ -35,25 +37,54 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/7/30
  */
-public class BaseViewModel extends ViewModel implements IViewModel {
+public class BaseViewModel extends ViewModel implements IViewModel, IEventResult, Function<String, Boolean> {
+
+    private static final String TYPE_UI = "Method_UI";
+
+    private static final String TYPE_VM = "Method_VM";
 
     private final static String TAG = BaseViewModel.class.getName ();
 
-    private RetrofitManager mRetrofit;
+    protected volatile CompositeDisposable mDisposableList = new CompositeDisposable ();
 
-    private RxBusRegistry mRxBus;
+    /***监听任务*/
+    protected ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
 
-    private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
+    /*** 消息监听方法*/
+    protected volatile SparseArray<Method> mEventMethod;
 
     public BaseViewModel() {
 
-        this.mRetrofit = new RetrofitManager ();
         // 注入ViewModel层之间数据通信
         if (this.eventOnOff ()) {
-            this.mRxBus = new RxBusRegistry (this);
-            this.mRxBus.init ();
+            this.mEventMethod = new SparseArray<> (3);
+            this.execute (Observable.just (TAG).map (this));
         }
     }
+
+    @Override
+    protected void onCleared() {
+
+        super.onCleared ();
+        if (this.mEventMethod != null) {
+            this.mEventMethod.clear ();
+            this.mEventMethod = null;
+        }
+
+        this.mDisposableList.clear ();
+        this.mDisposableList = null;
+
+        this.mLiveData.onCleared ();
+        this.mLiveData = null;
+    }
+
+    @Override
+    public MutableLiveData getLiveData() {
+
+        return this.mLiveData;
+    }
+
+    /* ---------------------------------------------------------------- 消息监听处理 start------------------------------------------------------------------ */
 
     /***
      * 消息监听开关 【默认关闭】
@@ -65,56 +96,87 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     }
 
     @Override
-    public MutableLiveData getLiveData() {
+    public Boolean apply(String data) throws Exception {
 
-        return this.mLiveData;
+        if (this.mEventMethod != null) {
+            final Method[] methods = this.getClass ().getDeclaredMethods ();
+
+            for (Method method : methods) {
+                int modifiers = method.getModifiers ();
+                if (!Modifier.isPublic (modifiers)
+                        || Modifier.isFinal (modifiers)
+                        || Modifier.isAbstract (modifiers)
+                        || Modifier.isStatic (modifiers)) {
+                    continue;
+                }
+                // 注册RxBus监听
+                RxBusEvent event = method.getAnnotation (RxBusEvent.class);
+                if (event == null) {
+                    continue;
+                }
+                Class<?>[] parameterTypes = method.getParameterTypes ();
+                Class<?> dataClass;
+                if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
+                    this.mEventMethod.put ((dataClass.getSimpleName () + TYPE_VM).hashCode (), method);
+                    RxBusEventManager.register (dataClass, this);
+                }
+            }
+        }
+        return true;
     }
 
     @Override
     public void putEventMethod(Method method) {
 
-        if (this.mRxBus == null) {
-            this.mRxBus = new RxBusRegistry (this);
+        if (this.mEventMethod == null) {
+            this.mEventMethod = new SparseArray<> (3);
         }
-        this.mRxBus.putEventMethod (EventMethod.TYPE_UI,method);
+        Class<?>[] parameterTypes = method.getParameterTypes ();
+        Class<?> dataClass;
+        if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
+            this.mEventMethod.put ((dataClass.getSimpleName () + TYPE_UI).hashCode (), method);
+            RxBusEventManager.register (dataClass, this);
+        }
+    }
+
+    @Override
+    public void onEventSuccess(Object data) throws Exception {
+        // RxBus 消息监听
+        Method eventMethod = this.mEventMethod.get ((data.getClass ().getSimpleName () + TYPE_VM).hashCode ());
+        if (eventMethod != null) {
+            //响应方法：当前ViewModel 监听方法
+            eventMethod.invoke (this, data);
+        } else {
+            eventMethod = this.mEventMethod.get ((data.getClass ().getSimpleName () + TYPE_UI).hashCode ());
+            if (eventMethod != null) {
+                //响应方法：当前UI 监听方法
+                this.setValue (eventMethod.getName (), data);
+            }
+        }
+    }
+
+    @Override
+    public void onSubscribe(Disposable d) {
+
+        this.putDisposable (d);
     }
 
     /***
-     * 刷新UI 数据
-     * @param action
-     * @param data
+     * 发送Rx消息通知
+     * @param t
+     * @param <T>
      */
-    @MainThread
-    public final void setValue(String action, Object... data) {
+    public final <T> void postEvent(T t) {
 
-        this.mLiveData.setValue (new UIData (action, data));
+        RxBusEventManager.postEvent (t);
     }
 
-
-    @MainThread
-    public final void setValue(String action) {
-
-        this.mLiveData.setValue (new UIData (action));
-    }
-
-
-    @Override
-    protected void onCleared() {
-
-        super.onCleared ();
-        if (this.mRxBus != null) {
-            this.mRxBus.onCleared ();
-            this.mRxBus = null;
-        }
-        this.mRetrofit.clearAll ();
-    }
-
+    /* ---------------------------------------------------------------- 任务执行 start------------------------------------------------------------------ */
     @Override
     public final void putDisposable(Disposable disposable) {
 
-        this.mRetrofit.put (disposable);
+        this.mDisposableList.add (disposable);
     }
-
 
     /***
      * 执行异步任务，任务执行无回调
@@ -124,159 +186,86 @@ public class BaseViewModel extends ViewModel implements IViewModel {
     @Override
     public final <T> void execute(@NonNull Observable<T> task) {
 
-        this.mRetrofit.execute (task, new EmptyResult ());
-    }
-
-    /***
-     * 执行异步任务，任务回调成功/异常方法
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull Observable<T> task, @Nullable IResult<T> listener) {
-
-        this.mRetrofit.execute (task, listener);
+        EmptyResult result = new EmptyResult<T> ();
+        Disposable disposable = RetrofitManager.executeSigin (task, result);
+        result.addDisposable (disposable);
+//        this.mRetrofit.execute (task, new EmptyResult ());
     }
 
     /**
      * 执行异步任务，任务回调成功方法，异常以对话框形式提示
      *
      * @param task
-     * @param listener
+     * @param listener IResultSuccess时异常以对话框形式提示， IResultSuccessNoFail时，异常丢弃，IResult时自行处理
      * @param <T>
      */
     public final <T> void execute(@NonNull Observable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask (task, new Task<> (listener));
-    }
-
-    /***
-     *  执行异步任务，任务回调成功方法，异常丢弃
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull Observable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
-
-        this.executeTask (task, new Task<> (listener));
-    }
-
-    /***
-     * 执行异步等待任务，任务回调成功/异常方法
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> task, @Nullable final IResult<T> listener) {
-
-        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
+        this.executeTask (task, new Task<T> (listener));
     }
 
     /***
      * 执行异步等待任务，任务回调成功方法，异常以对话框形式提示
      * @param cancelDialog true 可取消，false 不可取消
      * @param task
-     * @param listener
+     * @param listener IResultSuccess时异常以对话框形式提示， IResultSuccessNoFail时，异常丢弃，IResult时自行处理
      * @param <T>
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
+        this.executeTask (task, new TaskLoading<T> (cancelDialog, listener));
     }
 
-    /***
-     * 执行异步等待任务 任务回调成功方法，异常丢弃
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull Observable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
+    private final <T> void executeTask(@NonNull Observable<T> observable, Task<T> listener) {
 
-        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
-    }
-
-    private <T> void executeTask(@NonNull Observable<T> observable, Task<T> listener) {
-
-        this.mRetrofit.execute (observable, listener);
+        Disposable disposable = RetrofitManager.executeSigin (observable, listener);
+        listener.addDisposable (disposable);
+//        this.mRetrofit.execute (observable, listener);
     }
 
     /*------------------------------------Flowable 模式任务 start-------------------------------------------------------------------------------*/
 
     /***
-     * 执行背压异步任务，任务回调成功/异常方法
+     * 执行背压异步任务，任务回调成功方法，异常以对话框形式提示
      * @param task
-     * @param listener
      * @param <T>
      */
-    public final <T> void execute(@NonNull Flowable<T> task, @Nullable IResult<T> listener) {
+    public final <T> void execute(@NonNull Flowable<T> task) {
 
-        this.mRetrofit.execute (task, listener);
+        EmptyResult result = new EmptyResult<T> ();
+        Disposable disposable = RetrofitManager.executeSigin (task, result);
+        result.addDisposable (disposable);
     }
 
     /***
      * 执行背压异步任务，任务回调成功方法，异常以对话框形式提示
      * @param task
-     * @param listener
+     * @param listener IResultSuccess时异常以对话框形式提示， IResultSuccessNoFail时，异常丢弃，IResult时自行处理
      * @param <T>
      */
     public final <T> void execute(@NonNull Flowable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask (task, new Task<> (listener));
-    }
-
-
-    /***
-     * 执行背压异步任务，任务回调成功方法，异常丢弃
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull Flowable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
-
-        this.executeTask (task, new Task<> (listener));
-    }
-
-    /***
-     * 执行背压异步等待任务，任务回调成功/异常方法
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResult<T> listener) {
-
-        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
+        this.executeTask (task, new Task<T> (listener));
     }
 
     /***
      * 执行背压异步等待任务，任务回调成功方法，异常以对话框形式提示
      * @param cancelDialog true 可取消，false 不可取消
      * @param task
-     * @param listener
+     * @param listener IResultSuccess时异常以对话框形式提示， IResultSuccessNoFail时，异常丢弃，IResult时自行处理
      * @param <T>
      */
     public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResultSuccess<T> listener) {
 
-        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
-    }
-
-    /***
-     * 执行背压异步等待任务，任务回调成功方法，异常丢弃
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param task
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResultSuccessNoFail<T> listener) {
-
-        this.executeTask (task, new TaskLoading<> (cancelDialog, listener));
+        this.executeTask (task, new TaskLoading<T> (cancelDialog, listener));
     }
 
     private <T> void executeTask(@NonNull Flowable<T> flowable, Task<T> listener) {
 
-        this.mRetrofit.execute (flowable, listener);
+        Disposable disposable = RetrofitManager.executeSigin (flowable, listener);
+        listener.addDisposable (disposable);
+
+        //this.mRetrofit.execute (flowable, listener);
     }
     /*------------------------------------新的请求方式 start-------------------------------------------------------------------------------*/
 
@@ -286,84 +275,43 @@ public class BaseViewModel extends ViewModel implements IViewModel {
      */
     public final <T> void execute(@NonNull OutreachRequest<T> request) {
 
-        request.sendRequest (new EmptyResult<T> ());
-    }
-
-    /***
-     * 执行异步任务 任务回调成功/异常方法
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable IResult<T> listener) {
-
-        request.sendRequest (listener);
+        EmptyResult result = new EmptyResult<T> ();
+        Disposable disposable = request.sendRequest (result);
+        result.addDisposable (disposable);
+        //this.putDisposable (request.sendRequest (new EmptyResult<T> ()));
     }
 
     /**
      * 执行异步任务，任务回调成功方法，异常以对话框形式提示
      *
      * @param request
-     * @param listener
+     * @param listener IResultSuccess时异常以对话框形式提示， IResultSuccessNoFail时，异常丢弃，IResult时自行处理
      * @param <T>
      */
-    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
+    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable IResultSuccess<T> listener) {
 
-        this.executeTask (request, new Task<> (listener));
-    }
-
-    /***
-     *  执行异步任务，任务回调成功方法，异常丢弃
-     * @param request
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
-
-        this.executeTask (request, new Task<> (listener));
-    }
-
-    /***
-     * 执行异步等待任务，任务回调成功/异常方法
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param request
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResult<T> listener) {
-
-        this.executeTask (request, new TaskLoading<> (cancelDialog, listener));
+        this.executeTask (request, new Task<T> (listener));
     }
 
     /***
      * 执行异步等待任务，任务回调成功方法，异常以对话框形式提示
      * @param cancelDialog true 可取消，false 不可取消
      * @param request
-     * @param listener
+     * @param listener IResultSuccess时异常以对话框形式提示， IResultSuccessNoFail时，异常丢弃，IResult时自行处理
      * @param <T>
      */
-    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccess<T> listener) {
+    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable IResultSuccess<T> listener) {
 
-        this.executeTask (request, new TaskLoading<> (cancelDialog, listener));
-    }
-
-    /***
-     * 执行异步等待任务，任务回调成功方法，异常丢弃
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param request
-     * @param listener
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull OutreachRequest<T> request, @Nullable final IResultSuccessNoFail<T> listener) {
-
-        this.executeTask (request, new TaskLoading<> (cancelDialog, listener));
+        this.executeTask (request, new TaskLoading<T> (cancelDialog, listener));
     }
 
 
     private <T> void executeTask(@NonNull OutreachRequest<T> request, Task<T> task) {
 
-        this.putDisposable (request.sendRequest (task));
+        Disposable disposable = request.sendRequest (task);
+        task.addDisposable (disposable);
+        //this.putDisposable (request.sendRequest (task));
     }
-
 
     class TaskLoading<T> extends Task<T> {
 
@@ -390,6 +338,8 @@ public class BaseViewModel extends ViewModel implements IViewModel {
 
     class Task<T> implements IResult<T> {
 
+        Disposable disposable;
+
         IResultSuccess<T> listener;
 
         public Task(IResultSuccess<T> listener) {
@@ -397,31 +347,71 @@ public class BaseViewModel extends ViewModel implements IViewModel {
             this.listener = listener;
         }
 
+
+        public void addDisposable(Disposable disposable) {
+
+            this.disposable = disposable;
+        }
+
         @Override
         public void onFail(HandleException e) {
 
-            UtilLog.e (TAG, e.toString ());
+            this.dispose ();
             if (this.listener != null) {
                 if (listener instanceof IResult) {
                     //回调处理异常失败
                     ((IResult) listener).onFail (e);
                 } else if (listener instanceof IResultSuccessNoFail) {
                     //不处理异常失败
+                    UtilLog.i (TAG, e.toString ());
                 } else {
                     //对话框形式提示异常失败
                     BaseViewModel.this.showDialogToast (e.getMsg ());
                 }
             }
+
         }
 
         @Override
         public void onSuccess(T t) throws Exception {
 
+            this.dispose ();
             if (this.listener != null) {
                 this.listener.onSuccess (t);
             }
         }
+
+        private void dispose() {
+
+            if (this.disposable != null) {
+                UtilLog.d (TAG, "in Task.class Disposable dispose 对象释放");
+                //任务结束
+                this.disposable.dispose ();
+                this.disposable = null;
+            }
+        }
     }
+
+    /* ---------------------------------------------------------------- 消息监听处理 刷新UI 数据管理------------------------------------------------------------------ */
+
+    /***
+     * 刷新UI 数据
+     * @param action
+     * @param data
+     */
+    @MainThread
+    public final void setValue(String action, Object... data) {
+
+        this.mLiveData.setValue (new UIData (action, data));
+    }
+
+
+    @MainThread
+    public final void setValue(String action) {
+
+        this.mLiveData.setValue (new UIData (action));
+    }
+
 
     /***
      * 显示等待对话框
@@ -466,16 +456,8 @@ public class BaseViewModel extends ViewModel implements IViewModel {
         DialogBuilder dialogBuilder = new DialogBuilder ();
         dialogBuilder.setMessage (msg);
         dialogBuilder.setHideCancel (true);
-        showDialog (dialogBuilder);
+        this.showDialog (dialogBuilder);
     }
 
-    /***
-     * 发送Rx消息通知
-     * @param t
-     * @param <T>
-     */
-    public final <T> void postEvent(T t) {
 
-        RxBusEventManager.postEvent (t);
-    }
 }
