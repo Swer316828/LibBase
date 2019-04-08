@@ -72,7 +72,27 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
         this.tvLeftClick.setOnClickListener (this);
         this.tvRightClick.setOnClickListener (this);
         this.tvContent.setMovementMethod (ScrollingMovementMethod.getInstance ());
+    }
 
+
+
+    public void show(DialogBuilder data) {
+
+        Context context = this.getContext ();
+        if (context == null) {
+            return;
+        }
+        if (context instanceof Activity) {
+            if (((Activity) context).isFinishing ()) {
+                return;
+            }
+        }
+        super.show ();
+        this.showUIData(data);
+    }
+
+    private void showUIData(DialogBuilder data){
+        this.data = data;
         if (this.data == null) {
             return;
         }
@@ -110,7 +130,6 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
         this.setTextViewStyle (this.tvRightClick, data.getOkText (), data.getOkTextColor (), data.getOkTextSize ());
     }
 
-
     private void setTextViewStyle(TextView tv, CharSequence msg, int color, int size) {
 
         if (TextUtils.isEmpty (msg)) {
@@ -125,28 +144,6 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
         if (size > 0) {
             tv.setTextSize (this.getContext ().getResources ().getDimensionPixelSize (size));
         }
-    }
-
-
-    public void setData(DialogBuilder data) {
-
-        this.data = data;
-    }
-
-
-    @Override
-    public void show() {
-
-        Context context = this.getContext ();
-        if (context == null) {
-            return;
-        }
-        if (context instanceof Activity) {
-            if (((Activity) context).isFinishing ()) {
-                return;
-            }
-        }
-        super.show ();
     }
 
     @Override

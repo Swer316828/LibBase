@@ -65,9 +65,7 @@ public class AppDialog implements IDialog {
         if (this.mToastDialog == null) {
             this.mToastDialog = ToastDialog.newToastDialog(this.mActivity.get());
         }
-
-        this.mToastDialog.setData(dialog);
-        this.mToastDialog.show();
+        this.mToastDialog.show(dialog);
     }
 
     @Override
