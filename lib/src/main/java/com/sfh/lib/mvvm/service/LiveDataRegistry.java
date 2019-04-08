@@ -150,10 +150,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         super.onCleared ();
         UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
         this.mDisposableList.clear ();
-        this.mDisposableList = null;
-
         this.mLiveDataMethod.clear ();
-        this.mLiveDataMethod = null;
     }
 
     /***

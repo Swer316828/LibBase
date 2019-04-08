@@ -68,14 +68,10 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         super.onCleared ();
         if (this.mEventMethod != null) {
             this.mEventMethod.clear ();
-            this.mEventMethod = null;
         }
 
         this.mDisposableList.clear ();
-        this.mDisposableList = null;
-
         this.mLiveData.onCleared ();
-        this.mLiveData = null;
     }
 
     @Override
