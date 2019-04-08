@@ -30,9 +30,7 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
     }
 
     protected void onCleared() {
-
         this.mNetWorkState.clear ();
-        this.mNetWorkState = null;
     }
 
     @Override
