@@ -16,7 +16,7 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
 
     private boolean mOnActive = true;
 
-    private Set<T> mNetWorkState = new HashSet<> (7, 0.75f);
+    private volatile Set<T> mNetWorkState = new HashSet<> (7, 0.75f);
 
     @Override
     public void setValue(T value) {
