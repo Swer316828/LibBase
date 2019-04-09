@@ -4,6 +4,7 @@ import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
+import android.text.TextUtils;
 import android.util.SparseArray;
 
 import com.sfh.lib.event.RxBusEvent;
@@ -165,17 +166,19 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             return;
         }
 
-        Method method = this.mLiveDataMethod.get (data.getAction ().hashCode ());
-        if (method == null) {
-            UtilLog.e (TAG, "LiveDataRegistry not find method: " + data.getAction ());
-            return;
-        }
-
-        //方法需要参数
-        final Class<?>[] parameter = method.getParameterTypes ();
-
         try {
+            Method method = this.mLiveDataMethod.get (data.getAction ().hashCode ());
+            if (method == null) {
+                // 补齐方法
+                method = this.getPolishingMethod (view, data);
+                if (method == null) {
+                    UtilLog.e (TAG, "LiveDataRegistry not find method: " + data.getAction ());
+                    return;
+                }
+            }
 
+            //方法需要参数
+            final Class<?>[] parameter = method.getParameterTypes ();
             final int originalLength = parameter.length;
 
             //【响应方法】无参
@@ -213,8 +216,33 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             method.invoke (view, list.toArray ());
 
         } catch (Exception e) {
-            UtilLog.e (TAG, "LiveDataRegistry method:" + method.getName () + " e:" + e);
+            UtilLog.e (TAG, "LiveDataRegistry method:" + data.getAction () + " e:" + e);
         }
+    }
+
+    /***
+     * 补齐方法
+     * @param view
+     * @param data
+     * @return
+     */
+    private Method getPolishingMethod(Object view, UIData data) {
+
+        final Method[] methods = view.getClass ().getDeclaredMethods ();
+
+        for (Method method : methods) {
+
+            LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
+            if (liveEvent == null) {
+                continue;
+            }
+            if (TextUtils.equals (method.getName (), data.getAction ())) {
+                // 注册LiveData监听
+                this.mLiveDataMethod.put (method.getName ().hashCode (), method);
+                return method;
+            }
+        }
+        return null;
     }
 
     private Object getNullObject(Class<?> parameter) {
