@@ -27,6 +27,7 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2018/9/6
  */
+@Deprecated
 public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends FrameLayout implements IView, Observer {
 
     protected VM mViewModel;

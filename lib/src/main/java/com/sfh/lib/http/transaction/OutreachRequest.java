@@ -63,7 +63,13 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
             @Override
             public void subscribe(ObservableEmitter<T> emitter) throws Exception {
 
-                emitter.onNext (OutreachRequest.this.sendRequest ());
+                T t = OutreachRequest.this.sendRequest ();
+                if (t == null) {
+                    emitter.onError (new HandleException ("H1000", "请求失败，结果为NULL,Url：" + getUrl (code) + path));
+                } else {
+                    emitter.onNext (t);
+                }
+
                 emitter.onComplete ();
 
             }
