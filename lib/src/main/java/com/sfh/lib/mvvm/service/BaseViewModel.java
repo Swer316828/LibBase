@@ -1,6 +1,5 @@
 package com.sfh.lib.mvvm.service;
 
-import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -39,45 +38,37 @@ import io.reactivex.functions.Function;
  */
 public class BaseViewModel extends ViewModel implements IViewModel, IEventResult, Function<String, Boolean> {
 
-    private static final String TYPE_UI = "Method_UI";
-
-    private static final String TYPE_VM = "Method_VM";
-
     private final static String TAG = BaseViewModel.class.getName ();
 
     protected volatile CompositeDisposable mDisposableList = new CompositeDisposable ();
 
-    /***监听任务*/
-    protected ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
-
     /*** 消息监听方法*/
-    protected volatile SparseArray<Method> mEventMethod;
+    protected volatile SparseArray<Method> mEventMethod = new SparseArray<> (5);
+
+    /***监听任务*/
+    protected ObjectMutableLiveData mLiveData;
 
     public BaseViewModel() {
 
         // 注入ViewModel层之间数据通信
         if (this.eventOnOff ()) {
-            this.mEventMethod = new SparseArray<> (3);
             this.execute (Observable.just (TAG).map (this));
         }
+    }
+
+    @Override
+    public final void putLiveData(ObjectMutableLiveData listener) {
+
+        this.mLiveData = listener;
     }
 
     @Override
     protected void onCleared() {
 
         super.onCleared ();
-        if (this.mEventMethod != null) {
-            this.mEventMethod.clear ();
-        }
-
+        this.mEventMethod.clear ();
         this.mDisposableList.clear ();
-        this.mLiveData.onCleared ();
-    }
 
-    @Override
-    public MutableLiveData getLiveData() {
-
-        return this.mLiveData;
     }
 
     /* ---------------------------------------------------------------- 消息监听处理 start------------------------------------------------------------------ */
@@ -92,69 +83,47 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     }
 
     @Override
-    public Boolean apply(String data) throws Exception {
+    public final Boolean apply(String data) throws Exception {
 
-        if (this.mEventMethod != null) {
-            final Method[] methods = this.getClass ().getDeclaredMethods ();
+        final Method[] methods = this.getClass ().getDeclaredMethods ();
 
-            for (Method method : methods) {
-                int modifiers = method.getModifiers ();
-                if (!Modifier.isPublic (modifiers)
-                        || Modifier.isFinal (modifiers)
-                        || Modifier.isAbstract (modifiers)
-                        || Modifier.isStatic (modifiers)) {
-                    continue;
-                }
-                // 注册RxBus监听
-                RxBusEvent event = method.getAnnotation (RxBusEvent.class);
-                if (event == null) {
-                    continue;
-                }
-                Class<?>[] parameterTypes = method.getParameterTypes ();
-                Class<?> dataClass;
-                if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-                    this.mEventMethod.put ((dataClass.getSimpleName () + TYPE_VM).hashCode (), method);
-                    RxBusEventManager.register (dataClass, this);
-                }
+        for (Method method : methods) {
+            int modifiers = method.getModifiers ();
+            if (!Modifier.isPublic (modifiers)
+                    || Modifier.isFinal (modifiers)
+                    || Modifier.isAbstract (modifiers)
+                    || Modifier.isStatic (modifiers)) {
+                continue;
+            }
+            // 注册RxBus监听
+            RxBusEvent event = method.getAnnotation (RxBusEvent.class);
+            if (event == null) {
+                continue;
+            }
+            Class<?>[] parameterTypes = method.getParameterTypes ();
+            Class<?> dataClass;
+            if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
+                this.mEventMethod.put (dataClass.getSimpleName ().hashCode (), method);
+                RxBusEventManager.register (dataClass, this);
             }
         }
         return true;
     }
 
     @Override
-    public void putEventMethod(Method method) {
-
-        if (this.mEventMethod == null) {
-            this.mEventMethod = new SparseArray<> (3);
-        }
-        Class<?>[] parameterTypes = method.getParameterTypes ();
-        Class<?> dataClass;
-        if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-            this.mEventMethod.put ((dataClass.getSimpleName () + TYPE_UI).hashCode (), method);
-            RxBusEventManager.register (dataClass, this);
-        }
-    }
-
-    @Override
-    public void onEventSuccess(Object data) throws Exception {
+    public final void onEventSuccess(Object data) throws Exception {
         // RxBus 消息监听
-        Method eventMethod = this.mEventMethod.get ((data.getClass ().getSimpleName () + TYPE_VM).hashCode ());
+        Method eventMethod = this.mEventMethod.get (data.getClass ().getSimpleName ().hashCode ());
         if (eventMethod != null) {
             //响应方法：当前ViewModel 监听方法
             eventMethod.invoke (this, data);
-        } else {
-            eventMethod = this.mEventMethod.get ((data.getClass ().getSimpleName () + TYPE_UI).hashCode ());
-            if (eventMethod != null) {
-                //响应方法：当前UI 监听方法
-                this.setValue (eventMethod.getName (), data);
-            }
         }
     }
 
     @Override
-    public void onSubscribe(Disposable d) {
+    public final void onSubscribe(Disposable d) {
 
-        this.putDisposable (d);
+        this.mDisposableList.add (d);
     }
 
     /***
@@ -168,24 +137,18 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     }
 
     /* ---------------------------------------------------------------- 任务执行 start------------------------------------------------------------------ */
-    @Override
-    public final void putDisposable(Disposable disposable) {
 
-        this.mDisposableList.add (disposable);
-    }
 
     /***
      * 执行异步任务，任务执行无回调
      * @param task
      * @param <T>
      */
-    @Override
     public final <T> void execute(@NonNull Observable<T> task) {
 
         EmptyResult result = new EmptyResult<T> ();
         Disposable disposable = RetrofitManager.executeSigin (task, result);
         result.addDisposable (disposable);
-//        this.mRetrofit.execute (task, new EmptyResult ());
     }
 
     /**
@@ -216,7 +179,6 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         Disposable disposable = RetrofitManager.executeSigin (observable, listener);
         listener.addDisposable (disposable);
-//        this.mRetrofit.execute (observable, listener);
     }
 
     /*------------------------------------Flowable 模式任务 start-------------------------------------------------------------------------------*/
@@ -260,8 +222,6 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         Disposable disposable = RetrofitManager.executeSigin (flowable, listener);
         listener.addDisposable (disposable);
-
-        //this.mRetrofit.execute (flowable, listener);
     }
     /*------------------------------------新的请求方式 start-------------------------------------------------------------------------------*/
 
@@ -398,14 +358,18 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     @MainThread
     public final void setValue(String action, Object... data) {
 
-        this.mLiveData.setValue (new UIData (action, data));
+        if (this.mLiveData != null) {
+            this.mLiveData.setValue (new UIData (action, data));
+        }
     }
 
 
     @MainThread
     public final void setValue(String action) {
 
-        this.mLiveData.setValue (new UIData (action));
+        if (this.mLiveData != null) {
+            this.mLiveData.setValue (new UIData (action));
+        }
     }
 
 
@@ -413,40 +377,56 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
      * 显示等待对话框
      * @param cancel true 可以取消默认值 false 不可以取消
      */
+    @MainThread
     public final void showLoading(boolean cancel) {
 
-        this.mLiveData.setValue (NetWorkState.showLoading (cancel));
+        if (this.mLiveData != null) {
+            this.mLiveData.setValue (NetWorkState.showLoading (cancel));
+        }
     }
 
     /***
      *隐藏等待对话框
      */
+    @MainThread
     public final void hideLoading() {
 
-        this.mLiveData.setValue (NetWorkState.hideLoading ());
+        if (this.mLiveData != null) {
+            this.mLiveData.setValue (NetWorkState.hideLoading ());
+        }
+
     }
 
     /***
      * 显示提示对话框
      * @param dialog 提示信息
      */
+    @MainThread
     public final void showDialog(DialogBuilder dialog) {
 
-        this.mLiveData.setValue (NetWorkState.showDialog (dialog));
+        if (this.mLiveData != null) {
+            this.mLiveData.setValue (NetWorkState.showDialog (dialog));
+        }
+
     }
 
 
     /***
      * Toast提示(正常提示)
      */
+    @MainThread
     public final void showToast(CharSequence msg) {
 
-        this.mLiveData.setValue (NetWorkState.showToast (msg));
+        if (this.mLiveData != null) {
+            this.mLiveData.setValue (NetWorkState.showToast (msg));
+        }
+
     }
 
     /***
      * Toast提示(正常提示)
      */
+    @MainThread
     public final void showDialogToast(CharSequence msg) {
 
         DialogBuilder dialogBuilder = new DialogBuilder ();

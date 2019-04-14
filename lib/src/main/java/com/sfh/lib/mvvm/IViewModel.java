@@ -5,9 +5,11 @@ import android.arch.lifecycle.MutableLiveData;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.sfh.lib.mvvm.service.ObjectMutableLiveData;
 import com.sfh.lib.rx.IResult;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -22,19 +24,5 @@ import io.reactivex.disposables.Disposable;
  */
 public interface IViewModel {
 
-    /***
-     * 数据响应
-     * @return
-     */
-    <T> MutableLiveData<T> getLiveData();
-
-    /***
-     * 消息方法
-     * @param method
-     */
-    void putEventMethod(Method method);
-
-    void putDisposable(Disposable disposable);
-
-    <T> void execute(@NonNull Observable<T> task);
+    void putLiveData(ObjectMutableLiveData listener);
 }

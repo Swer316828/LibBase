@@ -3,8 +3,10 @@ package com.sfh.lib.ui;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
+import android.util.SparseArray;
 
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
@@ -12,11 +14,19 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
+import com.sfh.lib.mvvm.service.ObjectMutableLiveData;
+import com.sfh.lib.rx.EmptyResult;
+import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.ui.dialog.IDialog;
+import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.ViewModelProviders;
 
+import java.lang.reflect.Method;
+
+import io.reactivex.Flowable;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 
@@ -33,9 +43,10 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     private IDialog mDialogBridge;
 
+    private LiveDataRegistry mLiveDataRegistry;
+
     protected VM mViewModel;
 
-    private LiveDataRegistry mLiveDataRegistry;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -43,6 +54,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         super.onCreate (savedInstanceState);
         this.mLiveDataRegistry = ViewModelProviders.of (this).get (LiveDataRegistry.class);
         this.mLiveDataRegistry.handerMethod (this);
+
     }
 
     @Override
@@ -51,22 +63,22 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         super.onDestroy ();
         if (this.mDialogBridge != null) {
             this.mDialogBridge.onDestory ();
-            this.mDialogBridge = null;
         }
-
-        this.mLiveDataRegistry = null;
+        this.mDialogBridge = null;
         this.mViewModel = null;
+        this.mLiveDataRegistry = null;
     }
 
 
     @Override
     @Nullable
-    public VM getViewModel() {
+    @MainThread
+    public final VM getViewModel() {
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
             if (this.mViewModel != null) {
-                this.mViewModel.getLiveData ().observe (this, this);
+                this.mViewModel.putLiveData (this.mLiveDataRegistry.getLiveData ());
             }
         }
         return this.mViewModel;
@@ -78,29 +90,22 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      * @param <T>
      * @return
      */
-    public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+    @MainThread
+    public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
 
         T t = ViewModelProviders.of (this).get (cls);
         if (t != null) {
-            //是否已经绑定
-            t.getLiveData ().observe (this, this);
+            t.putLiveData (this.mLiveDataRegistry.getLiveData ());
         }
         return t;
     }
 
-
     @Override
-    public <T> void observer(LiveData<T> liveData) {
-
-        liveData.observe (this, this);
-    }
-
-    @Override
-    public void onChanged(@Nullable Object data) {
+    public final void onChanged(@Nullable Object data) {
 
         if (data instanceof NetWorkState) {
             this.setNetWorkState ((NetWorkState) data);
-        } else if (data instanceof UIData) {
+        } else if (this.mLiveDataRegistry != null && data instanceof UIData) {
             this.mLiveDataRegistry.showLiveData (this, (UIData) data);
         } else {
             this.showDialogToast ("数据类型不匹配:" + data);
@@ -220,7 +225,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     public final void putDisposable(Disposable disposable) {
 
-        this.mLiveDataRegistry.putDisposable (disposable);
+        if (this.mLiveDataRegistry != null) {
+            this.mLiveDataRegistry.putDisposable (disposable);
+        }
     }
 
 

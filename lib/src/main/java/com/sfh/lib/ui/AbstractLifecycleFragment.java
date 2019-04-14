@@ -20,6 +20,7 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
+import com.sfh.lib.mvvm.service.ObjectMutableLiveData;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
@@ -34,17 +35,8 @@ import io.reactivex.disposables.Disposable;
  */
 public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extends Fragment implements IView, Observer {
 
-
-    /***
-     * 布局
-     * @return
-     */
     public abstract int getLayout();
 
-    /***
-     * 初始化
-     * @param view
-     */
     public abstract void initData(View view);
 
     private LiveDataRegistry mLiveDataRegistry;
@@ -94,7 +86,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
      *
      * @param event
      */
-    public void handleLifecycleEvent(Lifecycle.Event event) {
+    public final void handleLifecycleEvent(Lifecycle.Event event) {
 
         Lifecycle lifecycle = this.getLifecycle ();
         if (lifecycle instanceof LifecycleRegistry) {
@@ -104,12 +96,12 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
     @Override
     @Nullable
-    public VM getViewModel() {
+    public final VM getViewModel() {
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
             if (this.mViewModel != null) {
-                this.mViewModel.getLiveData ().observe (this, this);
+                this.mViewModel.putLiveData (this.mLiveDataRegistry.getLiveData ());
             }
 
         }
@@ -122,27 +114,21 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
      * @param <T>
      * @return
      */
-    public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+    public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
 
         T t = ViewModelProviders.of (this).get (cls);
         if (t != null) {
-            t.getLiveData ().observe (this, this);
+            t.putLiveData (this.mLiveDataRegistry.getLiveData ());
         }
         return t;
     }
 
     @Override
-    public <T> void observer(LiveData<T> liveData) {
-
-        liveData.observe (this, this);
-    }
-
-    @Override
-    public void onChanged(@Nullable Object data) {
+    public final void onChanged(@Nullable Object data) {
 
         if (data instanceof NetWorkState) {
             this.setNetWorkState ((NetWorkState) data);
-        } else if (data instanceof UIData) {
+        } else if (this.mLiveDataRegistry != null && data instanceof UIData) {
             this.mLiveDataRegistry.showLiveData (this, (UIData) data);
         } else {
             this.setNetWorkState (NetWorkState.showToast ("数据类型不匹配"));
@@ -178,7 +164,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
      * 显示UI 基础操作
      * @param state
      */
-    protected final void setNetWorkState(NetWorkState state) {
+    private final void setNetWorkState(NetWorkState state) {
 
         FragmentActivity activity = getActivity ();
         if (activity == null || activity.isFinishing () || !(activity instanceof AbstractLifecycleActivity)) {
@@ -192,9 +178,11 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
      * 添加RxJava监听
      * @param disposable
      */
-    final public void putDisposable(Disposable disposable) {
+    public final void putDisposable(Disposable disposable) {
 
-        this.mLiveDataRegistry.putDisposable (disposable);
+        if (this.mLiveDataRegistry != null) {
+            this.mLiveDataRegistry.putDisposable (disposable);
+        }
     }
 
     /***

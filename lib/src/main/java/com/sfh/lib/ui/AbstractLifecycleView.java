@@ -15,6 +15,7 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
+import com.sfh.lib.mvvm.service.ObjectMutableLiveData;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.ViewModelProviders;
 
@@ -30,11 +31,16 @@ import io.reactivex.disposables.Disposable;
 @Deprecated
 public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends FrameLayout implements IView, Observer {
 
+    /**** 获取布局ID*/
+    public abstract int layout();
+
+    /***初始化*/
+    public abstract void initData();
+
+
     protected VM mViewModel;
 
     private LiveDataRegistry mLiveDataRegistry;
-
-    private LiveData mLiveData;
 
     public AbstractLifecycleView(Context context) {
 
@@ -53,17 +59,6 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         super (context, attrs, defStyleAttr);
         this.setContentView ();
     }
-
-    /***
-     * 获取布局ID
-     * @return
-     */
-    public abstract int layout();
-
-    /***
-     * 初始化
-     */
-    public abstract void initData();
 
     private void setContentView() {
 
@@ -91,9 +86,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      */
     public void onDestoryObserver() {
 
-        if (this.mLiveData != null) {
-            this.mLiveData.removeObserver (this);
-        }
+        this.mLiveDataRegistry.getLiveData ().removeObserver (this);
     }
 
     @Override
@@ -110,25 +103,22 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
     protected void onDetachedFromWindow() {
 
         super.onDetachedFromWindow ();
-        if (this.mLiveData != null) {
-            if (this.isForever ()) {
-                return;
-            }
-            this.mLiveData.removeObserver (this);
-            this.mViewModel = null;
-            this.mLiveDataRegistry = null;
-            this.mLiveData = null;
+        if (this.isForever ()) {
+            return;
         }
+
+        this.mViewModel = null;
+        this.mLiveDataRegistry = null;
     }
 
     @Nullable
     @Override
-    final public VM getViewModel() {
+    public final VM getViewModel() {
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
-            if (this.mViewModel != null){
-                this.mViewModel.getLiveData ().observe ((FragmentActivity) this.getContext (), this);
+            if (this.mViewModel != null) {
+                this.mViewModel.putLiveData (this.mLiveDataRegistry.getLiveData ());
             }
         }
         return this.mViewModel;
@@ -140,21 +130,13 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      * @param <T>
      * @return
      */
-    public <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+    public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
 
         T t = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (cls);
         if (t != null) {
-            t.getLiveData ().observe ((FragmentActivity) this.getContext (), this);
+            t.putLiveData (this.mLiveDataRegistry.getLiveData ());
         }
         return t;
-    }
-
-
-    @Override
-    public final <T> void observer(LiveData<T> liveData) {
-
-        this.mLiveData = liveData;
-        this.mLiveData.observe ((FragmentActivity) this.getContext (), this);
     }
 
     @Override
@@ -162,7 +144,7 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
 
         if (data instanceof NetWorkState) {
             this.setNetWorkState ((NetWorkState) data);
-        } else if (data instanceof UIData) {
+        } else if (this.mLiveDataRegistry != null && data instanceof UIData) {
             this.mLiveDataRegistry.showLiveData (this, (UIData) data);
         } else {
             this.setNetWorkState (NetWorkState.showToast ("数据类型不匹配"));
@@ -204,7 +186,10 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
      */
     public final void putDisposable(Disposable disposable) {
 
-        this.mLiveDataRegistry.putDisposable (disposable);
+        if (this.mLiveDataRegistry != null) {
+            this.mLiveDataRegistry.putDisposable (disposable);
+        }
+
     }
 
     /***

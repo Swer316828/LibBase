@@ -7,7 +7,9 @@ import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
+import com.sfh.lib.event.IEventResult;
 import com.sfh.lib.event.RxBusEvent;
+import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
@@ -21,6 +23,7 @@ import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.ViewModelProviders;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -34,12 +37,13 @@ import io.reactivex.functions.Function;
 
 /**
  * 功能描述:LiveDataRegistry 借助 ViewModel 生命周期管理
- * 2.处理UI LiveData 数据刷新,把LiveDate 数据持有者注入到真正业务ViewModel 中
+ * 1.处理UI LiveData 数据刷新,把LiveDate 数据持有者注入到真正业务ViewModel 中
+ * 2.处理消息监听
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean> {
+public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean>, IEventResult {
 
     private final static String TAG = LiveDataRegistry.class.getName ();
 
@@ -97,12 +101,17 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         return null;
     }
 
-//    private volatile RetrofitManager mRetrofit;
-
     /*** 响应方法集合*/
     private volatile SparseArray<Method> mLiveDataMethod = new SparseArray<> (5);
 
-    private volatile CompositeDisposable mDisposableList = new CompositeDisposable ();
+    /*** 消息响应方法集合*/
+    private volatile SparseArray<String> mRxEventMethod = new SparseArray<> (5);
+
+    /*** 任务管理*/
+    private CompositeDisposable mDisposableList = new CompositeDisposable ();
+
+    /***数据监听任务*/
+    private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
 
 
     /***
@@ -112,37 +121,66 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
     public final void handerMethod(@NonNull V listener) {
 
         UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
+
+        this.mLiveData.observe (listener, listener);
         // 解析业务响应方法,消息监听方法
-//        this.mRetrofit.execute (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ());
-        EmptyResult result = new EmptyResult ();
-        Disposable disposable = RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), result);
-        result.addDisposable (disposable);
+        this.mDisposableList.add (RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ()));
     }
 
+    public ObjectMutableLiveData getLiveData() {
+
+        return mLiveData;
+    }
 
     @Override
     public Boolean apply(V iView) throws Exception {
 
-        final IViewModel viewModel = iView.getViewModel ();
-        if (viewModel == null) {
-            return false;
-        }
         final Method[] methods = iView.getClass ().getDeclaredMethods ();
 
         for (Method method : methods) {
 
+            final int modifiers = method.getModifiers ();
+            if (!Modifier.isPublic (modifiers)
+                    || Modifier.isFinal (modifiers)
+                    || Modifier.isAbstract (modifiers)
+                    || Modifier.isStatic (modifiers)) {
+                continue;
+            }
+
             LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
-            RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
             if (liveEvent != null) {
                 // 注册LiveData监听
                 this.mLiveDataMethod.put (method.getName ().hashCode (), method);
             }
-            if (rxBusEvent != null && viewModel != null) {
-                // 注册RxEvent消息监听
-                viewModel.putEventMethod (method);
+
+            RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
+            if (rxBusEvent != null) {
+
+                Class<?>[] parameterTypes = method.getParameterTypes ();
+                Class<?> dataClass;
+                if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
+                    this.mRxEventMethod.put (dataClass.getSimpleName ().hashCode (), method.getName ());
+                    RxBusEventManager.register (dataClass, this);
+                }
             }
         }
         return true;
+    }
+
+    @Override
+    public void onEventSuccess(Object data) throws Exception {
+        // RxBus 消息监听
+        String eventMethodName = this.mRxEventMethod.get (data.getClass ().getSimpleName ().hashCode ());
+        if (TextUtils.isEmpty (eventMethodName)) {
+            //响应方法：当前ViewModel 监听方法
+            this.mLiveData.setValue (new UIData (eventMethodName, data));
+        }
+    }
+
+    @Override
+    public void onSubscribe(Disposable d) {
+
+        this.mDisposableList.add (d);
     }
 
     @Override
@@ -150,6 +188,8 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
         super.onCleared ();
         UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
+        this.mLiveData.onCleared ();
+        this.mRxEventMethod.clear ();
         this.mDisposableList.clear ();
         this.mLiveDataMethod.clear ();
     }
@@ -231,7 +271,13 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         final Method[] methods = view.getClass ().getDeclaredMethods ();
 
         for (Method method : methods) {
-
+            final int modifiers = method.getModifiers ();
+            if (!Modifier.isPublic (modifiers)
+                    || Modifier.isFinal (modifiers)
+                    || Modifier.isAbstract (modifiers)
+                    || Modifier.isStatic (modifiers)) {
+                continue;
+            }
             LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
             if (liveEvent == null) {
                 continue;

@@ -29,7 +29,7 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
         }
     }
 
-    protected void onCleared() {
+    public void onCleared() {
         this.mNetWorkState.clear ();
     }
 

@@ -65,6 +65,7 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
 
                 T t = OutreachRequest.this.sendRequest ();
                 if (t == null) {
+                    //onNext called with null. Null values are generally not allowed in 2.x operators and sources.
                     emitter.onError (new HandleException ("H1000", "请求失败，结果为NULL,Url：" + getUrl (code) + path));
                 } else {
                     emitter.onNext (t);
