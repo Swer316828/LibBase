@@ -136,6 +136,10 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         RxBusEventManager.postEvent (t);
     }
 
+    public final void putDisposable(Disposable disposable){
+        this.mDisposableList.add (disposable);
+    }
+
     /* ---------------------------------------------------------------- 任务执行 start------------------------------------------------------------------ */
 
 
