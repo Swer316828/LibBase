@@ -171,7 +171,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
     public void onEventSuccess(Object data) throws Exception {
         // RxBus 消息监听
         String eventMethodName = this.mRxEventMethod.get (data.getClass ().getSimpleName ().hashCode ());
-        if (TextUtils.isEmpty (eventMethodName)) {
+        if (!TextUtils.isEmpty (eventMethodName)) {
             //响应方法：当前ViewModel 监听方法
             this.mLiveData.setValue (new UIData (eventMethodName, data));
         }
