@@ -7,6 +7,7 @@ package com.sfh.lib.mvvm.data;
  * @date 2018/8/20
  */
 public class UIData {
+
     /**
      * 响应此数据的方法名称
      */
@@ -17,13 +18,13 @@ public class UIData {
      */
     private Object[] data;
 
-
     /***
      * 参数
      * @param action
      * @param args
      */
     public UIData(String action, Object... args) {
+
         this.action = action;
         this.data = args;
     }
@@ -33,6 +34,7 @@ public class UIData {
      * @param action
      */
     public UIData(String action) {
+
         this.action = action;
     }
 
@@ -41,6 +43,7 @@ public class UIData {
      * @return
      */
     public String getAction() {
+
         return this.action;
     }
 
@@ -49,6 +52,7 @@ public class UIData {
      * @return
      */
     public Object[] getData() {
+
         return this.data;
     }
 
@@ -56,7 +60,12 @@ public class UIData {
      * 数据个数
      * @return
      */
-    public int getDataLength(){
-        return this.data == null? 0: this.data.length;
+    public int getDataLength() {
+
+        return this.data == null ? 0 : this.data.length;
+    }
+
+    public Class<?> getDataClass(){
+       return this.data != null? (data.length > 0? data[0].getClass ():null):null;
     }
 }

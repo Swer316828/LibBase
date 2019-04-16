@@ -43,7 +43,7 @@ import io.reactivex.functions.Function;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class LiveDataRegistry<V extends IView> extends ViewModel implements Function<V, Boolean>, IEventResult {
+public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult {
 
     private final static String TAG = LiveDataRegistry.class.getName ();
 
@@ -101,13 +101,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         return null;
     }
 
-    /*** 响应方法集合*/
-    private volatile SparseArray<Method> mLiveDataMethod = new SparseArray<> (5);
+    private volatile SparseArray<UIMethod> mUIMethod = new SparseArray<> (5);
 
-    /*** 任务管理*/
     private CompositeDisposable mDisposableList = new CompositeDisposable ();
 
-    /***数据监听任务*/
     private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
 
 
@@ -115,12 +112,20 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      * 解析业务响应方法,消息监听方法
      * @param listener
      */
-    public final void handerMethod(@NonNull V listener) {
+    public final void register(@NonNull IView listener) {
 
         UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
 
         this.mLiveData.observe (listener, listener);
         this.mDisposableList.add (RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ()));
+    }
+
+    public void onDestroy() {
+
+        UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
+        this.mLiveData.onCleared ();
+        this.mDisposableList.clear ();
+        this.mUIMethod.clear ();
     }
 
     public ObjectMutableLiveData getLiveData() {
@@ -129,7 +134,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
     }
 
     @Override
-    public Boolean apply(V iView) throws Exception {
+    public Boolean apply(IView iView) throws Exception {
 
         final Method[] methods = iView.getClass ().getDeclaredMethods ();
 
@@ -146,7 +151,8 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
             LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
             if (liveEvent != null) {
                 // 注册LiveData监听
-                this.mLiveDataMethod.put (method.getName ().hashCode (), method);
+                UIMethod uiMethod = new UIMethod (method);
+                this.mUIMethod.put (uiMethod.hashCode (), uiMethod);
             }
 
             RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
@@ -154,8 +160,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
                 Class<?>[] parameterTypes = method.getParameterTypes ();
                 Class<?> dataClass;
                 if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-                    this.mLiveDataMethod.put (method.getName ().hashCode (), method);
+
                     RxBusEventManager.register (dataClass, this);
+                    UIMethod uiMethod = new UIMethod (method, dataClass);
+                    this.mUIMethod.put (uiMethod.hashCode (), uiMethod);
                 }
             }
         }
@@ -165,10 +173,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
     @Override
     public void onEventSuccess(Object data) throws Exception {
         // RxBus 消息监听
-        Method eventMethod = this.mLiveDataMethod.get (data.getClass ().getSimpleName ().hashCode ());
+        UIMethod eventMethod = this.mUIMethod.get (data.getClass ().getSimpleName ().hashCode ());
         if (eventMethod != null) {
             //响应方法：当前ViewModel 监听方法
-            this.mLiveData.setValue (new UIData (eventMethod.getName (), data));
+            this.mLiveData.setValue (new UIData (eventMethod.method.getName (), data));
         }
     }
 
@@ -178,15 +186,6 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         this.mDisposableList.add (d);
     }
 
-    @Override
-    protected void onCleared() {
-
-        super.onCleared ();
-        UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
-        this.mLiveData.onCleared ();
-        this.mDisposableList.clear ();
-        this.mLiveDataMethod.clear ();
-    }
 
     /***
      * 显示UI 数据
@@ -201,14 +200,9 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         }
 
         try {
-            Method method = this.mLiveDataMethod.get (data.getAction ().hashCode ());
+            Method method = this.getPolishingMethod (view, data);
             if (method == null) {
-                // 补齐方法
-                method = this.getPolishingMethod (view, data);
-                if (method == null) {
-                    UtilLog.e (TAG, "LiveDataRegistry not find method: " + data.getAction ());
-                    return;
-                }
+                return;
             }
 
             //方法需要参数
@@ -262,6 +256,22 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
      */
     private Method getPolishingMethod(Object view, UIData data) {
 
+        //LiveData
+        UIMethod uiMethod = this.mUIMethod.get (data.getAction ().hashCode ());
+        if (uiMethod != null) {
+            return uiMethod.method;
+        }
+
+        //RxBusEvent
+        Class<?> liveClass = data.getDataClass ();
+        if (liveClass != null) {
+            uiMethod = this.mUIMethod.get (liveClass.getSimpleName ().hashCode ());
+        }
+        if (uiMethod != null) {
+            return uiMethod.method;
+        }
+
+        // 补齐方法
         final Method[] methods = view.getClass ().getDeclaredMethods ();
 
         for (Method method : methods) {
@@ -275,7 +285,8 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
             if (TextUtils.equals (method.getName (), data.getAction ())) {
                 // 注册LiveData监听
-                this.mLiveDataMethod.put (method.getName ().hashCode (), method);
+                uiMethod = new UIMethod (method);
+                this.mUIMethod.put (uiMethod.hashCode (), uiMethod);
                 return method;
             }
         }

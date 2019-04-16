@@ -53,6 +53,4 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
         this.mOnActive = false;
         super.onInactive ();
     }
-
-
 }

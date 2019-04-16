@@ -15,6 +15,7 @@ import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.mvvm.service.ObjectMutableLiveData;
+import com.sfh.lib.mvvm.service.UIMethod;
 import com.sfh.lib.rx.EmptyResult;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.dialog.AppDialog;
@@ -47,14 +48,12 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
     protected VM mViewModel;
 
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate (savedInstanceState);
-        this.mLiveDataRegistry = ViewModelProviders.of (this).get (LiveDataRegistry.class);
-        this.mLiveDataRegistry.handerMethod (this);
-
+        this.mLiveDataRegistry = new LiveDataRegistry();
+        this.mLiveDataRegistry.register (this);
     }
 
     @Override
@@ -64,10 +63,11 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
         if (this.mDialogBridge != null) {
             this.mDialogBridge.onDestory ();
         }
-        this.mDialogBridge = null;
-        this.mViewModel = null;
-        this.mLiveDataRegistry = null;
+        if (this.mLiveDataRegistry != null) {
+            this.mLiveDataRegistry.onDestroy();
+        }
     }
+
 
 
     @Override

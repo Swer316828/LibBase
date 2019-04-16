@@ -94,8 +94,8 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
 
         super.onAttachedToWindow ();
         if (this.mLiveDataRegistry == null) {
-            this.mLiveDataRegistry = ViewModelProviders.of ((FragmentActivity) this.getContext ()).get (LiveDataRegistry.class);
-            this.mLiveDataRegistry.handerMethod (this);
+            this.mLiveDataRegistry = new LiveDataRegistry ();
+            this.mLiveDataRegistry.register (this);
         }
     }
 
@@ -106,9 +106,9 @@ public abstract class AbstractLifecycleView<VM extends BaseViewModel> extends Fr
         if (this.isForever ()) {
             return;
         }
-
-        this.mViewModel = null;
-        this.mLiveDataRegistry = null;
+        if (this.mLiveDataRegistry != null) {
+            this.mLiveDataRegistry.onDestroy ();
+        }
     }
 
     @Nullable

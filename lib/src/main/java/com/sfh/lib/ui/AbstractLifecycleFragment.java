@@ -65,8 +65,8 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
         if (initCreateView) {
             // 视图代理类-ViewModel
-            this.mLiveDataRegistry = ViewModelProviders.of (this).get (LiveDataRegistry.class);
-            this.mLiveDataRegistry.handerMethod (this);
+            this.mLiveDataRegistry = new LiveDataRegistry ();
+            this.mLiveDataRegistry.register (this);
             this.initData (this.mRoot);
         }
         return this.mRoot;
@@ -76,8 +76,9 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     public void onDestroy() {
 
         super.onDestroy ();
-        this.mLiveDataRegistry = null;
-        this.mViewModel = null;
+        if (this.mLiveDataRegistry != null) {
+            this.mLiveDataRegistry.onDestroy ();
+        }
         this.mRoot = null;
     }
 

@@ -59,7 +59,9 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     @Override
     public final void putLiveData(ObjectMutableLiveData listener) {
 
-        this.mLiveData = listener;
+        if (this.mLiveData != listener) {
+            this.mLiveData = listener;
+        }
     }
 
     @Override
@@ -136,7 +138,8 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         RxBusEventManager.postEvent (t);
     }
 
-    public final void putDisposable(Disposable disposable){
+    public final void putDisposable(Disposable disposable) {
+
         this.mDisposableList.add (disposable);
     }
 
