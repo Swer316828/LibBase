@@ -8,6 +8,8 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.sfh.lib.event.IEventResult;
+
 /**
  * 功能描述:
  *
@@ -15,7 +17,7 @@ import android.support.annotation.Nullable;
  * @date 2016/11/14
  */
 
-public interface IView extends LifecycleOwner, Observer {
+public interface IView extends LifecycleOwner, Observer{
 
     @Nullable
     <T extends IViewModel> T getViewModel();

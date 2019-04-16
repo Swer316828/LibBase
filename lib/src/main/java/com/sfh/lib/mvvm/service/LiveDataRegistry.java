@@ -104,9 +104,6 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
     /*** 响应方法集合*/
     private volatile SparseArray<Method> mLiveDataMethod = new SparseArray<> (5);
 
-    /*** 消息响应方法集合*/
-    private volatile SparseArray<String> mRxEventMethod = new SparseArray<> (5);
-
     /*** 任务管理*/
     private CompositeDisposable mDisposableList = new CompositeDisposable ();
 
@@ -123,13 +120,12 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
 
         this.mLiveData.observe (listener, listener);
-        // 解析业务响应方法,消息监听方法
         this.mDisposableList.add (RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ()));
     }
 
     public ObjectMutableLiveData getLiveData() {
 
-        return mLiveData;
+        return this.mLiveData;
     }
 
     @Override
@@ -155,11 +151,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
 
             RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
             if (rxBusEvent != null) {
-
                 Class<?>[] parameterTypes = method.getParameterTypes ();
                 Class<?> dataClass;
                 if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-                    this.mRxEventMethod.put (dataClass.getSimpleName ().hashCode (), method.getName ());
+                    this.mLiveDataMethod.put (method.getName ().hashCode (), method);
                     RxBusEventManager.register (dataClass, this);
                 }
             }
@@ -170,10 +165,10 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
     @Override
     public void onEventSuccess(Object data) throws Exception {
         // RxBus 消息监听
-        String eventMethodName = this.mRxEventMethod.get (data.getClass ().getSimpleName ().hashCode ());
-        if (!TextUtils.isEmpty (eventMethodName)) {
+        Method eventMethod = this.mLiveDataMethod.get (data.getClass ().getSimpleName ().hashCode ());
+        if (eventMethod != null) {
             //响应方法：当前ViewModel 监听方法
-            this.mLiveData.setValue (new UIData (eventMethodName, data));
+            this.mLiveData.setValue (new UIData (eventMethod.getName (), data));
         }
     }
 
@@ -189,7 +184,6 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
         super.onCleared ();
         UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
         this.mLiveData.onCleared ();
-        this.mRxEventMethod.clear ();
         this.mDisposableList.clear ();
         this.mLiveDataMethod.clear ();
     }
@@ -278,10 +272,7 @@ public class LiveDataRegistry<V extends IView> extends ViewModel implements Func
                     || Modifier.isStatic (modifiers)) {
                 continue;
             }
-            LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
-            if (liveEvent == null) {
-                continue;
-            }
+
             if (TextUtils.equals (method.getName (), data.getAction ())) {
                 // 注册LiveData监听
                 this.mLiveDataMethod.put (method.getName ().hashCode (), method);
