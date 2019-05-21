@@ -89,12 +89,6 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
     }
 
     @Override
-    public String getUrl(String code) {
-
-        return this.getHttpService ().getHots ();
-    }
-
-    @Override
     public Object buildParam() {
 
         if (TextUtils.equals (HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {

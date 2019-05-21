@@ -40,7 +40,6 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
 
     protected transient String method = POST;
 
-
     public abstract Object buildParam();
 
     public abstract IRxHttpClient getHttpService();

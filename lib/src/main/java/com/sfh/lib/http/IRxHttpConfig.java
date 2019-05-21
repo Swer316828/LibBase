@@ -13,12 +13,6 @@ import okhttp3.Interceptor;
 public interface IRxHttpConfig {
 
     /***
-     * 获取基本地址
-     * @return
-     */
-    String getHots();
-
-    /***
      * 日志
      * @return
      */
