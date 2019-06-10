@@ -83,7 +83,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     }
 
     /**
-     * 激活一次生命周期监听
+     * 激活一次生命周期监听(指定)
      *
      * @param event
      */
@@ -94,7 +94,17 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
             ((LifecycleRegistry) lifecycle).handleLifecycleEvent (event);
         }
     }
+    /**
+     * 激活一次生命周期监听
+     *
+     */
+    public final void activateLifecycleEvent() {
 
+        Lifecycle lifecycle = this.getLifecycle ();
+        if (lifecycle instanceof LifecycleRegistry) {
+            ((LifecycleRegistry) lifecycle).handleLifecycleEvent (Lifecycle.Event.ON_RESUME);
+        }
+    }
     @Override
     @Nullable
     public final VM getViewModel() {
@@ -104,7 +114,6 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
             if (this.mViewModel != null) {
                 this.mViewModel.putLiveData (this.mLiveDataRegistry.getLiveData ());
             }
-
         }
         return this.mViewModel;
     }
