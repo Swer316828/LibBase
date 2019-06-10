@@ -141,6 +141,16 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         return "";
     }
 
+    public final void showLoading(boolean cancel) {
+
+      this.setNetWorkState(NetWorkState.showLoading(cancel));
+    }
+
+    public final void hideLoading() {
+
+        this.setNetWorkState(NetWorkState.hideLoading());
+
+    }
 
     public final void showDialog(DialogBuilder dialog) {
 

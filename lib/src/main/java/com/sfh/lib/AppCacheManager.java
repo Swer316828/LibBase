@@ -87,7 +87,7 @@ public class AppCacheManager implements Consumer<Boolean> {
         }
 
         /**
-         * 创建缓存
+         * 初始化缓存
          *
          * @return
          */
@@ -111,17 +111,7 @@ public class AppCacheManager implements Consumer<Boolean> {
                     // 创建sharePrefer 文件
                     app.preferences = application.getSharedPreferences (prefFile, Context.MODE_MULTI_PROCESS);
                 }
-                // 防止Disposable 之后出现异常导致应用崩溃
-                RxJavaPlugins.setErrorHandler (new Consumer<Throwable> () {
-
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-
-                        HandleException.handleException (throwable);
-                    }
-                });
             }
-
             return app;
         }
     }

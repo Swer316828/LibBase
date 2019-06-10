@@ -195,7 +195,6 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      * <p>建议使用{@link #showDialog(DialogBuilder)} 因在部分android手机对Toast信息进行系统优化导致信息不显示</p>
      * @param msg
      */
-    @Deprecated
     public final void showToast(CharSequence msg) {
 
         if (this.isLifeCycle ()) {
