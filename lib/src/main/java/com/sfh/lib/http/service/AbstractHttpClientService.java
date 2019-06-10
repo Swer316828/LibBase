@@ -12,10 +12,10 @@ import okhttp3.OkHttpClient;
  * 功能描述:网络服务[需求单列模式]
  * 参考一下方式
  * private static class Builder {
- * private static final HttpClientService CLIENTSERVICE = new HttpClientService();
+ * private static final CommHttpClientService CLIENTSERVICE = new CommHttpClientService();
  * }
  * <p>
- * public static HttpClientService newInstance() {
+ * public static CommHttpClientService newInstance() {
  * return Builder.CLIENTSERVICE;
  * }
  * <p>
@@ -39,6 +39,9 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
     @Override
     public OkHttpClient getHttpClientService() {
 
+        if (this.mClientBuilder == null){
+            this.mClientBuilder = new OkHttpClientBuilder (this);
+        }
         return this.mClientBuilder.builder ();
     }
 
