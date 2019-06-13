@@ -23,6 +23,5 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation libs.android_supportV7
     compile project(path: ':lib')
 }

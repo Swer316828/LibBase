@@ -17,13 +17,16 @@ allprojects {
 
    说明：项目已引入框架如下：
 
-     implementation: 'com.android.support:appcompat-v7:27.1.1',
-     implementation  'io.reactivex.rxjava2:rxjava:2.2.8',
-     implementation  'io.reactivex.rxjava2:rxandroid:2.1.1',
+    compile 'com.android.support:appcompat-v7:27.1.1'
 
-     implementation  'com.squareup.okhttp3:okhttp:3.14.0',
-     implementation  'com.squareup.okhttp3:logging-interceptor:3.14.0',
-     implementation  'com.google.code.gson:gson:2.8.5',
+    compile 'io.reactivex.rxjava2:rxjava:2.2.9'
+    compile 'io.reactivex.rxjava2:rxandroid:2.1.1'
+
+    compile 'com.squareup.okhttp3:okhttp:3.12.3'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.12.3'
+
+    compile 'com.google.code.gson:gson:2.8.5'
+    compile 'com.squareup.okio:okio:2.2.2'
 
 
 步骤二：MVVM 框架的使用
@@ -64,5 +67,7 @@ allprojects {
     特别说明：UI层业务方法是有参数的，调用 setValue(String action)时，对参数进行补齐处理（对象默认null,基本参数：正常默认值）
 
 3.7 注意点
+
     3.7.1 在ViewPage 与 AbstractLifecycleFragment 组合使用时：需要注意适配器必须使用FragmentPagerAdapter,因ViewModel，Fragment生命周期关联，Fragment中onDestroyView 被调用，导致ViewModel 进入休眠状态而丢失监听。
+
     3.7.2 ViewPage 与 AbstractLifecycleFragment 组合使用，另一种解决方式：在调用业务时，唤当前Fragment中ViewModel生命状态。 激活方法：1:this.activateLifecycleEvent(); 指定激活生命周期：this.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);

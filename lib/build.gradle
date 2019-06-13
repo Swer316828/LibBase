@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-group='com.github.Swer316828'
+group = 'com.github.Swer316828'
 
 android {
 
@@ -27,14 +27,15 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation libs.android_supportV7
 
-    compile libs.comm_rxandroid
-    compile libs.comm_rxjava
+    compile 'com.android.support:appcompat-v7:27.1.1'
 
-    compile libs.comm_okhttp
-    compile libs.comm_okhttpLog
+    compile 'io.reactivex.rxjava2:rxjava:2.2.9'
+    compile 'io.reactivex.rxjava2:rxandroid:2.1.1'
 
-    compile libs.comm_gson
+    compile 'com.squareup.okhttp3:okhttp:3.12.3'
+    compile 'com.squareup.okhttp3:logging-interceptor:3.12.3'
 
+    compile 'com.google.code.gson:gson:2.8.5'
+    compile 'com.squareup.okio:okio:2.2.2'
 }
