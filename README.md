@@ -12,7 +12,7 @@ allprojects {
 1.2 项目(Module:app)的build.gradle 中添加依赖
 
     dependencies {
-       implementation 'com.github.Swer316828:LibBase:3.5.15'
+       implementation 'com.github.Swer316828:LibBase:3.5.19'
     }
 
    说明：项目已引入框架如下：
@@ -28,6 +28,11 @@ allprojects {
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'com.squareup.okio:okio:2.2.2'
 
+  需要权限
+
+     <uses-permission android:name="android.permission.INTERNET"/>
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
 步骤二：MVVM 框架的使用
 3.1 全局唯一Application 必须继承AbstractApplication，必须调用init()方法进行初始化操作。AppCacheManager 作为全局缓存类使用，永久保存与临时存储。
@@ -68,6 +73,6 @@ allprojects {
 
 3.7 注意点
 
-    3.7.1 在ViewPage 与 AbstractLifecycleFragment 组合使用时：需要注意适配器必须使用FragmentPagerAdapter,因ViewModel，Fragment生命周期关联，Fragment中onDestroyView 被调用，导致ViewModel 进入休眠状态而丢失监听。
+    A. 在ViewPage 与 AbstractLifecycleFragment 组合使用时：需要注意适配器必须使用FragmentPagerAdapter,因ViewModel，Fragment生命周期关联，Fragment中onDestroyView 被调用，导致ViewModel 进入休眠状态而丢失监听。
 
-    3.7.2 ViewPage 与 AbstractLifecycleFragment 组合使用，另一种解决方式：在调用业务时，唤当前Fragment中ViewModel生命状态。 激活方法：1:this.activateLifecycleEvent(); 指定激活生命周期：this.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+    B. ViewPage 与 AbstractLifecycleFragment 组合使用，另一种解决方式：在调用业务时，唤当前Fragment中ViewModel生命状态。 激活方法：1:this.activateLifecycleEvent(); 指定激活生命周期：this.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
