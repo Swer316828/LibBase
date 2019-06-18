@@ -58,7 +58,7 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     protected static class AppCacheHolder {
 
-        public static final AppCacheManager APP_CACHE = new AppCacheManager ();
+        public static final AppCacheManager APP_CACHE = new AppCacheManager();
     }
 
     /***
@@ -66,7 +66,7 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     public static void onLowMemory() {
 
-        AppCacheHolder.APP_CACHE.cacheObject.evictAll ();
+        AppCacheHolder.APP_CACHE.cacheObject.evictAll();
     }
 
     /**
@@ -97,19 +97,19 @@ public class AppCacheManager implements Consumer<Boolean> {
 
             synchronized (app) {
 
-                app.inject (this.application);
+                app.inject(this.application);
 
-                String cachePath = this.application.getCachePath ();
+                String cachePath = this.application.getCachePath();
 
-                if (!TextUtils.isEmpty (cachePath)) {
+                if (!TextUtils.isEmpty(cachePath)) {
                     // 创建缓存路径
-                    app.createFile (cachePath);
+                    app.createFile(cachePath);
                 }
 
-                String prefFile = this.application.getPreFile ();
-                if (!TextUtils.isEmpty (prefFile)) {
+                String prefFile = this.application.getPreFile();
+                if (!TextUtils.isEmpty(prefFile)) {
                     // 创建sharePrefer 文件
-                    app.preferences = application.getSharedPreferences (prefFile, Context.MODE_MULTI_PROCESS);
+                    app.preferences = application.getSharedPreferences(prefFile, Context.MODE_MULTI_PROCESS);
                 }
             }
             return app;
@@ -127,13 +127,13 @@ public class AppCacheManager implements Consumer<Boolean> {
     public static <T> T getCache(@NonNull String key, @NonNull Class<T> cls, Object... defaultObject) {
 
         //内存查询
-        Object temp = AppCacheHolder.APP_CACHE.cacheObject.get (key);
+        Object temp = AppCacheHolder.APP_CACHE.cacheObject.get(key);
         if (temp == null) {
             //文件查询
-            temp = AppCacheHolder.APP_CACHE.getObject (key, cls, defaultObject);
+            temp = AppCacheHolder.APP_CACHE.getObject(key, cls, defaultObject);
             if (temp != null) {
                 //存在临时缓存
-                putCache (key, temp, true);
+                putCache(key, temp, true);
             }
         }
         return (T) temp;
@@ -149,13 +149,13 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     public static <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
 
-        if (TextUtils.isEmpty (key)) {
+        if (TextUtils.isEmpty(key)) {
             return false;
         }
 
-        AppCacheHolder.APP_CACHE.cacheObject.put (key, value);
+        AppCacheHolder.APP_CACHE.cacheObject.put(key, value);
         if (persist != null && persist.length > 0 && persist[0]) {
-            AppCacheHolder.APP_CACHE.saveObject (key, value);
+            AppCacheHolder.APP_CACHE.saveObject(key, value);
         }
         return true;
     }
@@ -171,12 +171,12 @@ public class AppCacheManager implements Consumer<Boolean> {
             return;
         }
         AppCacheManager app = AppCacheHolder.APP_CACHE;
-        SharedPreferences.Editor editor = app.preferences.edit ();
+        SharedPreferences.Editor editor = app.preferences.edit();
         for (String k : key) {
-            app.cacheObject.remove (k);
-            editor.remove (k);
+            app.cacheObject.remove(k);
+            editor.remove(k);
         }
-        editor.apply ();
+        editor.apply();
     }
 
     /***
@@ -185,8 +185,8 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     public static void onDestroy() {
 
-        AppCacheHolder.APP_CACHE.cacheObject.evictAll ();
-        AppCacheHolder.APP_CACHE.preferences.edit ().clear ().commit ();
+        AppCacheHolder.APP_CACHE.cacheObject.evictAll();
+        AppCacheHolder.APP_CACHE.preferences.edit().clear().commit();
     }
 
     /*--------------------------------------------------属性-----------------------------------------------------*/
@@ -196,12 +196,12 @@ public class AppCacheManager implements Consumer<Boolean> {
     private SharedPreferences preferences;
 
     /*** 内存缓存数据集合 10M以下Lru 缓存策略算法*/
-    private final LruCache<String, Object> cacheObject = new LruCache<String, Object> ((int) Runtime.getRuntime ().maxMemory () / 1024 / 50) {
+    private final LruCache<String, Object> cacheObject = new LruCache<String, Object>((int) Runtime.getRuntime().maxMemory() / 1024 / 50) {
 
         @Override
         protected int sizeOf(String key, Object value) {
 
-            return String.valueOf (value).getBytes ().length / 1024;
+            return String.valueOf(value).getBytes().length / 1024;
         }
     };
 
@@ -230,23 +230,23 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     private <T> boolean saveObject(@NonNull String key, @NonNull T value) {
 
-        if (this.preferences == null || TextUtils.isEmpty (key)) {
+        if (this.preferences == null || TextUtils.isEmpty(key)) {
             return false;
         }
 
-        SharedPreferences.Editor editor = this.preferences.edit ();
+        SharedPreferences.Editor editor = this.preferences.edit();
         if (value instanceof Integer
                 || value instanceof String
                 || value instanceof Float
                 || value instanceof Long
                 || value instanceof Boolean
         ) {
-            editor.putString (key, String.valueOf (value));
+            editor.putString(key, String.valueOf(value));
         } else {
             // 非基本类型
-            editor.putString (key, new Gson ().toJson (value));
+            editor.putString(key, new Gson().toJson(value));
         }
-        editor.apply ();
+        editor.apply();
         return true;
     }
 
@@ -258,27 +258,27 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     private Object getObject(@NonNull String key, @NonNull Class cls, Object... defaultObject) {
 
-        if (this.preferences == null || TextUtils.isEmpty (key) || cls == null) {
+        if (this.preferences == null || TextUtils.isEmpty(key) || cls == null) {
             return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
         }
 
-        String value = this.preferences.getString (key, "");
-        if (TextUtils.isEmpty (value)) {
+        String value = this.preferences.getString(key, "");
+        if (TextUtils.isEmpty(value)) {
             return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
         }
 
-        if (Integer.class.isAssignableFrom (cls)) {
-            return Integer.valueOf (value);
-        } else if (Long.class.isAssignableFrom (cls)) {
-            return Long.valueOf (value);
-        } else if (Float.class.isAssignableFrom (cls)) {
-            return Float.valueOf (value);
-        } else if (Boolean.class.isAssignableFrom (cls)) {
-            return Boolean.valueOf (value);
-        } else if (String.class.isAssignableFrom (cls)) {
+        if (Integer.class.isAssignableFrom(cls)) {
+            return Integer.valueOf(value);
+        } else if (Long.class.isAssignableFrom(cls)) {
+            return Long.valueOf(value);
+        } else if (Float.class.isAssignableFrom(cls)) {
+            return Float.valueOf(value);
+        } else if (Boolean.class.isAssignableFrom(cls)) {
+            return Boolean.valueOf(value);
+        } else if (String.class.isAssignableFrom(cls)) {
             return value;
         } else {
-            return new Gson ().fromJson (value, cls);
+            return new Gson().fromJson(value, cls);
         }
 
     }
@@ -290,10 +290,10 @@ public class AppCacheManager implements Consumer<Boolean> {
      */
     private void remove(String key) {
 
-        if (preferences.contains (key)) {
-            SharedPreferences.Editor editor = this.preferences.edit ();
-            editor.remove (key);
-            editor.apply ();
+        if (preferences.contains(key)) {
+            SharedPreferences.Editor editor = this.preferences.edit();
+            editor.remove(key);
+            editor.apply();
         }
     }
 
@@ -304,20 +304,26 @@ public class AppCacheManager implements Consumer<Boolean> {
     @Nullable
     public static File getFileCache() {
 
-        String path = getApplication ().getCachePath ();
-        if (TextUtils.isEmpty (path)) {
-            return null;
+        File cache;
+        String path = getApplication().getCachePath();
+        if (TextUtils.isEmpty(path)) {
+            //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
+            cache = new File(getApplication().getExternalCacheDir(), path);
+        } else  {
+            String filepath = getCache(path, String.class);
+            if (TextUtils.isEmpty(filepath)){
+                cache = new File(filepath);
+            }else{
+                cache = new File(getApplication().getExternalCacheDir(), path);
+            }
         }
 
-        File cache = AppCacheHolder.APP_CACHE.application.getExternalFilesDir (path);
-        if (cache.exists ()) {
+        if (cache.exists()) {
+            return cache;
+        }else if (cache.mkdirs()) {
             return cache;
         }
-
-        if (cache.mkdirs ()) {
-            return cache;
-        }
-        return null;
+        return cache;
     }
 
     Disposable mTaskdisposable;
@@ -330,46 +336,49 @@ public class AppCacheManager implements Consumer<Boolean> {
     private void createFile(final String path) {
         // 背压模式
         if (this.mTaskdisposable != null) {
-            this.mTaskdisposable.dispose ();
+            this.mTaskdisposable.dispose();
         }
         //创建缓存失败，线创建定时30秒检查一次，10次结束
-        this.mTaskdisposable = Flowable.interval (3, 30, TimeUnit.SECONDS).take (10).map (new Function<Long, Boolean> () {
+        this.mTaskdisposable = Flowable.interval(3, 30, TimeUnit.SECONDS).take(10).map(new Function<Long, Boolean>() {
 
             @Override
             public Boolean apply(Long aLong) throws Exception {
 
                 File cache;
                 //SD目录
-                if (android.os.Environment.MEDIA_MOUNTED.equals (android.os.Environment.getExternalStorageState ())) {
+                if (android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState())) {
                     //内部存储 /storage/emulated/0
-                    cache = new File (Environment.getExternalStorageDirectory (), path);
+                    cache = new File(Environment.getExternalStorageDirectory(), path);
                 } else {
                     // 公共目录 /storage/emulated/0/Downloads
-                    cache = new File (android.os.Environment.getDownloadCacheDirectory (), path);
-                    if (!cache.exists ()) {
-                        cache = new File (android.os.Environment.getDataDirectory () , path);
+                    cache = new File(android.os.Environment.getDownloadCacheDirectory(), path);
+                    if (!cache.exists()) {
+                        cache = new File(android.os.Environment.getDataDirectory(), path);
                     }
                 }
 
-                if (cache.exists ()) {
+                if (cache.exists()) {
                     //创建目录存在
+                    putCache(path, cache.getAbsolutePath(), true);
                     return true;
                 }
 
                 // 创建目录 成功
-                if (cache.mkdirs ()) {
+                if (cache.mkdirs()) {
+                    putCache(path, cache.getAbsolutePath(), true);
                     return true;
                 } else {
                     //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
-                    cache = new File (application.getExternalCacheDir (), path);
-                    if (cache.exists ()) {
+                    cache = new File(application.getExternalCacheDir(), path);
+                    if (cache.exists() || cache.mkdirs()) {
+                        putCache(path, cache.getAbsolutePath(), true);
                         return true;
-                    } else {
-                        return cache.mkdirs ();
                     }
                 }
+
+                return false;
             }
-        }).onBackpressureLatest ().observeOn (Schedulers.newThread ()).subscribe (this);
+        }).onBackpressureLatest().observeOn(Schedulers.newThread()).subscribe(this);
     }
 
 
@@ -377,11 +386,11 @@ public class AppCacheManager implements Consumer<Boolean> {
     public void accept(Boolean result) throws Exception {
 
         if (result && mTaskdisposable != null) {
-            mTaskdisposable.dispose ();
+            mTaskdisposable.dispose();
         } else {
-            Toast toast = Toast.makeText (application, "请检查应用存储权限是否打开", Toast.LENGTH_LONG);
-            UtilsToast.hook (toast);
-            toast.show ();
+            Toast toast = Toast.makeText(application, "请检查应用存储权限是否打开", Toast.LENGTH_LONG);
+            UtilsToast.hook(toast);
+            toast.show();
         }
     }
 }
