@@ -312,9 +312,9 @@ public class AppCacheManager implements Consumer<Boolean> {
         } else  {
             String filepath = getCache(path, String.class);
             if (TextUtils.isEmpty(filepath)){
-                cache = new File(filepath);
-            }else{
                 cache = new File(getApplication().getExternalCacheDir(), path);
+            }else{
+                cache = new File(filepath);
             }
         }
 
