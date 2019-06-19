@@ -30,6 +30,8 @@ public final class HttpDownHelper {
         String url;
         ProgressListener listener;
         File tagFile;
+        long readTimeout = 120L;
+        long connectTimeout = 20L;
 
         public Builder(String url) {
             this.url = url;
@@ -45,8 +47,18 @@ public final class HttpDownHelper {
             return this;
         }
 
+        public Builder setConnectTimeout(long connectTimeout) {
+            this.connectTimeout = connectTimeout;
+            return this;
+        }
+
+        public Builder setReadTimeout(long readTimeout) {
+            this.readTimeout = readTimeout;
+            return this;
+        }
+
         public File start() throws IOException {
-            HttpDownHelper downHelper = new HttpDownHelper();
+            HttpDownHelper downHelper = new HttpDownHelper(connectTimeout,readTimeout);
             if (this.listener != null) {
                 return downHelper.create(this.tagFile, this.url, this.listener);
             } else {
@@ -55,7 +67,9 @@ public final class HttpDownHelper {
         }
     }
 
-    HttpDownHelper() {
+    HttpDownHelper(long readTimeout, long connectTimeout) {
+        this.connectTimeout = connectTimeout;
+        this.readTimeout = readTimeout;
     }
 
     /**
@@ -69,7 +83,7 @@ public final class HttpDownHelper {
     private File create(@NonNull File tagFile, @NonNull String url) throws IOException {
 
         Request request = new Request.Builder().url(url).build();
-        ResponseBody body =  buildResponseBody(request);
+        ResponseBody body = buildResponseBody(request);
 
         BufferedSource bufferedSource = body.source();
 
@@ -95,14 +109,17 @@ public final class HttpDownHelper {
         long read = tagFile.exists() ? tagFile.length() : 0;
         Request request = new Request.Builder().url(url).addHeader("Accept-Encoding", "identity")
                 .addHeader("RANGE", "bytes=" + read + "-").build();
-        ResponseBody body =  buildResponseBody(request);
+        ResponseBody body = buildResponseBody(request);
         return writeFile(tagFile, body, listener);
     }
 
+    private long readTimeout;
+    private long connectTimeout;
+
     private ResponseBody buildResponseBody(Request request) throws IOException {
         OkHttpClient.Builder builder = new OkHttpClient().newBuilder();
-        builder.readTimeout(25, TimeUnit.SECONDS);
-        builder.connectTimeout(15, TimeUnit.SECONDS);
+        builder.readTimeout(this.readTimeout, TimeUnit.SECONDS);
+        builder.connectTimeout(this.connectTimeout, TimeUnit.SECONDS);
         builder.retryOnConnectionFailure(true);
         return builder.build().newCall(request).execute().body();
     }
