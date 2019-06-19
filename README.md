@@ -26,7 +26,7 @@ allprojects {
     compile 'com.squareup.okhttp3:logging-interceptor:3.12.3'
 
     compile 'com.google.code.gson:gson:2.8.5'
-    compile 'com.squareup.okio:okio:2.2.2'
+    compile 'com.squareup.okio:okio:1.17.4'
 
   需要权限
 
