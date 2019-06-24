@@ -1,12 +1,11 @@
 package com.sfh.lib.ui;
 
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.os.Bundle;
 import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
-import android.util.SparseArray;
+import android.view.KeyEvent;
 
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
@@ -14,20 +13,11 @@ import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.mvvm.service.BaseViewModel;
 import com.sfh.lib.mvvm.service.LiveDataRegistry;
 import com.sfh.lib.mvvm.service.NetWorkState;
-import com.sfh.lib.mvvm.service.ObjectMutableLiveData;
-import com.sfh.lib.mvvm.service.UIMethod;
-import com.sfh.lib.rx.EmptyResult;
-import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.ui.dialog.IDialog;
-import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.ViewModelProviders;
 
-import java.lang.reflect.Method;
-
-import io.reactivex.Flowable;
-import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 
 
@@ -44,41 +34,42 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     private IDialog mDialogBridge;
 
-    private LiveDataRegistry mLiveDataRegistry;
+    protected LiveDataRegistry mLiveDataRegistry;
 
     protected VM mViewModel;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
-        super.onCreate (savedInstanceState);
-        this.mLiveDataRegistry = new LiveDataRegistry();
-        this.mLiveDataRegistry.register (this);
-    }
-
-    @Override
-    protected void onDestroy() {
-
-        super.onDestroy ();
-        if (this.mDialogBridge != null) {
-            this.mDialogBridge.onDestory ();
-        }
-        if (this.mLiveDataRegistry != null) {
-            this.mLiveDataRegistry.onDestroy();
+        super.onCreate(savedInstanceState);
+        if (this.mLiveDataRegistry == null) {
+            this.mLiveDataRegistry = new LiveDataRegistry();
+            this.mLiveDataRegistry.register(this);
         }
     }
 
-
+    @Override
+    protected void onStop() {
+        super.onStop();
+        System.out.println(" isFinishing()= " + isFinishing());
+        if (this.isFinishing()) {
+            if (this.mDialogBridge != null) {
+                this.mDialogBridge.onDestory();
+            }
+            if (this.mLiveDataRegistry != null) {
+                this.mLiveDataRegistry.onDestroy();
+            }
+        }
+    }
 
     @Override
-    @Nullable
     @MainThread
     public final VM getViewModel() {
 
         if (this.mViewModel == null) {
-            this.mViewModel = LiveDataRegistry.getViewModel (this);
-            if (this.mViewModel != null) {
-                this.mViewModel.putLiveData (this.mLiveDataRegistry.getLiveData ());
+            this.mViewModel = LiveDataRegistry.getViewModel(this);
+            if (this.mViewModel != null &&  this.mLiveDataRegistry != null) {
+                this.mViewModel.putLiveData(this.mLiveDataRegistry.getLiveData());
             }
         }
         return this.mViewModel;
@@ -93,9 +84,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     @MainThread
     public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
 
-        T t = ViewModelProviders.of (this).get (cls);
-        if (t != null) {
-            t.putLiveData (this.mLiveDataRegistry.getLiveData ());
+        T t = ViewModelProviders.of(this).get(cls);
+        if (t != null && this.mLiveDataRegistry != null) {
+            t.putLiveData(this.mLiveDataRegistry.getLiveData());
         }
         return t;
     }
@@ -104,11 +95,11 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     public final void onChanged(@Nullable Object data) {
 
         if (data instanceof NetWorkState) {
-            this.setNetWorkState ((NetWorkState) data);
+            this.setNetWorkState((NetWorkState) data);
         } else if (this.mLiveDataRegistry != null && data instanceof UIData) {
-            this.mLiveDataRegistry.showLiveData (this, (UIData) data);
+            this.mLiveDataRegistry.showLiveData(this, (UIData) data);
         } else {
-            this.showDialogToast ("数据类型不匹配:" + data);
+            this.showDialogToast("数据类型不匹配:" + data);
         }
     }
 
@@ -119,33 +110,33 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     protected IDialog onCreateDialog() {
 
-        return new AppDialog (this);
+        return new AppDialog(this);
     }
 
     protected void setNetWorkState(NetWorkState state) {
 
-        if (this.isLifeCycle ()) {
+        if (this.isLifeCycle()) {
             return;
         }
-        switch (state.getType ()) {
+        switch (state.getType()) {
             case NetWorkState.TYPE_SHOW_LOADING: {
-                this.mDialogBridge.showLoading (true);
+                this.mDialogBridge.showLoading(true);
                 break;
             }
             case NetWorkState.TYPE_SHOW_LOADING_NO_CANCEL: {
-                this.mDialogBridge.showLoading (false);
+                this.mDialogBridge.showLoading(false);
                 break;
             }
             case NetWorkState.TYPE_HIDE_LOADING: {
-                this.mDialogBridge.hideLoading ();
+                this.mDialogBridge.hideLoading();
                 break;
             }
             case NetWorkState.TYPE_SHOW_TOAST: {
-                this.mDialogBridge.showToast (state.getShowToast ());
+                this.mDialogBridge.showToast(state.getShowToast());
                 break;
             }
             case NetWorkState.TYPE_SHOW_DIALOG: {
-                this.mDialogBridge.showDialog (state.getBuilder ());
+                this.mDialogBridge.showDialog(state.getBuilder());
                 break;
             }
             default:
@@ -155,39 +146,39 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
     public final void showLoading(boolean cancel) {
 
-        if (this.isLifeCycle ()) {
+        if (this.isLifeCycle()) {
             return;
         }
-        this.mDialogBridge.showLoading (cancel);
+        this.mDialogBridge.showLoading(cancel);
     }
 
     public final void hideLoading() {
 
-        if (this.isLifeCycle ()) {
+        if (this.isLifeCycle()) {
             return;
         }
-        this.mDialogBridge.hideLoading ();
+        this.mDialogBridge.hideLoading();
 
     }
 
     public final void showDialog(DialogBuilder dialog) {
 
-        if (this.isLifeCycle ()) {
+        if (this.isLifeCycle()) {
             return;
         }
-        this.mDialogBridge.showDialog (dialog);
+        this.mDialogBridge.showDialog(dialog);
     }
 
     public final void showDialogToast(CharSequence msg) {
 
-        if (this.isLifeCycle ()) {
+        if (this.isLifeCycle()) {
             return;
         }
-        DialogBuilder dialog = new DialogBuilder ();
-        dialog.setTitle ("提示");
-        dialog.setHideCancel (true);
-        dialog.setMessage (msg);
-        this.mDialogBridge.showDialog (dialog);
+        DialogBuilder dialog = new DialogBuilder();
+        dialog.setTitle("提示");
+        dialog.setHideCancel(true);
+        dialog.setMessage(msg);
+        this.mDialogBridge.showDialog(dialog);
     }
 
     /***
@@ -197,20 +188,20 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     public final void showToast(CharSequence msg) {
 
-        if (this.isLifeCycle ()) {
+        if (this.isLifeCycle()) {
             return;
         }
-        this.mDialogBridge.showToast (msg);
+        this.mDialogBridge.showToast(msg);
     }
 
     private final boolean isLifeCycle() {
 
-        if (this.isFinishing ()) {
+        if (this.isFinishing()) {
             return true;
         }
         if (this.mDialogBridge == null) {
             // 创建统一对话框与等待框，提示框
-            this.mDialogBridge = this.onCreateDialog ();
+            this.mDialogBridge = this.onCreateDialog();
         }
         if (this.mDialogBridge == null) {
             return true;
@@ -225,7 +216,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     public final void putDisposable(Disposable disposable) {
 
         if (this.mLiveDataRegistry != null) {
-            this.mLiveDataRegistry.putDisposable (disposable);
+            this.mLiveDataRegistry.putDisposable(disposable);
         }
     }
 
@@ -237,7 +228,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
      */
     public final <T> void postEvent(T t) {
 
-        RxBusEventManager.postEvent (t);
+        RxBusEventManager.postEvent(t);
     }
 
 }

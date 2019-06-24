@@ -83,6 +83,7 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
         return null;
     }
 
+    @Deprecated
     public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleView lifecycleView) {
 
         ///对象的直接超类的 Type
@@ -101,12 +102,13 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
         return null;
     }
 
+
+
     private volatile SparseArray<UIMethod> mUIMethod = new SparseArray<> (5);
 
     private CompositeDisposable mDisposableList = new CompositeDisposable ();
 
     private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
-
 
     /***
      * 解析业务响应方法,消息监听方法
@@ -114,7 +116,6 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
      */
     public final void register(@NonNull IView listener) {
 
-        UtilLog.d (TAG, "LiveDataRegistry observe =========== 注册监听");
 
         this.mLiveData.observe (listener, listener);
         this.mDisposableList.add (RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ()));
