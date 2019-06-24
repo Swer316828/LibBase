@@ -298,7 +298,7 @@ public final class UtilTool {
 
 
     /***
-     * 设置复制内容到复制系统
+     * 设置复制内容到复制系统[配合getCopyText一起使用]
      * @param label 描述
      * @param content 复制内容
      * @return
@@ -327,7 +327,7 @@ public final class UtilTool {
      * 获取复制内容
      * @return
      */
-    public static String getCopyText(Context context) {
+    public static CharSequence getCopyText(Context context) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService (Context.CLIPBOARD_SERVICE);
@@ -341,15 +341,18 @@ public final class UtilTool {
                 return "";
             }
 
-            return clipData.getItemAt (0).getText ().toString ();
+            ClipData.Item item =  clipData.getItemAt (0);
+            if (item == null){
+                return "";
+            }
+            return item.getText ();
 
         } else {
             android.text.ClipboardManager clipboardManager = (ClipboardManager) context.getSystemService (Context.CLIPBOARD_SERVICE);
-            if (clipboardManager != null && clipboardManager.hasText ()) {
-
+            if (clipboardManager == null || !clipboardManager.hasText ()) {
                 return "";
             }
-            return clipboardManager.getText ().toString ();
+            return clipboardManager.getText ();
         }
     }
 }

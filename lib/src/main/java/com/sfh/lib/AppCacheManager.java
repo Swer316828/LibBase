@@ -1,7 +1,9 @@
 package com.sfh.lib;
 
+import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -32,7 +34,7 @@ import io.reactivex.schedulers.Schedulers;
  * @author SunFeihu 孙飞虎
  * @date 2018/3/29
  */
-public class AppCacheManager implements Consumer<Boolean> {
+public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
 
     /***
      * 获取静态对象
@@ -61,13 +63,7 @@ public class AppCacheManager implements Consumer<Boolean> {
         public static final AppCacheManager APP_CACHE = new AppCacheManager();
     }
 
-    /***
-     * 清除缓存数据
-     */
-    public static void onLowMemory() {
 
-        AppCacheHolder.APP_CACHE.cacheObject.evictAll();
-    }
 
     /**
      * 功能描述:全局缓存构建Builder模式
@@ -115,7 +111,17 @@ public class AppCacheManager implements Consumer<Boolean> {
             return app;
         }
     }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
 
+    }
+
+    @Override
+    public void onLowMemory() {
+        if (this.cacheObject != null){
+            this.cacheObject.evictAll();
+        }
+    }
 
     /***
      * 获取缓存信息
@@ -218,6 +224,7 @@ public class AppCacheManager implements Consumer<Boolean> {
     private AppCacheManager inject(AbstractApplication application) {
 
         this.application = application;
+        this.application.registerComponentCallbacks(this);
         return this;
     }
 
@@ -387,10 +394,6 @@ public class AppCacheManager implements Consumer<Boolean> {
 
         if (result && mTaskdisposable != null) {
             mTaskdisposable.dispose();
-        } else {
-            Toast toast = Toast.makeText(application, "请检查应用存储权限是否打开", Toast.LENGTH_LONG);
-            UtilsToast.hook(toast);
-            toast.show();
         }
     }
 }

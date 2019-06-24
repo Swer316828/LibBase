@@ -70,13 +70,4 @@ public abstract class AbstractApplication extends Application {
         });
     }
 
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        //清理内存缓存
-        AppCacheManager.onLowMemory();
-    }
-
-
 }

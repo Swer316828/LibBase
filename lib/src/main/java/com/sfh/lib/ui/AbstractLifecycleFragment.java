@@ -111,7 +111,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
 
         if (this.mViewModel == null) {
             this.mViewModel = LiveDataRegistry.getViewModel (this);
-            if (this.mViewModel != null) {
+            if (this.mViewModel != null && this.mLiveDataRegistry != null) {
                 this.mViewModel.putLiveData (this.mLiveDataRegistry.getLiveData ());
             }
         }
