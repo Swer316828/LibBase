@@ -1,8 +1,10 @@
 package com.sfh.lib.ui;
 
 import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProvider;
 import android.os.Bundle;
 import android.support.annotation.MainThread;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.view.KeyEvent;
@@ -16,7 +18,13 @@ import com.sfh.lib.mvvm.service.NetWorkState;
 import com.sfh.lib.ui.dialog.AppDialog;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.ui.dialog.IDialog;
+import com.sfh.lib.utils.UtilLog;
+import com.sfh.lib.utils.UtilTool;
 import com.sfh.lib.utils.ViewModelProviders;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.reactivex.disposables.Disposable;
 
@@ -36,7 +44,9 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
     protected LiveDataRegistry mLiveDataRegistry;
 
-    protected VM mViewModel;
+    protected ViewModelProvider mViewModelProvider;
+
+    protected Class<VM> mVMCls;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,7 +61,7 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     @Override
     protected void onStop() {
         super.onStop();
-        System.out.println(" isFinishing()= " + isFinishing());
+        UtilLog.d(this, " isFinishing()= " + isFinishing());
         if (this.isFinishing()) {
             if (this.mDialogBridge != null) {
                 this.mDialogBridge.onDestory();
@@ -59,33 +69,47 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             if (this.mLiveDataRegistry != null) {
                 this.mLiveDataRegistry.onDestroy();
             }
+            this.mVMCls = null;
+            this.mViewModelProvider = null;
         }
     }
 
+    /***
+     * 【不推荐使用此方法】 建设使用getViewModel(@NonNull Class<T> cls)
+     * @return
+     */
     @Override
     @MainThread
     public final VM getViewModel() {
 
-        if (this.mViewModel == null) {
-            this.mViewModel = LiveDataRegistry.getViewModel(this);
-            if (this.mViewModel != null &&  this.mLiveDataRegistry != null) {
-                this.mViewModel.putLiveData(this.mLiveDataRegistry.getLiveData());
-            }
+        if (mVMCls == null) {
+            mVMCls = UtilTool.getParameterizedType(this);
         }
-        return this.mViewModel;
+        if (mVMCls == null) {
+            return null;
+        }
+        return this.getViewModel(mVMCls);
     }
 
     /***
-     * 使用其他ViewModel
+     * 使用ViewModel【推荐使用】
      * @param cls
      * @param <T>
      * @return
      */
     @MainThread
-    public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+    public final <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
 
-        T t = ViewModelProviders.of(this).get(cls);
-        if (t != null && this.mLiveDataRegistry != null) {
+        if (this.mViewModelProvider == null) {
+            this.mViewModelProvider = ViewModelProviders.of(this);
+        }
+        T t = this.mViewModelProvider.get(cls);
+
+        if (t != null) {
+            if (this.mLiveDataRegistry == null) {
+                this.mLiveDataRegistry = new LiveDataRegistry();
+                this.mLiveDataRegistry.register(this);
+            }
             t.putLiveData(this.mLiveDataRegistry.getLiveData());
         }
         return t;
@@ -102,7 +126,6 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             this.showDialogToast("数据类型不匹配:" + data);
         }
     }
-
 
     /***
      * 创建对话框句柄【可自定义对话框】
@@ -158,7 +181,6 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             return;
         }
         this.mDialogBridge.hideLoading();
-
     }
 
     public final void showDialog(DialogBuilder dialog) {

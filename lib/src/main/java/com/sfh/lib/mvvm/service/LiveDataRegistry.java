@@ -1,9 +1,8 @@
 package com.sfh.lib.mvvm.service;
 
-import android.arch.lifecycle.ViewModel;
+import android.arch.lifecycle.ViewModelProvider;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
@@ -11,21 +10,14 @@ import com.sfh.lib.event.IEventResult;
 import com.sfh.lib.event.RxBusEvent;
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
-import com.sfh.lib.mvvm.IViewModel;
 import com.sfh.lib.mvvm.annotation.LiveDataMatch;
 import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.EmptyResult;
 import com.sfh.lib.rx.RetrofitManager;
-import com.sfh.lib.ui.AbstractLifecycleActivity;
-import com.sfh.lib.ui.AbstractLifecycleFragment;
-import com.sfh.lib.ui.AbstractLifecycleView;
 import com.sfh.lib.utils.UtilLog;
-import com.sfh.lib.utils.ViewModelProviders;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,60 +39,6 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
 
     private final static String TAG = LiveDataRegistry.class.getName ();
 
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleActivity activity) {
-
-        ///对象的直接超类的 Type
-        Type type = activity.getClass ().getGenericSuperclass ();
-        if (type == null) {
-            return null;
-        }
-
-        if (type instanceof ParameterizedType) {
-            //参数化类型
-            Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
-            if (types != null && types.length > 0) {
-                return ViewModelProviders.of (activity).get ((Class<T>) types[0]);
-            }
-        }
-        return null;
-    }
-
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleFragment fragment) {
-
-        ///对象的直接超类的 Type
-        Type type = fragment.getClass ().getGenericSuperclass ();
-        if (type == null) {
-            return null;
-        }
-
-        if (type instanceof ParameterizedType) {
-            //参数化类型
-            Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
-            if (types != null && types.length > 0) {
-                return ViewModelProviders.of (fragment).get ((Class<T>) types[0]);
-            }
-        }
-        return null;
-    }
-
-    @Deprecated
-    public static <T extends BaseViewModel> T getViewModel(AbstractLifecycleView lifecycleView) {
-
-        ///对象的直接超类的 Type
-        Type type = lifecycleView.getClass ().getGenericSuperclass ();
-        if (type == null) {
-            return null;
-        }
-
-        if (type instanceof ParameterizedType) {
-            //参数化类型
-            Type[] types = ((ParameterizedType) type).getActualTypeArguments ();
-            if (types != null && types.length > 0) {
-                return ViewModelProviders.of ((FragmentActivity) lifecycleView.getContext ()).get ((Class<T>) types[0]);
-            }
-        }
-        return null;
-    }
 
 
 
@@ -110,12 +48,13 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
 
     private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
 
+    private ViewModelProvider mViewModelProvider;
+
     /***
      * 解析业务响应方法,消息监听方法
      * @param listener
      */
     public final void register(@NonNull IView listener) {
-
 
         this.mLiveData.observe (listener, listener);
         this.mDisposableList.add (RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ()));

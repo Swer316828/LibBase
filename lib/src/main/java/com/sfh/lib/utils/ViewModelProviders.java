@@ -10,6 +10,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 
+import com.sfh.lib.AppCacheManager;
+
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -20,79 +22,30 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class ViewModelProviders {
 
-    private static long managerKey = 0;
-
-    public static synchronized String createKey() {
-        String str;
-        synchronized (ViewModelProviders.class) {
-            managerKey += System.currentTimeMillis();
-            str = "ViewModelProviders" + String.valueOf(managerKey);
-        }
-        return str;
-    }
-
-    private static DefaultFactory sDefaultFactory;
-
-    private static void initializeFactoryIfNeeded(Application application) {
-        if (sDefaultFactory == null) {
-            sDefaultFactory = new DefaultFactory(application);
-        }
-    }
-
-    private static Application checkApplication(Activity activity) {
-        Application application = activity.getApplication();
-        if (application == null) {
-            throw new IllegalStateException("Your activity/fragment is not yet attached to "
-                    + "Application. You can't request ViewModel before onCreate call.");
-        }
-        return application;
-    }
-
-    private static Activity checkActivity(Fragment fragment) {
-        Activity activity = fragment.getActivity();
-        if (activity == null) {
-            throw new IllegalStateException("Can't create ViewModelProvider for detached fragment");
-        }
-        return activity;
-    }
-
 
     @MainThread
     public static ViewModelProvider of(@NonNull Fragment fragment) {
-        initializeFactoryIfNeeded(checkApplication(checkActivity(fragment)));
-        return new ViewModelProvider(fragment.getViewModelStore(),sDefaultFactory);
+        return new ViewModelProvider(fragment.getViewModelStore(), DefaultFactory.getInstance());
     }
-
 
     @MainThread
     public static ViewModelProvider of(@NonNull FragmentActivity activity) {
-        initializeFactoryIfNeeded(checkApplication(activity));
-        return new ViewModelProvider(activity.getViewModelStore(), sDefaultFactory);
-    }
-
-
-    @MainThread
-    public static ViewModelProvider of(@NonNull Fragment fragment, @NonNull ViewModelProvider.Factory factory) {
-        checkApplication(checkActivity(fragment));
-        return new ViewModelProvider(fragment.getViewModelStore(), factory);
-    }
-
-
-    @MainThread
-    public static ViewModelProvider of(@NonNull FragmentActivity activity,
-                                       @NonNull ViewModelProvider.Factory factory) {
-        checkApplication(activity);
-        return new ViewModelProvider(activity.getViewModelStore(), factory);
+        return new ViewModelProvider(activity.getViewModelStore(), DefaultFactory.getInstance());
     }
 
     @SuppressWarnings("WeakerAccess")
     public static class DefaultFactory extends ViewModelProvider.NewInstanceFactory {
+        private static DefaultFactory sInstance;
 
-        private Application mApplication;
+        public static DefaultFactory getInstance() {
+            if (sInstance == null) {
+                sInstance = new DefaultFactory();
+            }
+            return sInstance;
+        }
 
+        private DefaultFactory() {
 
-        public DefaultFactory(@NonNull Application application) {
-            mApplication = application;
         }
 
         @NonNull
@@ -101,8 +54,15 @@ public class ViewModelProviders {
             if (AndroidViewModel.class.isAssignableFrom(modelClass)) {
                 //noinspection TryWithIdenticalCatches
                 try {
-                    return modelClass.getConstructor(Application.class).newInstance(mApplication);
-                } catch (Exception e) {
+                    Application application = AppCacheManager.getApplication();
+                    return modelClass.getConstructor(Application.class).newInstance(application);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
+                } catch (InstantiationException e) {
+                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
+                } catch (InvocationTargetException e) {
                     throw new RuntimeException("Cannot create an instance of " + modelClass, e);
                 }
             }
