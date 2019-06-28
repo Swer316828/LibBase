@@ -253,8 +253,7 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
             // 非基本类型
             editor.putString(key, new Gson().toJson(value));
         }
-        editor.apply();
-        return true;
+        return editor.commit();
     }
 
     /***
