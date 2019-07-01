@@ -1,6 +1,9 @@
 package com.sfh.lib;
 
 import android.app.Application;
+import android.content.Context;
+import android.support.multidex.MultiDex;
+import android.support.multidex.MultiDexApplication;
 import android.text.TextUtils;
 
 import com.sfh.lib.exception.HandleException;
@@ -16,7 +19,7 @@ import io.reactivex.plugins.RxJavaPlugins;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/11
  */
-public abstract class AbstractApplication extends Application {
+public abstract class AbstractApplication extends MultiDexApplication {
 
     /***
      *  首选项-文件名
@@ -68,6 +71,12 @@ public abstract class AbstractApplication extends Application {
                 HandleException.handleException (throwable);
             }
         });
+    }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
     }
 
 }
