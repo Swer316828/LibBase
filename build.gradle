@@ -28,7 +28,7 @@ ext {
     config = [
             compileSdkVersion: 27,        // 编译版本
             buildToolsVersion: '26.0.2',  // 编译工具版本
-            minSdkVersion    : 15,        // 最低版本
+            minSdkVersion    : 16,        // 最低版本
             targetSdkVersion : 22,        // 目标版本
             versionCode      : 1,
             versionName      : '1.0.0',

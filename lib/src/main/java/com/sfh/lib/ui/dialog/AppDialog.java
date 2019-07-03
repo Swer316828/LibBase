@@ -1,6 +1,7 @@
 package com.sfh.lib.ui.dialog;
 
 import android.support.v4.app.FragmentActivity;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
@@ -78,9 +79,9 @@ public class AppDialog implements IDialog {
         if (mToast == null) {
 
             mToast = Toast.makeText(AppCacheManager.getApplication(), msg, time);
+            mToast.setGravity(Gravity.CENTER,0,0);
             UtilsToast.hook(mToast);
         }
-
         mToast.setText(msg);
         mToast.setDuration(time);
         mToast.show();

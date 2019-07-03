@@ -1,27 +1,35 @@
 package com.sfh.lib;
 
+import android.app.Application;
 import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.LruCache;
 import android.widget.Toast;
 
+import com.getkeepsafe.relinker.ReLinker;
 import com.google.gson.Gson;
 import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.UtilsToast;
+import com.tencent.mmkv.MMKV;
+import com.tencent.mmkv.MMKVLogLevel;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.reactivex.Flowable;
+import io.reactivex.Observable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
@@ -35,51 +43,101 @@ import io.reactivex.schedulers.Schedulers;
  * @date 2018/3/29
  */
 public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
-
     /***
-     * 获取静态对象
-     * @return AppCacheManager
+     * 内部静态对象
+     * @author SunFeihu 孙飞虎
      */
-    public static AppCacheManager newInstance() {
-
-        return AppCacheHolder.APP_CACHE;
+    private static class AppCacheHolder {
+        private static final AppCacheManager APP_CACHE = new AppCacheManager();
     }
 
     /***
      * 获取AbstractApplication
      * @return
      */
-    public static AbstractApplication getApplication() {
+    public static <T extends Application> T getApplication() {
 
-        return AppCacheHolder.APP_CACHE.application;
+        return (T) defaultManager().getApp();
     }
 
     /***
-     * 内部静态对象
-     * @author SunFeihu 孙飞虎
+     * 返回缓存文件
+     * @return
      */
-    protected static class AppCacheHolder {
+    @Nullable
+    public static File getFileCache() {
 
-        public static final AppCacheManager APP_CACHE = new AppCacheManager();
+        String path = getCache(CACHE_FILE, String.class, "");
+        return new File(path);
+    }
+
+    /***
+     * 获取信息
+     * @param key
+     * @param <T>
+     * @return
+     */
+    public static <T> T getCache(@NonNull String key, @NonNull Class<T> cls, Object... defaultObject) {
+
+        T data = (defaultObject != null && defaultObject.length > 0) ? (T) defaultObject[0] : null;
+        if (TextUtils.isEmpty(key)) {
+            return data;
+        }
+        Object temp = defaultManager().getValue(key, cls);
+        return temp == null ? data : (T) temp;
     }
 
 
+    /***
+     * 清除信息
+     * @param key
+     */
+    public static void removeCache(@NonNull String... key) {
+
+        if (key == null || key.length == 0) {
+            return;
+        }
+        defaultManager().remove(key);
+    }
+
+    /***
+     * 保存缓存信息
+     *
+     * @param persist true 持久化数据 false 不持久化数据
+     * @param key
+     * @param value
+     * @return
+     */
+    public static <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
+        if (TextUtils.isEmpty(key)) {
+            return false;
+        }
+        return defaultManager().putCache(key, value);
+    }
+
+    private static AppCacheManager defaultManager() {
+        return AppCacheHolder.APP_CACHE;
+    }
+    /*--------------------------------------------------全局缓存构建Builder模式-----------------------------------------------------*/
 
     /**
      * 功能描述:全局缓存构建Builder模式
      *
-     * @author SunFeihu 孙飞虎
-     * @company 中储南京智慧物流科技有限公司
-     * @copyright （版权）中储南京智慧物流科技有限公司所有
      * @date 2018/3/29
      */
     public static class Builder {
 
-        AbstractApplication application;
+        Application application;
+        String cachePath;
 
-        public Builder(@NonNull AbstractApplication context) {
+        public Builder(@NonNull Application context) {
 
             this.application = context;
+        }
+
+        public Builder setCachePath(String cachePath) {
+            this.cachePath = cachePath;
+            return this;
         }
 
         /**
@@ -93,24 +151,78 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
 
             synchronized (app) {
 
-                app.inject(this.application);
-
-                String cachePath = this.application.getCachePath();
-
-                if (!TextUtils.isEmpty(cachePath)) {
-                    // 创建缓存路径
-                    app.createFile(cachePath);
-                }
-
-                String prefFile = this.application.getPreFile();
-                if (!TextUtils.isEmpty(prefFile)) {
-                    // 创建sharePrefer 文件
-                    app.preferences = application.getSharedPreferences(prefFile, Context.MODE_MULTI_PROCESS);
-                }
+                app.init(this.application);
+                // 创建缓存路径
+                app.createFile(this.cachePath);
             }
             return app;
         }
     }
+
+    /*--------------------------------------------------属性-----------------------------------------------------*/
+
+    public static final String CACHE_FILE = "CACHE_FILE";
+    public static final String MMAPID = "PROCESS_MMAPID";
+
+    private final Thread.UncaughtExceptionHandler defaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+    private Disposable mTaskdisposable;
+
+    private Application mApplication;
+
+    private MMKV mMmkv;
+
+    private Gson mGson;
+
+    private AppCacheManager() {
+    }
+
+    public Gson getGson() {
+        if (this.mGson == null) {
+            this.mGson = new Gson();
+        }
+        return this.mGson;
+    }
+
+    /***
+     * 设置AbstractApplication
+     * @param application
+     * @return
+     */
+    private  <T extends Application> void init(T application) {
+
+        this.mApplication = application;
+        String root = application.getFilesDir().getAbsolutePath() + "/mmkv";
+        MMKV.initialize(root, new MMKV.LibLoader() {
+            @Override
+            public void loadLibrary(String libName) {
+                ReLinker.loadLibrary(mApplication, libName);
+            }
+        });
+        MMKV.setLogLevel(MMKVLogLevel.LevelNone);
+        this.mApplication.registerComponentCallbacks(this);
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                if (TextUtils.equals("FinalizerWatchdogDaemon", t.getName()) && e instanceof TimeoutException) {
+                    // FinalizerWatchdogDaemon 出现 TimeoutException 时主动忽略这个异常，阻断 UncaughtExceptionHandler 链式调用，使系统默认的 UncaughtExceptionHandler 不会被调用，防止APP停止运行
+                } else {
+                    defaultUncaughtExceptionHandler.uncaughtException(t, e);
+                }
+            }
+        });
+
+        // 防止Disposable 之后出现异常导致应用崩溃
+        RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
+
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+
+                HandleException.handleException(throwable);
+            }
+        });
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
 
@@ -118,175 +230,102 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
 
     @Override
     public void onLowMemory() {
-        if (this.cacheObject != null){
-            this.cacheObject.evictAll();
+        this.getMmkv().clearMemoryCache();
+    }
+
+    private Application getApp() {
+        return this.mApplication;
+    }
+
+    /***
+     * 持久化数据
+     * @param key
+     * @param value
+     * @param <T>
+     * @return
+     */
+    private <T> boolean putCache(@NonNull String key, @NonNull T value) {
+
+        final MMKV mmkv = this.getMmkv();
+
+        if (value instanceof Integer) {
+            return mmkv.encode(key, (Integer) value);
+
+        } else if (value instanceof Long) {
+            return mmkv.encode(key, (Long) value);
+
+        } else if (value instanceof Float) {
+            return mmkv.encode(key, (Float) value);
+
+        } else if (value instanceof Boolean) {
+            return mmkv.encode(key, (Boolean)value);
+
+        } else if (value instanceof String) {
+            return mmkv.encode(key, String.valueOf(value));
+
+        } else if (value instanceof Double) {
+            return mmkv.encode(key, (Double) value);
+
+        } else if (value instanceof Parcelable) {
+            return mmkv.encode(key, (Parcelable) value);
+
+        } else {
+            return mmkv.encode(key, this.getGson().toJson(value));
         }
     }
 
     /***
-     * 获取缓存信息
-     * [先从内存查询，存在则返回，否则本地缓存文件查询存在则返回并放入内存 否则返回默认]
+     * 查询数据[持久化数据]
      * @param key
-     * @param <T>
      * @return
      */
-    public static <T> T getCache(@NonNull String key, @NonNull Class<T> cls, Object... defaultObject) {
+    private Object getValue(@NonNull String key, @NonNull Class cls) {
+        if (TextUtils.isEmpty(key) || cls == null) {
+            return null;
+        }
+        //持久化数据查询
+        final MMKV mmkv = this.getMmkv();
+        if (!mmkv.contains(key)) {
+            return null;
+        }
+        if (Integer.class.isAssignableFrom(cls)) {
+            return mmkv.decodeInt(key, 0);
 
-        //内存查询
-        Object temp = AppCacheHolder.APP_CACHE.cacheObject.get(key);
-        if (temp == null) {
-            //文件查询
-            temp = AppCacheHolder.APP_CACHE.getObject(key, cls, defaultObject);
-            if (temp != null) {
-                //存在临时缓存
-                putCache(key, temp, true);
+        } else if (Long.class.isAssignableFrom(cls)) {
+            return mmkv.decodeLong(key, 0);
+
+        } else if (Float.class.isAssignableFrom(cls)) {
+            return mmkv.decodeFloat(key, 0.0f);
+
+        } else if (Boolean.class.isAssignableFrom(cls)) {
+            return mmkv.decodeBool(key, false);
+
+        } else if (String.class.isAssignableFrom(cls)) {
+            return mmkv.decodeString(key, "");
+
+        } else if (Double.class.isAssignableFrom(cls)) {
+            return mmkv.decodeDouble(key, 0.0);
+
+        } else if (Parcelable.class.isAssignableFrom(cls)) {
+            return mmkv.decodeParcelable(key, cls);
+
+        } else {
+            return this.getGson().fromJson(mmkv.decodeString(key), cls);
+        }
+    }
+
+    private MMKV getMmkv() {
+        if (this.mMmkv == null) {
+            try {
+                this.mMmkv = MMKV.mmkvWithID(MMAPID, MMKV.MULTI_PROCESS_MODE);
+            } catch (IllegalStateException e) {
+                UtilLog.e(AppCacheManager.class, e.getMessage());
+
+                MMKV.initialize(this.mApplication);
+                this.mMmkv = MMKV.mmkvWithID(MMAPID, MMKV.MULTI_PROCESS_MODE);
             }
         }
-        return (T) temp;
-    }
-
-    /***
-     * 保存缓存信息
-     *
-     * @param persist true 持久化数据 false 不持久化数据
-     * @param key
-     * @param value
-     * @return
-     */
-    public static <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
-
-        if (TextUtils.isEmpty(key)) {
-            return false;
-        }
-
-        AppCacheHolder.APP_CACHE.cacheObject.put(key, value);
-        if (persist != null && persist.length > 0 && persist[0]) {
-            AppCacheHolder.APP_CACHE.saveObject(key, value);
-        }
-        return true;
-    }
-
-    /***
-     * 清除缓存信息
-     * @param key
-     * @return
-     */
-    public static void removeCache(@NonNull String... key) {
-
-        if (key == null) {
-            return;
-        }
-        AppCacheManager app = AppCacheHolder.APP_CACHE;
-        SharedPreferences.Editor editor = app.preferences.edit();
-        for (String k : key) {
-            app.cacheObject.remove(k);
-            editor.remove(k);
-        }
-        editor.apply();
-    }
-
-    /***
-     * 清除所有信息
-     * @return
-     */
-    public static void onDestroy() {
-
-        AppCacheHolder.APP_CACHE.cacheObject.evictAll();
-        AppCacheHolder.APP_CACHE.preferences.edit().clear().commit();
-    }
-
-    /*--------------------------------------------------属性-----------------------------------------------------*/
-
-    private AbstractApplication application;
-
-    private SharedPreferences preferences;
-
-    /*** 内存缓存数据集合 10M以下Lru 缓存策略算法*/
-    private final LruCache<String, Object> cacheObject = new LruCache<String, Object>((int) Runtime.getRuntime().maxMemory() / 1024 / 50) {
-
-        @Override
-        protected int sizeOf(String key, Object value) {
-
-            return String.valueOf(value).getBytes().length / 1024;
-        }
-    };
-
-    private AppCacheManager() {
-
-    }
-
-
-    /***
-     * 设置AbstractApplication
-     * @param application
-     * @return
-     */
-    private AppCacheManager inject(AbstractApplication application) {
-
-        this.application = application;
-        this.application.registerComponentCallbacks(this);
-        return this;
-    }
-
-    /***
-     * 保存数据
-     * @param key
-     * @param value
-     * @param <T>
-     * @return
-     */
-    private <T> boolean saveObject(@NonNull String key, @NonNull T value) {
-
-        if (this.preferences == null || TextUtils.isEmpty(key)) {
-            return false;
-        }
-
-        SharedPreferences.Editor editor = this.preferences.edit();
-        if (value instanceof Integer
-                || value instanceof String
-                || value instanceof Float
-                || value instanceof Long
-                || value instanceof Boolean
-        ) {
-            editor.putString(key, String.valueOf(value));
-        } else {
-            // 非基本类型
-            editor.putString(key, new Gson().toJson(value));
-        }
-        return editor.commit();
-    }
-
-    /***
-     * 查询数据
-     * @param key
-     * @param defaultObject
-     * @return
-     */
-    private Object getObject(@NonNull String key, @NonNull Class cls, Object... defaultObject) {
-
-        if (this.preferences == null || TextUtils.isEmpty(key) || cls == null) {
-            return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
-        }
-
-        String value = this.preferences.getString(key, "");
-        if (TextUtils.isEmpty(value)) {
-            return (defaultObject != null && defaultObject.length > 0) ? defaultObject[0] : null;
-        }
-
-        if (Integer.class.isAssignableFrom(cls)) {
-            return Integer.valueOf(value);
-        } else if (Long.class.isAssignableFrom(cls)) {
-            return Long.valueOf(value);
-        } else if (Float.class.isAssignableFrom(cls)) {
-            return Float.valueOf(value);
-        } else if (Boolean.class.isAssignableFrom(cls)) {
-            return Boolean.valueOf(value);
-        } else if (String.class.isAssignableFrom(cls)) {
-            return value;
-        } else {
-            return new Gson().fromJson(value, cls);
-        }
-
+        return this.mMmkv;
     }
 
     /**
@@ -294,45 +333,10 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
      *
      * @param key
      */
-    private void remove(String key) {
-
-        if (preferences.contains(key)) {
-            SharedPreferences.Editor editor = this.preferences.edit();
-            editor.remove(key);
-            editor.apply();
-        }
+    private void remove(String... key) {
+        MMKV mmkv = this.getMmkv();
+        mmkv.removeValuesForKeys(key);
     }
-
-    /***
-     * 返回缓存文件 可能出现NULL
-     * @return
-     */
-    @Nullable
-    public static File getFileCache() {
-
-        File cache;
-        String path = getApplication().getCachePath();
-        if (TextUtils.isEmpty(path)) {
-            //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
-            cache = new File(getApplication().getExternalCacheDir(), path);
-        } else  {
-            String filepath = getCache(path, String.class);
-            if (TextUtils.isEmpty(filepath)){
-                cache = new File(getApplication().getExternalCacheDir(), path);
-            }else{
-                cache = new File(filepath);
-            }
-        }
-
-        if (cache.exists()) {
-            return cache;
-        }else if (cache.mkdirs()) {
-            return cache;
-        }
-        return cache;
-    }
-
-    Disposable mTaskdisposable;
 
     /***
      * 创建缓存文件目录
@@ -340,53 +344,61 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
      * @return
      */
     private void createFile(final String path) {
+
         // 背压模式
         if (this.mTaskdisposable != null) {
             this.mTaskdisposable.dispose();
         }
         //创建缓存失败，线创建定时30秒检查一次，10次结束
-        this.mTaskdisposable = Flowable.interval(3, 30, TimeUnit.SECONDS).take(10).map(new Function<Long, Boolean>() {
+        this.mTaskdisposable = Observable.interval(1, 30, TimeUnit.SECONDS).take(10).map(new Function<Long, Boolean>() {
 
             @Override
             public Boolean apply(Long aLong) throws Exception {
-
+                final MMKV mmkv = getMmkv();
                 File cache;
-                //SD目录
-                if (android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState())) {
-                    //内部存储 /storage/emulated/0
-                    cache = new File(Environment.getExternalStorageDirectory(), path);
-                } else {
-                    // 公共目录 /storage/emulated/0/Downloads
-                    cache = new File(android.os.Environment.getDownloadCacheDirectory(), path);
-                    if (!cache.exists()) {
-                        cache = new File(android.os.Environment.getDataDirectory(), path);
-                    }
-                }
-
-                if (cache.exists()) {
-                    //创建目录存在
-                    putCache(path, cache.getAbsolutePath(), true);
-                    return true;
-                }
-
-                // 创建目录 成功
-                if (cache.mkdirs()) {
-                    putCache(path, cache.getAbsolutePath(), true);
-                    return true;
-                } else {
+                if (TextUtils.isEmpty(path)) {
                     //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
-                    cache = new File(application.getExternalCacheDir(), path);
+                    cache = new File(mApplication.getExternalCacheDir(), path);
                     if (cache.exists() || cache.mkdirs()) {
-                        putCache(path, cache.getAbsolutePath(), true);
+                        mmkv.encode(CACHE_FILE, cache.getAbsolutePath());
                         return true;
                     }
-                }
+                } else {
+                    //SD目录
+                    if (android.os.Environment.MEDIA_MOUNTED.equals(android.os.Environment.getExternalStorageState())) {
+                        //内部存储 /storage/emulated/0
+                        cache = new File(Environment.getExternalStorageDirectory(), path);
+                    } else {
+                        // 公共目录 /storage/emulated/0/Downloads
+                        cache = new File(android.os.Environment.getDownloadCacheDirectory(), path);
+                        if (!cache.exists()) {
+                            cache = new File(android.os.Environment.getDataDirectory(), path);
+                        }
+                    }
 
+                    if (cache.exists()) {
+                        //创建目录存在
+                        mmkv.encode(CACHE_FILE, cache.getAbsolutePath());
+                        return true;
+                    }
+
+                    // 创建目录 成功
+                    if (cache.mkdirs()) {
+                        mmkv.encode(CACHE_FILE, cache.getAbsolutePath());
+                        return true;
+                    } else {
+                        //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
+                        cache = new File(mApplication.getExternalCacheDir(), path);
+                        if (cache.exists() || cache.mkdirs()) {
+                            mmkv.encode(CACHE_FILE, cache.getAbsolutePath());
+                            return true;
+                        }
+                    }
+                }
                 return false;
             }
-        }).onBackpressureLatest().observeOn(Schedulers.newThread()).subscribe(this);
+        }).observeOn(Schedulers.newThread()).subscribe(this);
     }
-
 
     @Override
     public void accept(Boolean result) throws Exception {

@@ -1,41 +1,43 @@
 快速开发框架之MVVM设计模式，框架中使用一些主流第三方框架okHttp3，rxjava2，gson,google的MVVM库
-
-步骤一
-1.1 在项目根build.gradle中
-
-allprojects {
-    repositories {
-        maven { url 'https://jitpack.io' }
-    }
-}
-
-1.2 项目(Module:app)的build.gradle 中添加依赖
-
-    dependencies {
-       implementation 'com.github.Swer316828:LibBase:3.5.19'
-    }
-
-   说明：项目已引入框架如下：
+框架已引入以下第三方框架：
 
     compile 'com.android.support:appcompat-v7:27.1.1'
 
+    compile 'com.getkeepsafe.relinker:relinker:1.3.1'//配合MMKV K-V
+    compile 'com.tencent:mmkv:1.0.22' //MMKV K-V内存映射高速缓存
     compile 'io.reactivex.rxjava2:rxjava:2.2.9'
     compile 'io.reactivex.rxjava2:rxandroid:2.1.1'
 
-    compile 'com.squareup.okhttp3:okhttp:3.12.3'
+    compile 'com.squareup.okhttp3:okhttp:3.12.3' //网络通信
     compile 'com.squareup.okhttp3:logging-interceptor:3.12.3'
 
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'com.squareup.okio:okio:1.17.4'
 
-  需要权限
+集成步骤一
+
+1.1 在项目根build.gradle中
+
+    allprojects {
+        repositories {
+            maven { url 'https://jitpack.io' }
+        }
+    }
+
+1.2 项目(Module:app)的build.gradle 中添加依赖
+
+    dependencies {
+       implementation 'com.github.Swer316828:LibBase:x.x.x'
+    }
+
+1.3 所需权限
 
      <uses-permission android:name="android.permission.INTERNET"/>
      <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
 步骤二：MVVM 框架的使用
-3.1 全局唯一Application 必须继承AbstractApplication，必须调用init()方法进行初始化操作。AppCacheManager 作为全局缓存类使用，永久保存与临时存储。
+3.1 应用启动时进行初始操作 new AppCacheManager.Builder(this).setCachePath("MVVMTest").build();AppCacheManager（单例） 作为全局缓存类使用。
 
 3.2 在Activity，Fragment 中存在业务需求分别对应继承 AbstractLifecycleActivity<T>,AbstractLifecycleFragment<T>，T是需要处理业务逻辑ViewModel类。
 业务ViewModel需继承BaseViewModel。
@@ -76,3 +78,5 @@ allprojects {
     A. 在ViewPage 与 AbstractLifecycleFragment 组合使用时：需要注意适配器必须使用FragmentPagerAdapter,因ViewModel，Fragment生命周期关联，Fragment中onDestroyView 被调用，导致ViewModel 进入休眠状态而丢失监听。
 
     B. ViewPage 与 AbstractLifecycleFragment 组合使用，另一种解决方式：在调用业务时，唤当前Fragment中ViewModel生命状态。 激活方法：1:this.activateLifecycleEvent(); 指定激活生命周期：this.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+
+    C.AppCacheManager 缓存操作会进行数据持久化处理，如临时使用建议使用完之后删除相应缓存数据

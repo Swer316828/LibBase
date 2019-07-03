@@ -17,20 +17,18 @@ public class UtilLog {
         throw new IllegalStateException("you can't instantiate me!");
     }
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     public static void setDEBUG(boolean bug) {
 
         UtilLog.DEBUG = bug;
     }
 
-
     public static void e(String tag, String msg) {
 
         if (DEBUG) {
             Log.e(tag, msg);
         }
-
     }
 
     public static void e(Class tag, String msg) {
