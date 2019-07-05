@@ -16,6 +16,8 @@ public class AppContent extends Application {
     public void onCreate() {
         super.onCreate();
         //初始化操作
-        new AppCacheManager.Builder(this).setCachePath("MVVMTest").build();
+        new AppCacheManager.Builder(this)
+                .setCachePath("MVVMTest")//设置缓存文件目录
+                .build();
     }
 }

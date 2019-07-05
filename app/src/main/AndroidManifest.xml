@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:name=".AppContent"
         android:theme="@style/AppTheme">
-        <activity android:name=".TestFileActivity" >
+        <activity android:name=".TestMainActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

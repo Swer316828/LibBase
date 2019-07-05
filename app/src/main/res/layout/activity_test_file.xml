@@ -3,19 +3,42 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
 
-    <TextView
-        android:textStyle="bold"
-        android:textSize="16sp"
-        android:textColor="#333333"
-        android:id="@+id/tv_load"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
     <Button
-        android:text="开始下载"
-        android:id="@+id/bt_load"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:id="@+id/bt_text1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="对话框"
+        android:textColor="#333333"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/bt_text2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="提示框" />
+    <Button
+        android:id="@+id/bt_text3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="HTTP请求" />
+    <Button
+        android:id="@+id/bt_text4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="文件下载" />
+    <Button
+        android:id="@+id/bt_text5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fragment使用" />
+    <Button
+        android:id="@+id/bt_text6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="消息监听" />
 </LinearLayout>

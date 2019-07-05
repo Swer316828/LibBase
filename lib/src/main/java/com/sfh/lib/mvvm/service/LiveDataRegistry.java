@@ -39,9 +39,6 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
 
     private final static String TAG = LiveDataRegistry.class.getName ();
 
-
-
-
     private volatile SparseArray<UIMethod> mUIMethod = new SparseArray<> (5);
 
     private CompositeDisposable mDisposableList = new CompositeDisposable ();
@@ -67,6 +64,15 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
         this.mDisposableList.clear ();
         this.mUIMethod.clear ();
     }
+
+    /***
+     * 绑定数据监听与
+     * @param viewModel
+     */
+    public void bindLiveDataAndCompositeDisposable(BaseViewModel viewModel){
+        viewModel.putLiveData(this.mLiveData);
+    }
+
 
     public ObjectMutableLiveData getLiveData() {
 

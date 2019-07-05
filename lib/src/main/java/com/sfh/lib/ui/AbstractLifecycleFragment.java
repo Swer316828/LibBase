@@ -147,7 +147,7 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
                 this.mLiveDataRegistry = new LiveDataRegistry();
                 this.mLiveDataRegistry.register(this);
             }
-            t.putLiveData(this.mLiveDataRegistry.getLiveData());
+            this.mLiveDataRegistry.bindLiveDataAndCompositeDisposable(t);
         }
         return t;
     }

@@ -16,6 +16,7 @@ import android.widget.Toast;
 import com.getkeepsafe.relinker.ReLinker;
 import com.google.gson.Gson;
 import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.rx.RxJavaDisposableThrowableHandler;
 import com.sfh.lib.utils.UtilLog;
 import com.sfh.lib.utils.UtilsToast;
 import com.tencent.mmkv.MMKV;
@@ -213,14 +214,7 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
         });
 
         // 防止Disposable 之后出现异常导致应用崩溃
-        RxJavaPlugins.setErrorHandler(new Consumer<Throwable>() {
-
-            @Override
-            public void accept(Throwable throwable) throws Exception {
-
-                HandleException.handleException(throwable);
-            }
-        });
+        RxJavaPlugins.setErrorHandler(RxJavaDisposableThrowableHandler.newInstance());
     }
 
     @Override

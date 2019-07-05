@@ -93,7 +93,7 @@ public final class RetrofitManager {
     public static <T> Disposable executeSigin(@NonNull Observable<T> observable, @Nullable IResult<T> result) {
 
         RxObserver<T> subscribe = new RxObserver (result);
-        return compose (observable).subscribe (subscribe, subscribe.getOnError ());
+        return compose (observable).subscribe (subscribe, subscribe.getOnError (),subscribe);
     }
 
 
@@ -106,7 +106,7 @@ public final class RetrofitManager {
     public static <T> Disposable executeSigin(@NonNull Flowable<T> flowable, @Nullable IResult<T> result) {
 
         RxObserver<T> subscribe = new RxObserver (result);
-        return compose (flowable).subscribe (subscribe, subscribe.getOnError ());
+        return compose (flowable).subscribe (subscribe, subscribe.getOnError (),subscribe);
     }
 
     /***

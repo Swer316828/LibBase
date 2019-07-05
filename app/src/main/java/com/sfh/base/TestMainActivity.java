@@ -4,12 +4,15 @@ import android.os.Bundle;
 import android.view.View;
 
 import com.sfh.lib.AppCacheManager;
+import com.sfh.lib.event.RxBusEvent;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.down.HttpDownHelper;
 import com.sfh.lib.http.down.ProgressListener;
 import com.sfh.lib.rx.IResult;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.ui.AbstractLifecycleActivity;
+import com.sfh.lib.ui.dialog.DialogBuilder;
+import com.sfh.lib.utils.UtilLog;
 
 import java.io.File;
 
@@ -17,23 +20,66 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 
-/***
- * 文件下载
- */
-public class TestFileActivity extends AbstractLifecycleActivity {
+
+public class TestMainActivity extends AbstractLifecycleActivity<TestMainModel> {
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test_file);
-        findViewById(R.id.bt_load).setOnClickListener(new View.OnClickListener() {
+        initView();
+    }
+
+    private void initView() {
+        UtilLog.setDEBUG(true);
+        findViewById(R.id.bt_text1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                loadFile("");
+                //对话框
+                DialogBuilder builder = new DialogBuilder();
+                builder.setMessage("对话框");
+                builder.setTitle("标题");
+                showDialog(builder);
             }
         });
+        findViewById(R.id.bt_text2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //提示框
+            }
+        });
+        findViewById(R.id.bt_text3).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //HTTP请求'
+                getViewModel().http();
+            }
+        });
+        findViewById(R.id.bt_text4).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //文件下载
+            }
+        });
+        findViewById(R.id.bt_text5).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Fragment使用
+            }
+        });
+        findViewById(R.id.bt_text6).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //消息监听
+            }
+        });
+    }
+
+    @RxBusEvent(from = "消息通知")
+    public void eventMag(String msg){
+        showDialogToast(msg);
     }
 
     private void loadFile(String url) {
@@ -44,7 +90,7 @@ public class TestFileActivity extends AbstractLifecycleActivity {
                     @Override
                     public void onProgress(long total, long percent, long progress) {
 
-                        System.out.println("文件  total"+total+" percent:"+percent+" progress:"+progress);
+                        System.out.println("文件  total" + total + " percent:" + percent + " progress:" + progress);
                     }
                 }).start();
                 emitter.onNext(file);
@@ -63,5 +109,6 @@ public class TestFileActivity extends AbstractLifecycleActivity {
         });
         putDisposable(disposable);
     }
+
 
 }
