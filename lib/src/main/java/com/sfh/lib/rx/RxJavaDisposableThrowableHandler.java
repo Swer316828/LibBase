@@ -71,7 +71,6 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
     @Override
     public void accept(Throwable throwable) throws Exception {
         UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [Throwable] Thread Id:" + Thread.currentThread().getId() + " [连续2次异常，请注意]Throwable:" + throwable.getMessage());
-        this.mDisposableList.clear();
     }
 
 }

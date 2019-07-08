@@ -1,7 +1,6 @@
 package com.sfh.lib.rx;
 
 import com.sfh.lib.exception.HandleException;
-import com.sfh.lib.rx.IResult;
 import com.sfh.lib.utils.UtilLog;
 
 import io.reactivex.disposables.Disposable;
@@ -19,15 +18,13 @@ public class EmptyResult<T> implements IResult<T> {
     public void addDisposable(Disposable disposable) {
 
         this.disposable = disposable;
-        if (this.disposable != null) {
-            RxJavaDisposableThrowableHandler.put(this, this.disposable);
-        }
+
     }
 
     @Override
     public void onSuccess(T t) throws Exception {
         if (this.disposable != null) {
-            RxJavaDisposableThrowableHandler.onRemove(this, this.disposable);
+            this.disposable.dispose();
         }
     }
 
@@ -36,7 +33,7 @@ public class EmptyResult<T> implements IResult<T> {
 
         UtilLog.w(EmptyResult.class.getName(), "RxJava EmptyResult.class onFail:" + e);
         if (this.disposable != null) {
-            RxJavaDisposableThrowableHandler.onRemove(this, this.disposable);
+            this.disposable.dispose();
         }
     }
 }

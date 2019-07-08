@@ -72,7 +72,6 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         super.onCleared();
         this.mEventMethod.clear();
         this.mDisposableList.clear();
-        RxJavaDisposableThrowableHandler.onClearAll(this);
     }
 
     /* ---------------------------------------------------------------- 消息监听处理 start------------------------------------------------------------------ */
@@ -320,14 +319,13 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         public Task(IResultSuccess<T> listener) {
             this.listener = listener;
-            UtilLog.w(TAG, "RxJava Task:" + this);
         }
 
         public void addDisposable(Disposable disposable) {
 
             this.disposable = disposable;
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.put(this, this.disposable);
+                BaseViewModel.this.mDisposableList.add(this.disposable);
             }
         }
 
@@ -348,18 +346,17 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
             }
 
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.onRemove(this, this.disposable);
+                BaseViewModel.this.mDisposableList.remove(this.disposable);
             }
         }
 
         @Override
         public void onSuccess(T t) throws Exception {
-            UtilLog.w(TAG, "RxJava Task "+ this +" onSuccess() Data:" + t);
             if (this.listener != null) {
                 this.listener.onSuccess(t);
             }
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.onRemove(this,this.disposable);
+                BaseViewModel.this.mDisposableList.remove(this.disposable);
             }
         }
     }
