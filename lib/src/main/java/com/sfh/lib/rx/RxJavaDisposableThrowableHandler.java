@@ -36,16 +36,17 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
     }
 
 
-    private final CompositeDisposable mDisposableList;
+//    private final CompositeDisposable mDisposableList;
 
     private RxJavaDisposableThrowableHandler() {
-        this.mDisposableList = new CompositeDisposable();
+//        this.mDisposableList = new CompositeDisposable();
     }
 
     private boolean add(Object object, @NonNull Disposable disposable) {
 
         UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [Add] Thread Id: " + Thread.currentThread().getId() + " Task:" + object + " disposable:" + disposable);
-        return mDisposableList.add(disposable);
+//        return mDisposableList.add(disposable);
+        return true;
     }
 
     /***
@@ -55,7 +56,8 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
      */
     private boolean remove(@NonNull Object object, @NonNull Disposable disposable) {
         UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [remove] Thread Id: " + Thread.currentThread().getId() + " Task:" + object + " disposable:" + disposable);
-        return mDisposableList.remove(disposable);
+//        return mDisposableList.remove(disposable);
+        return true;
     }
 
     /***
@@ -64,7 +66,7 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
      */
     private void clearAll(@NonNull Object object) {
         UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [clearAll]");
-        this.mDisposableList.clear();
+//        this.mDisposableList.clear();
     }
 
 
