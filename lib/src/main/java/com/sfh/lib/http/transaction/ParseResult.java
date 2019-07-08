@@ -15,7 +15,7 @@ import java.lang.reflect.Type;
  */
 public abstract class ParseResult {
 
-    protected Gson mGson;
+    protected transient volatile Gson mGson;
 
     public <T> T parseResult(Reader reader, Type cls) {
 
