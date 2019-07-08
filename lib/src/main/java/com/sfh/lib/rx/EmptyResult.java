@@ -24,21 +24,21 @@ public class EmptyResult<T> implements IResult<T> {
     @Override
     public void onSuccess(T t) throws Exception {
 
-        UtilLog.d (EmptyResult.class.getName (), "onSuccess:" + t);
+        UtilLog.w (EmptyResult.class.getName (), "RxJava EmptyResult.class onSuccess:" + t);
         this.dispose ();
     }
 
     @Override
     public void onFail(HandleException e) {
 
-        UtilLog.d (EmptyResult.class.getName (), "onFail:" + e);
+        UtilLog.w (EmptyResult.class.getName (), "RxJava EmptyResult.class onFail:" + e);
         this.dispose ();
     }
 
     private void dispose() {
 
         if (this.disposable != null) {
-            UtilLog.d (EmptyResult.class.getName (), "in EmptyResult.class Disposable dispose 对象释放");
+            UtilLog.w (EmptyResult.class.getName (), "RxJava EmptyResult.class in EmptyResult.class Disposable dispose 对象释放");
             //任务结束
             this.disposable.dispose ();
             this.disposable = null;

@@ -1,11 +1,10 @@
 package com.sfh.lib.rx;
 
-import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-
 import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.utils.UtilLog;
 
 import org.reactivestreams.Publisher;
 
@@ -15,7 +14,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
@@ -27,62 +25,6 @@ import io.reactivex.schedulers.Schedulers;
  * @date 2017/7/19
  */
 public final class RetrofitManager {
-
-
-    private volatile CompositeDisposable serverList = new CompositeDisposable ();
-
-    /***
-     * 添加业务层控制监听
-     * @param disposable
-     */
-    @Deprecated
-    public void put(Disposable disposable) {
-
-        this.serverList.add (disposable);
-    }
-
-    /***
-     *  取消业务层控制监听
-     */
-    @Deprecated
-    public void remove(Disposable disposable) {
-
-        this.serverList.remove (disposable);
-    }
-
-    /***
-     * 取消全部业务层监听
-     */
-    @Deprecated
-    public void clearAll() {
-
-        this.serverList.clear ();
-
-    }
-
-    /***
-     * 异步请求操作
-     * @param observable
-     * @param <T>
-     * @return
-     */
-    @Deprecated
-    public <T> void execute(@NonNull Observable<T> observable, @Nullable IResult<T> result) {
-
-        this.put (executeSigin (observable, result));
-    }
-
-    /***
-     * [背压]异步请求操作
-     * @param flowable
-     * @param <T>
-     * @return
-     */
-    @Deprecated
-    public <T> void execute(@NonNull Flowable<T> flowable, @Nullable IResult<T> result) {
-
-        this.put (executeSigin(flowable,result));
-    }
 
     /***
      * 异步请求操作
@@ -161,6 +103,7 @@ public final class RetrofitManager {
         @Override
         public Observable<HandleException> apply(E throwable) throws Exception {
             // 封装成自定义异常对象
+            UtilLog.w("","RxJava ThrowableFunc.class throwable:"+throwable);
             return Observable.error (HandleException.handleException (throwable));
         }
     }

@@ -332,6 +332,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         @Override
         public void onFail(HandleException e) {
+            UtilLog.w(TAG, "RxJava BaseViewModel.class onFail() HandleException:" + e);
 
             if (this.listener != null) {
                 if (listener instanceof IResult) {
@@ -347,18 +348,18 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
             }
 
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.remove(this, this.disposable);
+                RxJavaDisposableThrowableHandler.remove(this,0, this.disposable);
             }
         }
 
         @Override
         public void onSuccess(T t) throws Exception {
-
+            UtilLog.w(TAG, "RxJava BaseViewModel.class onSuccess() :" + t);
             if (this.listener != null) {
                 this.listener.onSuccess(t);
             }
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.remove(this, this.disposable);
+                RxJavaDisposableThrowableHandler.remove(this,1, this.disposable);
             }
         }
     }

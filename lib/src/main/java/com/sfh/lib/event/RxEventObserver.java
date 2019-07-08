@@ -1,6 +1,8 @@
 package com.sfh.lib.event;
 
 
+import com.sfh.lib.utils.UtilLog;
+
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 
@@ -27,18 +29,19 @@ class RxEventObserver<T> implements Observer<T> {
 
     @Override
     public void onNext(T t) {
+
         if (result != null) {
             try {
                 result.onEventSuccess(t);
             } catch (Exception e) {
-                e.printStackTrace();
+                UtilLog.w(RxEventObserver.class, "RxJava RxEventObserver.class onNext() Exception:" + e);
             }
         }
     }
 
     @Override
     public void onError(Throwable e) {
-
+        UtilLog.w(RxEventObserver.class, "RxJava RxEventObserver.class onError:" + e);
     }
 
     @Override

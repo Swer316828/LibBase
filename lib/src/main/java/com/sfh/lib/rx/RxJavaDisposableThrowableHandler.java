@@ -31,8 +31,8 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
         Hond.mHandler.clear();
     }
 
-    public static boolean remove(@NonNull Object object, @NonNull Disposable disposable) {
-        return Hond.mHandler.remove(disposable);
+    public static boolean remove(@NonNull Object object,int method, @NonNull Disposable disposable) {
+        return Hond.mHandler.remove(method,disposable);
     }
 
     private final CompositeDisposable mDisposableList;
@@ -43,7 +43,7 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
 
     private boolean add(@NonNull Disposable disposable) {
 
-        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJavaDisposableThrowableHandler [Add] Thread Id: "+ Thread.currentThread().getId());
+        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJava RxJavaDisposableThrowableHandler.class [Add] Thread Id: "+ Thread.currentThread().getId());
         return mDisposableList.add(disposable);
     }
 
@@ -52,7 +52,7 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
      * @return
      */
     private void clear() {
-        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJavaDisposableThrowableHandler [clear] Thread Id: "+Thread.currentThread().getId());
+        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJava RxJavaDisposableThrowableHandler.class [clear] Thread Id: "+Thread.currentThread().getId());
         this.mDisposableList.clear();
     }
 
@@ -61,15 +61,15 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
      * @param disposable
      * @return
      */
-    private boolean remove(@NonNull Disposable disposable) {
-        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJavaDisposableThrowableHandler [remove] Thread Id: "+ Thread.currentThread().getId());
+    private boolean remove(int method,@NonNull Disposable disposable) {
+        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJava RxJavaDisposableThrowableHandler.class [remove] Thread Id: "+ Thread.currentThread().getId() +" method:"+method);
         return mDisposableList.remove(disposable);
     }
 
 
     @Override
     public void accept(Throwable throwable) throws Exception {
-        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJavaDisposableThrowableHandler [Throwable] Thread Id:"+Thread.currentThread().getId()+" [连续2次异常，请注意]Throwable:"+throwable.getMessage());
+        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava RxJavaDisposableThrowableHandler.class [Throwable] Thread Id:"+Thread.currentThread().getId()+" [连续2次异常，请注意]Throwable:"+throwable.getMessage());
         this.mDisposableList.clear();
     }
 

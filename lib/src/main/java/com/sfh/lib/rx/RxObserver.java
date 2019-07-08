@@ -13,7 +13,7 @@ import io.reactivex.functions.Consumer;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3
  */
-class RxObserver<T> implements Consumer<T> , Action {
+class RxObserver<T> implements Consumer<T>, Action {
 
     private IResult<T> result;
 
@@ -24,9 +24,9 @@ class RxObserver<T> implements Consumer<T> , Action {
 
     @Override
     public void accept(T o) throws Exception {
-
+        UtilLog.w(RxObserver.class.getName(), "RxJava RxObserver.class onSuccess:" + o);
         if (this.result != null) {
-            this.result.onSuccess (o);
+            this.result.onSuccess(o);
         }
     }
 
@@ -36,12 +36,13 @@ class RxObserver<T> implements Consumer<T> , Action {
         return this.onError;
     }
 
-    private Consumer onError = new Consumer<HandleException> () {
+    private Consumer onError = new Consumer<HandleException>() {
 
         @Override
         public void accept(HandleException e) throws Exception {
+            UtilLog.w(RxObserver.class.getName(), "RxJava RxObserver.class onFail:" + e);
             if (result != null) {
-                result.onFail (e);
+                result.onFail(e);
             }
         }
     };

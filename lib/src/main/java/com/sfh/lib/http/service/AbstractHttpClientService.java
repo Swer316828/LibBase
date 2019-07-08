@@ -46,12 +46,6 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
     }
 
     @Override
-    public boolean log() {
-
-        return true;
-    }
-
-    @Override
     public long getReadTimeout() {
 
         return 15 * 1000L;
