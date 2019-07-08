@@ -79,10 +79,12 @@ public final class HandleException extends RuntimeException {
 
     public static HandleException handleException(Throwable e) {
 
+        UtilLog.e (HandleException.class,"HandleException Throwable:" + e);
+
         if (crashReportHandler != null) {
             crashReportHandler.accept (e);
         }
-        UtilLog.e (HandleException.class, e.toString ());
+
         if (e == null) {
             // bugly会将这个throwable上报
             return new HandleException (CODE_NULL_EXCEPTION, NULL_EXCEPTION, e);
@@ -91,6 +93,7 @@ public final class HandleException extends RuntimeException {
         if (e instanceof HandleException) {
             return (HandleException) e;
         }
+
         final Throwable throwable = e.getCause ();
         // 服务器请求超时 or 服务器响应超时
         if (e instanceof ConnectTimeoutException

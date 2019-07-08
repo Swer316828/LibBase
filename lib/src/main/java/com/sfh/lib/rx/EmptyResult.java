@@ -19,29 +19,24 @@ public class EmptyResult<T> implements IResult<T> {
     public void addDisposable(Disposable disposable) {
 
         this.disposable = disposable;
+        if (this.disposable != null) {
+            RxJavaDisposableThrowableHandler.put(this, this.disposable);
+        }
     }
 
     @Override
     public void onSuccess(T t) throws Exception {
-
-        UtilLog.w (EmptyResult.class.getName (), "RxJava EmptyResult.class onSuccess:" + t);
-        this.dispose ();
+        if (this.disposable != null) {
+            RxJavaDisposableThrowableHandler.onRemove(this, this.disposable);
+        }
     }
 
     @Override
     public void onFail(HandleException e) {
 
-        UtilLog.w (EmptyResult.class.getName (), "RxJava EmptyResult.class onFail:" + e);
-        this.dispose ();
-    }
-
-    private void dispose() {
-
+        UtilLog.w(EmptyResult.class.getName(), "RxJava EmptyResult.class onFail:" + e);
         if (this.disposable != null) {
-            UtilLog.w (EmptyResult.class.getName (), "RxJava EmptyResult.class in EmptyResult.class Disposable dispose 对象释放");
-            //任务结束
-            this.disposable.dispose ();
-            this.disposable = null;
+            RxJavaDisposableThrowableHandler.onRemove(this, this.disposable);
         }
     }
 }

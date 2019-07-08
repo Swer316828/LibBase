@@ -24,7 +24,6 @@ class RxObserver<T> implements Consumer<T>, Action {
 
     @Override
     public void accept(T o) throws Exception {
-        UtilLog.w(RxObserver.class.getName(), "RxJava RxObserver.class onSuccess:" + o);
         if (this.result != null) {
             this.result.onSuccess(o);
         }

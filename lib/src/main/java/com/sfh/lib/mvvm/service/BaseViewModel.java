@@ -72,7 +72,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         super.onCleared();
         this.mEventMethod.clear();
         this.mDisposableList.clear();
-        RxJavaDisposableThrowableHandler.clear(this);
+        RxJavaDisposableThrowableHandler.onClearAll(this);
     }
 
     /* ---------------------------------------------------------------- 消息监听处理 start------------------------------------------------------------------ */
@@ -320,6 +320,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         public Task(IResultSuccess<T> listener) {
             this.listener = listener;
+            UtilLog.w(TAG, "RxJava Task:" + this);
         }
 
         public void addDisposable(Disposable disposable) {
@@ -332,8 +333,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         @Override
         public void onFail(HandleException e) {
-            UtilLog.w(TAG, "RxJava BaseViewModel.class onFail() HandleException:" + e);
-
+            UtilLog.w(TAG, "RxJava Task "+ this +" onFail() e:" + e);
             if (this.listener != null) {
                 if (listener instanceof IResult) {
                     //回调处理异常失败
@@ -348,18 +348,18 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
             }
 
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.remove(this,0, this.disposable);
+                RxJavaDisposableThrowableHandler.onRemove(this, this.disposable);
             }
         }
 
         @Override
         public void onSuccess(T t) throws Exception {
-            UtilLog.w(TAG, "RxJava BaseViewModel.class onSuccess() :" + t);
+            UtilLog.w(TAG, "RxJava Task "+ this +" onSuccess() Data:" + t);
             if (this.listener != null) {
                 this.listener.onSuccess(t);
             }
             if (this.disposable != null) {
-                RxJavaDisposableThrowableHandler.remove(this,1, this.disposable);
+                RxJavaDisposableThrowableHandler.onRemove(this,this.disposable);
             }
         }
     }

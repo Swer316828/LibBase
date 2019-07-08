@@ -15,6 +15,7 @@ import java.lang.reflect.Type;
  */
 public abstract class ParseResult {
 
+    protected Gson mGson;
 
     public <T> T parseResult(Reader reader, Type cls) {
 
@@ -29,13 +30,15 @@ public abstract class ParseResult {
         return gson.toJson (object);
     }
 
-    private Gson getGson() {
-
-        return new GsonBuilder ()
-                .setLenient ()// json宽松
+    protected Gson getGson() {
+        if (this.mGson == null){
+            this.mGson = new GsonBuilder ()
+                    .setLenient ()// json宽松
 //                .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
 //                .serializeNulls() //智能null
 //                .setPrettyPrinting()// 调整格式 ，使对齐
-                .registerTypeAdapterFactory (new NullStringToEmptyAdapterFactory ()).create ();
+                    .registerTypeAdapterFactory (new NullStringToEmptyAdapterFactory ()).create ();
+        }
+        return this.mGson;
     }
 }

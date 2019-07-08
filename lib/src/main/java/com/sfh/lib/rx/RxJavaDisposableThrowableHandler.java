@@ -23,17 +23,18 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
         return Hond.mHandler;
     }
 
-    public static boolean put(@NonNull Object object,@NonNull Disposable disposable) {
-        return Hond.mHandler.add(disposable);
+    public static boolean put(Object object, @NonNull Disposable disposable) {
+        return Hond.mHandler.add(object, disposable);
     }
 
-    public static void clear(@NonNull Object object) {
-        Hond.mHandler.clear();
+    public static void onClearAll(Object object) {
+        Hond.mHandler.clearAll(object);
     }
 
-    public static boolean remove(@NonNull Object object,int method, @NonNull Disposable disposable) {
-        return Hond.mHandler.remove(method,disposable);
+    public static boolean onRemove(Object object, @NonNull Disposable disposable) {
+        return Hond.mHandler.remove(object, disposable);
     }
+
 
     private final CompositeDisposable mDisposableList;
 
@@ -41,19 +42,10 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
         this.mDisposableList = new CompositeDisposable();
     }
 
-    private boolean add(@NonNull Disposable disposable) {
+    private boolean add(Object object, @NonNull Disposable disposable) {
 
-        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJava RxJavaDisposableThrowableHandler.class [Add] Thread Id: "+ Thread.currentThread().getId());
+        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [Add] Thread Id: " + Thread.currentThread().getId() + " Task:" + object + " disposable:" + disposable);
         return mDisposableList.add(disposable);
-    }
-
-    /***
-     *  移除所有任务并且取消监听任务
-     * @return
-     */
-    private void clear() {
-        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJava RxJavaDisposableThrowableHandler.class [clear] Thread Id: "+Thread.currentThread().getId());
-        this.mDisposableList.clear();
     }
 
     /***
@@ -61,15 +53,24 @@ public class RxJavaDisposableThrowableHandler implements Consumer<Throwable> {
      * @param disposable
      * @return
      */
-    private boolean remove(int method,@NonNull Disposable disposable) {
-        UtilLog.w(RxJavaDisposableThrowableHandler.class,"RxJava RxJavaDisposableThrowableHandler.class [remove] Thread Id: "+ Thread.currentThread().getId() +" method:"+method);
+    private boolean remove(@NonNull Object object, @NonNull Disposable disposable) {
+        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [remove] Thread Id: " + Thread.currentThread().getId() + " Task:" + object + " disposable:" + disposable);
         return mDisposableList.remove(disposable);
+    }
+
+    /***
+     *  移除所有任务并且取消监听任务
+     * @return
+     */
+    private void clearAll(@NonNull Object object) {
+        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [clearAll]");
+        this.mDisposableList.clear();
     }
 
 
     @Override
     public void accept(Throwable throwable) throws Exception {
-        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava RxJavaDisposableThrowableHandler.class [Throwable] Thread Id:"+Thread.currentThread().getId()+" [连续2次异常，请注意]Throwable:"+throwable.getMessage());
+        UtilLog.w(RxJavaDisposableThrowableHandler.class, "RxJava Disposable [Throwable] Thread Id:" + Thread.currentThread().getId() + " [连续2次异常，请注意]Throwable:" + throwable.getMessage());
         this.mDisposableList.clear();
     }
 

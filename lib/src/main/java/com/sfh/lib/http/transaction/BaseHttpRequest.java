@@ -5,16 +5,15 @@ import android.text.TextUtils;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.HttpMediaType;
 import com.sfh.lib.http.IRxHttpClient;
+import com.sfh.lib.utils.UtilLog;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.security.Policy;
 import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -145,10 +144,12 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
                 return this.parseResult (response.body ().charStream (), this.getClassType ());
 
             } else {
+                UtilLog.w(BaseHttpRequest.class, "RxJava OkHttp BaseHttpRequest.class sendRequest :" + "code:" + response.code () + ",msg:" + response.message ());
                 //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
                 throw new HandleException (HandleException.CODE_HTTP_EXCEPTION, HandleException.HTTP_EXCEPTION, new Throwable ("code:" + response.code () + ",msg:" + response.message ()));
             }
         } catch (Exception e) {
+            UtilLog.w(BaseHttpRequest.class, "RxJava OkHttp BaseHttpRequest.class sendRequest e:" + e);
             throw HandleException.handleException (e);
         }
 
