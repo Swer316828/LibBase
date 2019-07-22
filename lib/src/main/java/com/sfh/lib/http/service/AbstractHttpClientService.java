@@ -1,12 +1,17 @@
 package com.sfh.lib.http.service;
 
 import com.sfh.lib.http.IRxHttpClient;
+import com.sfh.lib.http.IRxHttpConfig;
 import com.sfh.lib.utils.UtilLog;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import okhttp3.Dns;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * 功能描述:网络服务[需求单列模式]
@@ -28,21 +33,46 @@ import okhttp3.OkHttpClient;
  */
 public abstract class AbstractHttpClientService implements IRxHttpClient {
 
-    private OkHttpClientBuilder mClientBuilder;
+    private volatile OkHttpClient mOkHttpClient;
+    private AtomicBoolean mBuilder = new AtomicBoolean(false);
 
     protected AbstractHttpClientService() {
         //构建网络连接
-        this.mClientBuilder = new OkHttpClientBuilder (this);
-        UtilLog.setDEBUG (this.log ());
+        UtilLog.setDEBUG(this.log());
     }
 
     @Override
     public OkHttpClient getHttpClientService() {
 
-        if (this.mClientBuilder == null){
-            this.mClientBuilder = new OkHttpClientBuilder (this);
+        if (this.mOkHttpClient == null) {
+
+            OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
+            //失败重连
+            httpBuilder.retryOnConnectionFailure(true);
+            httpBuilder.readTimeout(this.getReadTimeout(), TimeUnit.MILLISECONDS);
+            httpBuilder.connectTimeout(this.getConnectTimeout(), TimeUnit.MILLISECONDS);
+            httpBuilder.writeTimeout(this.getWriteTimeout(), TimeUnit.MILLISECONDS);
+            if (this.getInterceptor() != null) {
+                httpBuilder.addInterceptor(this.getInterceptor());
+            }
+            if (this.getHttpDns() != null) {
+                httpBuilder.dns(this.getHttpDns());
+            }
+            if (this.log()) {
+                HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+                loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+                httpBuilder.addNetworkInterceptor(loggingInterceptor);
+            }
+
+            if (this.getNetworkInterceptor() != null) {
+                httpBuilder.addNetworkInterceptor(this.getNetworkInterceptor());
+            }
+
+            if (this.mOkHttpClient == null && this.mBuilder.compareAndSet(false, true)) {
+                this.mOkHttpClient = httpBuilder.build();
+            }
         }
-        return this.mClientBuilder.builder ();
+        return this.mOkHttpClient;
     }
 
     @Override
@@ -78,6 +108,11 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
     @Override
     public Interceptor getNetworkInterceptor() {
 
+        return null;
+    }
+
+    @Override
+    public Dns getHttpDns() {
         return null;
     }
 

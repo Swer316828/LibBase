@@ -15,30 +15,30 @@ import java.lang.reflect.Type;
  */
 public abstract class ParseResult {
 
-    protected transient volatile Gson mGson;
+    protected static transient volatile Gson mGson;
 
     public <T> T parseResult(Reader reader, Type cls) {
 
-        Gson gson = this.getGson ();
-        return gson.fromJson (reader, cls);
+        Gson gson = this.getGson();
+        return gson.fromJson(reader, cls);
 
     }
 
     public String toJson(Object object) {
 
-        Gson gson = this.getGson ();
-        return gson.toJson (object);
+        Gson gson = this.getGson();
+        return gson.toJson(object);
     }
 
     protected Gson getGson() {
-        if (this.mGson == null){
-            this.mGson = new GsonBuilder ()
-                    .setLenient ()// json宽松
+        if (mGson == null) {
+            mGson = new GsonBuilder()
+                    .setLenient()// json宽松
 //                .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
 //                .serializeNulls() //智能null
 //                .setPrettyPrinting()// 调整格式 ，使对齐
-                    .registerTypeAdapterFactory (new NullStringToEmptyAdapterFactory ()).create ();
+                    .registerTypeAdapterFactory(new NullStringToEmptyAdapterFactory()).create();
         }
-        return this.mGson;
+        return mGson;
     }
 }

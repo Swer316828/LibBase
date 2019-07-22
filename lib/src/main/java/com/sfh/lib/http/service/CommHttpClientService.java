@@ -24,4 +24,6 @@ public final class CommHttpClientService extends AbstractHttpClientService {
     public boolean log() {
         return LOG;
     }
+
+
 }

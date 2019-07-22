@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -72,6 +73,8 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
         this.tvLeftClick.setOnClickListener (this);
         this.tvRightClick.setOnClickListener (this);
         this.tvContent.setMovementMethod (ScrollingMovementMethod.getInstance ());
+
+        this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
     }
 
 

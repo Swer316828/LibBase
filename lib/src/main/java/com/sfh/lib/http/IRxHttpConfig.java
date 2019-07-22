@@ -2,6 +2,7 @@ package com.sfh.lib.http;
 
 import java.util.Map;
 
+import okhttp3.Dns;
 import okhttp3.Interceptor;
 
 /**
@@ -53,4 +54,10 @@ public interface IRxHttpConfig {
      * @return
      */
     Interceptor getNetworkInterceptor();
+
+    /****
+     * DNS
+     * @return
+     */
+    Dns getHttpDns();
 }
