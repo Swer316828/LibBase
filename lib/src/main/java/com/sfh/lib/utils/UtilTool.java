@@ -1,6 +1,5 @@
 package com.sfh.lib.utils;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -59,7 +58,7 @@ public final class UtilTool {
 
     /**
      * 方法描述:网络连接 boolean
-     *
+     *  6.0 需要申请权限 android.Manifest.permission.ACCESS_NETWORK_STATE
      * @param context
      * @return
      */
@@ -86,12 +85,14 @@ public final class UtilTool {
 
     /**
      * 获取当前手机电话号码
+     *   6.0 需要申请权限 android.Manifest.permission.READ_PHONE_STATE,
+     *             android.Manifest.permission.READ_SMS,
+     *             android.Manifest.permission.READ_PHONE_NUMBERS 其中之一
      */
     public static String getPhoneNumber(Context context) {
 
         TelephonyManager telephonyManager = (TelephonyManager) context
                 .getSystemService(Context.TELEPHONY_SERVICE);
-        @SuppressLint("HardwareIds")
         String number = telephonyManager.getLine1Number();
         return TextUtils.isEmpty(number) ? "" : number;
     }
@@ -99,11 +100,7 @@ public final class UtilTool {
     /**
      * 获取硬件设备信息组合唯一号码
      * <p>
-     * 需要
-     * android.permission.ACCESS_WIFI_STATE
-     * android.Manifest.permission.READ_PHONE_STATE，
-     * android.Manifest.permission.READ_SMS,
-     * android.Manifest.permission.READ_PHONE_NUMBERS 权限
+     * 6.0 需要申请权限 android.Manifest.permission.READ_PHONE_STATE
      *
      * @return wifi mac地址 + android设备唯一ID + android设备唯一标识
      */
@@ -138,13 +135,12 @@ public final class UtilTool {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+
         }
 
         try {
             androidId = Settings.Secure.getString(temp.getContentResolver(), Settings.Secure.ANDROID_ID);
         } catch (Exception e) {
-            e.printStackTrace();
         }
         try {
             TelephonyManager telephonyManager = (TelephonyManager) temp.getSystemService(Context.TELEPHONY_SERVICE);
@@ -254,7 +250,6 @@ public final class UtilTool {
             String version = info.versionName;
             return version;
         } catch (Exception e) {
-            e.printStackTrace();
             return "";
         }
     }
@@ -272,7 +267,6 @@ public final class UtilTool {
             String version = String.valueOf(info.versionCode);
             return version;
         } catch (Exception e) {
-            e.printStackTrace();
             return "";
         }
     }

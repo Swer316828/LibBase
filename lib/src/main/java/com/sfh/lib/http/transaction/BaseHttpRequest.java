@@ -105,52 +105,47 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
      */
     public T sendRequest() throws Exception {
 
-        final IRxHttpClient httpClient = this.getHttpService ();
+        final IRxHttpClient httpClient = this.getHttpService();
         if (httpClient == null) {
-            throw new HandleException (HandleException.CODE_NULL_EXCEPTION, HandleException.NULL_EXCEPTION, new Throwable ("IRxHttpClient Cannot be NULL !"));
+            throw new HandleException(HandleException.CODE_NULL_EXCEPTION, HandleException.NULL_EXCEPTION, new Throwable("IRxHttpClient Cannot be NULL !"));
         }
 
-        String url = this.getUrl (this.code) + this.path;
+        String url = this.getUrl(this.code) + this.path;
 
-        final Request.Builder builder = new Request.Builder ();
+        final Request.Builder builder = new Request.Builder();
         //请求头
-        this.buildHeader (httpClient, builder);
+        this.buildHeader(httpClient, builder);
 
-        final Object params = this.buildParam ();
+        final Object params = this.buildParam();
 
-        if (TextUtils.equals (POST, this.method)) {
+        if (TextUtils.equals(POST, this.method)) {
 
-            builder.url (url);
+            builder.url(url);
             RequestBody body;
-            if (TextUtils.equals (HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
+            if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
                 //文件上传
                 body = (MultipartBody) params;
             } else {
                 //其他 请求参数
-                body = RequestBody.create (MediaType.parse (this.mediaType), params.toString ());
+                body = RequestBody.create(MediaType.parse(this.mediaType), params.toString());
             }
-            builder.post (body);
+            builder.post(body);
         } else {
-            url = url + "?" + params.toString ();
-            builder.url (url).get ();
+            url = url + "?" + params.toString();
+            builder.url(url).get();
         }
 
-        final Call call = httpClient.getHttpClientService ().newCall (builder.build ());
-        try {
+        final Call call = httpClient.getHttpClientService().newCall(builder.build());
 
-            Response response = call.execute ();
-            if (response.isSuccessful ()) {
+        Response response = call.execute();
+        if (response.isSuccessful()) {
 
-                return this.parseResult (response.body ().charStream (), this.getClassType ());
+            return this.parseResult(response.body().charStream(), this.getClassType());
 
-            } else {
-                UtilLog.w(BaseHttpRequest.class, "RxJava OkHttp BaseHttpRequest.class sendRequest :" + "code:" + response.code () + ",msg:" + response.message ());
-                //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
-                throw new HandleException (HandleException.CODE_HTTP_EXCEPTION, HandleException.HTTP_EXCEPTION, new Throwable ("code:" + response.code () + ",msg:" + response.message ()));
-            }
-        } catch (Exception e) {
-            UtilLog.w(BaseHttpRequest.class, "RxJava OkHttp BaseHttpRequest.class sendRequest e:" + e);
-            throw HandleException.handleException (e);
+        } else {
+            UtilLog.w(BaseHttpRequest.class, "RxJava OkHttp sendRequest :" + "code:" + response.code() + ",msg:" + response.message());
+            //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
+            throw new HandleException(HandleException.CODE_HTTP_EXCEPTION, HandleException.HTTP_EXCEPTION, new Throwable("code:" + response.code() + ",msg:" + response.message()));
         }
 
     }
@@ -162,10 +157,10 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
      */
     public void buildHeader(IRxHttpClient client, Request.Builder builder) {
 
-        Map<String, String> header = client.getHeader ();
-        if (header != null && header.size () > 0) {
-            for (Map.Entry<String, String> entry : header.entrySet ()) {
-                builder.addHeader (entry.getKey (), entry.getValue ());
+        Map<String, String> header = client.getHeader();
+        if (header != null && header.size() > 0) {
+            for (Map.Entry<String, String> entry : header.entrySet()) {
+                builder.addHeader(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -176,8 +171,8 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
      */
     private Type getClassType() {
 
-        Type type = getClass ().getGenericSuperclass ();
-        return ((ParameterizedType) type).getActualTypeArguments ()[0];
+        Type type = getClass().getGenericSuperclass();
+        return ((ParameterizedType) type).getActualTypeArguments()[0];
 
     }
 }
