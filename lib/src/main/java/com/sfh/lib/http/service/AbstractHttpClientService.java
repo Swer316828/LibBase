@@ -25,8 +25,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
  * }
  * <p>
  * 1.网络接口初始化
- * 2.不同服务IP地址可以继承当前类实现不同地址请求
- * 3.默认超时时间设置15s
+ * 2.默认超时时间设置15s
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/4/3

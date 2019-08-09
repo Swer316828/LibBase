@@ -24,7 +24,7 @@ import io.reactivex.annotations.Nullable;
 public final class HandleException extends RuntimeException {
 
     @Nullable
-    static volatile ICrashReport<? super Throwable> crashReportHandler;
+    public static volatile ICrashReport<? super Throwable> crashReportHandler;
 
     /**
      * 设置异常上报处理
@@ -79,22 +79,22 @@ public final class HandleException extends RuntimeException {
 
     public static HandleException handleException(Throwable e) {
 
-        UtilLog.e (HandleException.class,"HandleException Throwable:" + e);
+        UtilLog.e(HandleException.class, "HandleException Throwable:" + e);
 
         if (crashReportHandler != null) {
-            crashReportHandler.accept (e);
+            crashReportHandler.accept(e);
         }
 
         if (e == null) {
             // bugly会将这个throwable上报
-            return new HandleException (CODE_NULL_EXCEPTION, NULL_EXCEPTION, e);
+            return new HandleException(CODE_NULL_EXCEPTION, NULL_EXCEPTION, e);
         }
 
         if (e instanceof HandleException) {
             return (HandleException) e;
         }
 
-        final Throwable throwable = e.getCause ();
+        final Throwable throwable = e.getCause();
         // 服务器请求超时 or 服务器响应超时
         if (e instanceof ConnectTimeoutException
                 || e instanceof java.net.SocketTimeoutException
@@ -103,7 +103,7 @@ public final class HandleException extends RuntimeException {
                 || throwable instanceof java.net.SocketTimeoutException
                 || throwable instanceof java.net.SocketException
         ) {
-            return new HandleException (CODE_TIMEOUT_EXCEPTION, TIMEOUT_EXCEPTION, e);
+            return new HandleException(CODE_TIMEOUT_EXCEPTION, TIMEOUT_EXCEPTION, e);
         }
 
 
@@ -115,7 +115,7 @@ public final class HandleException extends RuntimeException {
                 || throwable instanceof java.net.NoRouteToHostException
                 || throwable instanceof UnknownHostException
         ) {
-            return new HandleException (CODE_NET_EXCEPTION, NET_EXCEPTION, e);
+            return new HandleException(CODE_NET_EXCEPTION, NET_EXCEPTION, e);
         }
 
         // 返回数据进行Json解析出现异常，如数据不符合Json数据格式
@@ -129,21 +129,21 @@ public final class HandleException extends RuntimeException {
                 || throwable instanceof com.google.gson.JsonSyntaxException
                 || throwable instanceof com.google.gson.JsonParseException
                 || throwable instanceof IllegalArgumentException) {
-            return new HandleException (CODE_PARSE_EXCEPTION, PARSE_EXCEPTION, e);
+            return new HandleException(CODE_PARSE_EXCEPTION, PARSE_EXCEPTION, e);
         }
 
         // 读写数据的时出现
         if (e instanceof IOException || throwable instanceof IOException) {
-            return new HandleException (CODE_IO_EXCEPTION, IO_EXCEPTION, e);
+            return new HandleException(CODE_IO_EXCEPTION, IO_EXCEPTION, e);
         }
 
         //没有信任证书，导致请求失败
         if (e instanceof SSLException || throwable instanceof SSLException) {
-            return new HandleException (CODE_SSL_EXCEPTION, SSL_EXCEPTION, e);
+            return new HandleException(CODE_SSL_EXCEPTION, SSL_EXCEPTION, e);
         }
 
         // 未捕获异常情况
-        return new HandleException (CODE_UNKNOWN_EXCEPTION, UNKNOWN_EXCEPTION, e);
+        return new HandleException(CODE_UNKNOWN_EXCEPTION, UNKNOWN_EXCEPTION, e);
     }
 
 
@@ -159,23 +159,23 @@ public final class HandleException extends RuntimeException {
 
     public HandleException(int code, String msg, Throwable throwable) {
 
-        super (msg, throwable);
-        this.code = String.valueOf (code);
-        this.msg = String.format (msg, this.code);
+        super(msg, throwable);
+        this.code = String.valueOf(code);
+        this.msg = String.format(msg, this.code);
     }
 
     public HandleException(String code, String msg) {
 
-        super (msg);
+        super(msg);
         this.code = code;
-        this.msg = String.format (msg, this.code);
+        this.msg = String.format(msg, this.code);
     }
 
     public HandleException(int code, String msg) {
 
-        super (msg);
-        this.code = String.valueOf (code);
-        this.msg = String.format (msg, this.code);
+        super(msg);
+        this.code = String.valueOf(code);
+        this.msg = String.format(msg, this.code);
     }
 
     @Override
@@ -200,7 +200,7 @@ public final class HandleException extends RuntimeException {
         return "HandleException{" +
                 "code='" + code + '\'' +
                 ", msg='" + msg + '\'' +
-                ", throwable='" + getCause () +
+                ", throwable='" + getCause() +
                 '}';
     }
 }
