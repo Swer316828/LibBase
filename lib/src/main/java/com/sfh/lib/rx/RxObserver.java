@@ -29,9 +29,7 @@ class RxObserver<T> implements Consumer<T>, Action {
         }
     }
 
-
     public Consumer getOnError() {
-
         return this.onError;
     }
 
@@ -39,7 +37,6 @@ class RxObserver<T> implements Consumer<T>, Action {
 
         @Override
         public void accept(HandleException e) throws Exception {
-            UtilLog.w(RxObserver.class.getName(), "RxJava RxObserver.class onFail:" + e);
             if (result != null) {
                 result.onFail(e);
             }

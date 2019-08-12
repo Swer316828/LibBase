@@ -2,6 +2,7 @@ package com.sfh.lib.http.transaction;
 
 import android.text.TextUtils;
 
+import com.sfh.lib.exception.ExceptionType;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.HttpMediaType;
 import com.sfh.lib.http.IRxHttpClient;
@@ -9,6 +10,7 @@ import com.sfh.lib.utils.UtilLog;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.HttpRetryException;
 import java.util.Map;
 
 import okhttp3.Call;
@@ -107,7 +109,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
 
         final IRxHttpClient httpClient = this.getHttpService();
         if (httpClient == null) {
-            throw new HandleException(HandleException.CODE_NULL_EXCEPTION, HandleException.NULL_EXCEPTION, new Throwable("IRxHttpClient Cannot be NULL !"));
+           throw new HandleException(ExceptionType.NULL, new RuntimeException("IRxHttpClient Cannot be NULL !"));
         }
 
         String url = this.getUrl(this.code) + this.path;
@@ -138,16 +140,16 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         final Call call = httpClient.getHttpClientService().newCall(builder.build());
 
         Response response = call.execute();
-        if (response.isSuccessful()) {
-
-            return this.parseResult(response.body().charStream(), this.getClassType());
-
-        } else {
-            UtilLog.w(BaseHttpRequest.class, "RxJava OkHttp sendRequest :" + "code:" + response.code() + ",msg:" + response.message());
-            //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
-            throw new HandleException(HandleException.CODE_HTTP_EXCEPTION, HandleException.HTTP_EXCEPTION, new Throwable("code:" + response.code() + ",msg:" + response.message()));
+        try {
+            if (response.isSuccessful()) {
+                return this.parseResult(response.body().charStream(), this.getClassType());
+            } else {
+                //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
+                throw new HandleException(ExceptionType.HTTP,new RuntimeException(response.toString()));
+            }
+        } finally {
+            response.close();
         }
-
     }
 
     /**

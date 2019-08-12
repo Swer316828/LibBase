@@ -2,6 +2,7 @@ package com.sfh.lib.http.transaction;
 
 import android.text.TextUtils;
 
+import com.sfh.lib.exception.ExceptionType;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.HttpMediaType;
 import com.sfh.lib.http.UtilRxHttp;
@@ -39,7 +40,7 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
 
     public OutreachRequest(String path) {
 
-        super (path);
+        super(path);
     }
 
     /***
@@ -49,7 +50,7 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
      */
     public Disposable sendRequest(IResult<T> result) {
 
-        return RetrofitManager.executeSigin (this.getTask (), result);
+        return RetrofitManager.executeSigin(this.getTask(), result);
     }
 
     /***
@@ -58,20 +59,19 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
      */
     public Observable<T> getTask() {
 
-        return Observable.create (new ObservableOnSubscribe<T> () {
+        return Observable.create(new ObservableOnSubscribe<T>() {
 
             @Override
             public void subscribe(ObservableEmitter<T> emitter) throws Exception {
 
-                T t = OutreachRequest.this.sendRequest ();
+                T t = OutreachRequest.this.sendRequest();
                 if (t == null) {
                     //onNext called with null. Null values are generally not allowed in 2.x operators and sources.
-                    emitter.onError (new HandleException ("H1000", "请求失败，结果为NULL,Url：" + getUrl (code) + path));
+                    emitter.onError(new HandleException(ExceptionType.NULL, new NullPointerException("H请求失败，结果为NULL,Url：" + getUrl(code) + path)));
                 } else {
-                    emitter.onNext (t);
+                    emitter.onNext(t);
                 }
-
-                emitter.onComplete ();
+                emitter.onComplete();
 
             }
         });
@@ -85,23 +85,23 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
     @Override
     public T sendRequest() throws Exception {
 
-        return super.sendRequest ();
+        return super.sendRequest();
     }
 
     @Override
     public Object buildParam() {
 
-        if (TextUtils.equals (HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
+        if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
             // 文件类型
-            MultipartBody.Builder builder = new MultipartBody.Builder ().setType (MultipartBody.FORM);
-            this.buildParamMultipart (this, builder);
-            return builder.build ();
+            MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+            this.buildParamMultipart(this, builder);
+            return builder.build();
         }
-        if (TextUtils.equals (HttpMediaType.MEDIA_TYPE_JSON, this.mediaType)) {
-            return this.toJson (this);
+        if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_JSON, this.mediaType)) {
+            return this.toJson(this);
         }
 
-        return this.buildParamKeyValue (this);
+        return this.buildParamKeyValue(this);
     }
 
     /**
@@ -112,35 +112,35 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
      */
     private void buildParamMultipart(Object object, MultipartBody.Builder builder) {
 
-        Field[] fields = object.getClass ().getDeclaredFields ();
+        Field[] fields = object.getClass().getDeclaredFields();
         if (fields == null || fields.length <= 0) {
             return;
         }
 
         //准备实体
         for (Field field : fields) {
-            field.setAccessible (true);
-            if (this.isLoseParameter (field)) {
+            field.setAccessible(true);
+            if (this.isLoseParameter(field)) {
                 continue;
             }
             Object value = null;
             try {
-                value = field.get (object);
+                value = field.get(object);
             } catch (IllegalAccessException e) {
             }
-            if (value == null || TextUtils.isEmpty (value.toString ())) {
+            if (value == null || TextUtils.isEmpty(value.toString())) {
                 continue;
             }
-            String key = field.getName ();
-            if (UtilRxHttp.isBaseType (value)) {
+            String key = field.getName();
+            if (UtilRxHttp.isBaseType(value)) {
                 // 基础类型
-                builder.addPart (MultipartBody.Part.createFormData (key, String.valueOf (value)));
+                builder.addPart(MultipartBody.Part.createFormData(key, String.valueOf(value)));
 
             } else if (value instanceof File) {
                 File f = (File) value;
-                builder.addPart (MultipartBody.Part.createFormData (field.getName (), f.getName (), RequestBody.create (MediaType.parse ("application/octet-stream"), f)));
+                builder.addPart(MultipartBody.Part.createFormData(field.getName(), f.getName(), RequestBody.create(MediaType.parse("application/octet-stream"), f)));
             } else {
-                builder.addPart (MultipartBody.Part.createFormData (key, this.toJson (value)));
+                builder.addPart(MultipartBody.Part.createFormData(key, this.toJson(value)));
             }
         }
     }
@@ -152,36 +152,36 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
      */
     private String buildParamKeyValue(Object object) {
 
-        Field[] fields = object.getClass ().getDeclaredFields ();
+        Field[] fields = object.getClass().getDeclaredFields();
         if (fields == null || fields.length <= 0) {
             return "";
         }
-        StringBuffer buffer = new StringBuffer (100);
+        StringBuffer buffer = new StringBuffer(100);
 
         for (Field field : fields) {
-            field.setAccessible (true);
+            field.setAccessible(true);
 
-            if (this.isLoseParameter (field)) {
+            if (this.isLoseParameter(field)) {
                 continue;
             }
             Object value = null;
             try {
-                value = field.get (object);
+                value = field.get(object);
             } catch (IllegalAccessException e) {
             }
-            if (value == null || TextUtils.isEmpty (value.toString ())) {
+            if (value == null || TextUtils.isEmpty(value.toString())) {
                 continue;
             }
-            if (UtilRxHttp.isBaseType (value)) {
+            if (UtilRxHttp.isBaseType(value)) {
                 // 基础类型
-                buffer.append (field.getName ()).append ("=").append (value.toString ()).append ("&");
+                buffer.append(field.getName()).append("=").append(value.toString()).append("&");
             } else if (value instanceof File) {
 
             } else {
-                buffer.append (field.getName ()).append ("=").append (this.toJson (value)).append ("&");
+                buffer.append(field.getName()).append("=").append(this.toJson(value)).append("&");
             }
         }
-        return buffer.toString ();
+        return buffer.toString();
     }
 
 
@@ -192,12 +192,12 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
      */
     private boolean isLoseParameter(Field field) {
         //静态属性被忽略
-        if (Modifier.isStatic (field.getModifiers ())
-                || Modifier.isFinal (field.getModifiers ())
-                || Modifier.isTransient (field.getModifiers ())) {
+        if (Modifier.isStatic(field.getModifiers())
+                || Modifier.isFinal(field.getModifiers())
+                || Modifier.isTransient(field.getModifiers())) {
             return true;
         }
-        LoseParameter lose = field.getAnnotation (LoseParameter.class);
+        LoseParameter lose = field.getAnnotation(LoseParameter.class);
         if (lose != null) {
             // 忽略参数
             return true;
