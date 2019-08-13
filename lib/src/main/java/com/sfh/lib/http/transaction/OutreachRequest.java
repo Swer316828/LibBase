@@ -2,8 +2,6 @@ package com.sfh.lib.http.transaction;
 
 import android.text.TextUtils;
 
-import com.sfh.lib.exception.ExceptionType;
-import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.HttpMediaType;
 import com.sfh.lib.http.UtilRxHttp;
 import com.sfh.lib.http.annotation.LoseParameter;
@@ -13,14 +11,11 @@ import com.sfh.lib.rx.RetrofitManager;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Iterator;
-import java.util.Map;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -67,7 +62,7 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
                 T t = OutreachRequest.this.sendRequest();
                 if (t == null) {
                     //onNext called with null. Null values are generally not allowed in 2.x operators and sources.
-                    emitter.onError(new HandleException(ExceptionType.NULL, new NullPointerException("H请求失败，结果为NULL,Url：" + getUrl(code) + path)));
+                    emitter.onError(new NullPointerException("请求失败，结果为NULL,Url" + getUrl(code) + path));
                 } else {
                     emitter.onNext(t);
                 }
@@ -75,17 +70,6 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
 
             }
         });
-    }
-
-    /***
-     * 同步执行任务
-     * @return 返回数据对象
-     * @throws HandleException
-     */
-    @Override
-    public T sendRequest() throws Exception {
-
-        return super.sendRequest();
     }
 
     @Override

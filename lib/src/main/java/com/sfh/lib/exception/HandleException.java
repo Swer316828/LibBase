@@ -1,7 +1,10 @@
 package com.sfh.lib.exception;
 
 import android.net.ParseException;
+import android.support.v4.content.ContextCompat;
 
+import com.sfh.lib.AppCacheManager;
+import com.sfh.lib.R;
 import com.sfh.lib.utils.UtilLog;
 
 import org.apache.http.conn.ConnectTimeoutException;
@@ -22,6 +25,14 @@ import io.reactivex.annotations.Nullable;
  * @date 2018/4/3
  */
 public final class HandleException extends RuntimeException {
+    public static final int CODE_UNKNOWN = 10000;
+    public static final int CODE_PARSE = 10001;
+    public static final int CODE_NET = 10002;
+    public static final int CODE_HTTP = 10003;
+    public static final int CODE_SSL = 10004;
+    public static final int CODE_TIMEOUT = 10005;
+    public static final int CODE_IO = 10006;
+    public static final int CODE_NULL = 10007;
 
     /**** 错误码*/
     private int code;
@@ -41,12 +52,6 @@ public final class HandleException extends RuntimeException {
         this.msg = msg;
     }
 
-    public HandleException(ExceptionType type, Throwable throwable) {
-
-        super(throwable);
-        this.code = type.code;
-        this.msg = type.format;
-    }
 
     @Override
     public String getMessage() {
@@ -75,14 +80,14 @@ public final class HandleException extends RuntimeException {
     }
 
     @Nullable
-    public static volatile ICrashReport<? super Throwable> crashReportHandler;
+    public static volatile ICrashReport crashReportHandler;
 
     /**
      * 设置异常上报处理
      *
      * @param handler
      */
-    public static void setErrorHandler(@Nullable ICrashReport<? super Throwable> handler) {
+    public static void setErrorHandler(@Nullable ICrashReport handler) {
 
         crashReportHandler = handler;
     }
@@ -90,19 +95,26 @@ public final class HandleException extends RuntimeException {
 
     public static HandleException handleException(Throwable e) {
 
-        if (crashReportHandler != null) {
-            crashReportHandler.accept(e);
-        }
-
         if (e == null) {
-            return new HandleException(ExceptionType.NULL.code, ExceptionType.NULL.format);
+            return new HandleException(CODE_NULL, AppCacheManager.getApplication().getString(R.string.exception_null));
         }
 
         if (e instanceof HandleException) {
+            //已经处理
             return (HandleException) e;
         }
 
+        HandleException exception;
+        if (crashReportHandler != null && (exception = crashReportHandler.accept(e)) != null) {
+            //上层处理异常
+            return exception;
+        }
+
         final Throwable throwable = e.getCause();
+        //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
+        if (e instanceof HttpCodeException || throwable instanceof HttpCodeException){
+            return new HandleException(CODE_HTTP, AppCacheManager.getApplication().getString(R.string.exception_http), e);
+        }
 
         // 服务器请求超时 or 服务器响应超时
         if (e instanceof ConnectTimeoutException
@@ -113,7 +125,7 @@ public final class HandleException extends RuntimeException {
                 || throwable instanceof java.net.SocketTimeoutException
                 || throwable instanceof java.net.SocketException
         ) {
-            return new HandleException(ExceptionType.TIMEOUT, e);
+            return new HandleException(CODE_TIMEOUT, AppCacheManager.getApplication().getString(R.string.exception_timeout), e);
         }
 
 
@@ -126,7 +138,7 @@ public final class HandleException extends RuntimeException {
                 || throwable instanceof java.net.NoRouteToHostException
                 || throwable instanceof UnknownHostException
         ) {
-            return new HandleException(ExceptionType.NET, e);
+            return new HandleException(CODE_NET, AppCacheManager.getApplication().getString(R.string.exception_net), e);
         }
 
         // 返回数据进行Json解析出现异常，如数据不符合Json数据格式
@@ -138,21 +150,21 @@ public final class HandleException extends RuntimeException {
                 || throwable instanceof ParseException
                 || throwable instanceof com.google.gson.JsonParseException) {
 
-            return new HandleException(ExceptionType.PARSE, e);
+            return new HandleException(CODE_PARSE, AppCacheManager.getApplication().getString(R.string.exception_parse), e);
         }
 
         // IO读写时出现
         if (e instanceof IOException || throwable instanceof IOException) {
-            return new HandleException(ExceptionType.IO, e);
+            return new HandleException(CODE_IO, AppCacheManager.getApplication().getString(R.string.exception_io), e);
         }
 
         //没有信任证书，导致请求失败
         if (e instanceof SSLException || throwable instanceof SSLException) {
-            return new HandleException(ExceptionType.SSL, e);
+            return new HandleException(CODE_SSL, AppCacheManager.getApplication().getString(R.string.exception_ssl), e);
         }
 
         // 未捕获异常情况
-        return new HandleException(ExceptionType.UNKNOWN, e);
+        return new HandleException(CODE_UNKNOWN, AppCacheManager.getApplication().getString(R.string.exception_unknown), e);
     }
 
 
