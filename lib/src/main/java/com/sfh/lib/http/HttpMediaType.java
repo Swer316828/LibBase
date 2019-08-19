@@ -4,8 +4,6 @@ package com.sfh.lib.http;
  * 功能描述:参数类型
  *
  * @author SunFeihu 孙飞虎
- * @company 中储南京智慧物流科技有限公司
- * @copyright （版权）中储南京智慧物流科技有限公司所有
  * @date 2019/1/9
  */
 public class HttpMediaType {

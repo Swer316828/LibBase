@@ -137,16 +137,16 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         final Call call = httpClient.getHttpClientService().newCall(builder.build());
 
         Response response = call.execute();
-        try {
+//        try {
             if (response.isSuccessful()) {
                 return this.parseResult(response.body().charStream(), this.getClassType());
             } else {
                 //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
                 throw new HttpCodeException(response.code(),response.toString());
             }
-        } finally {
-            response.close();
-        }
+//        } finally {
+//            response.close();
+//        }
     }
 
     /**
