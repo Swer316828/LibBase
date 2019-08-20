@@ -106,7 +106,7 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
 
         final IRxHttpClient httpClient = this.getHttpService();
         if (httpClient == null) {
-           throw new NullPointerException("IRxHttpClient Cannot be NULL !");
+            throw new NullPointerException("IRxHttpClient Cannot be NULL !");
         }
 
         String url = this.getUrl(this.code) + this.path;
@@ -137,16 +137,21 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         final Call call = httpClient.getHttpClientService().newCall(builder.build());
 
         Response response = call.execute();
-//        try {
-            if (response.isSuccessful()) {
-                return this.parseResult(response.body().charStream(), this.getClassType());
-            } else {
-                //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
-                throw new HttpCodeException(response.code(),response.toString());
-            }
-//        } finally {
-//            response.close();
-//        }
+        if (response.isSuccessful()) {
+            T data = this.parseResult(response.body().charStream(), this.getClassType());
+            this.cacheResponse(data);
+            return data;
+        } else {
+            //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
+            throw new HttpCodeException(response.code(), response.toString());
+        }
+    }
+
+    /***
+     * 处理返回数据
+     * @param data
+     */
+    public void cacheResponse(T data) {
     }
 
     /**

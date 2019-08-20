@@ -4,6 +4,8 @@ import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleRegistry;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
+import android.arch.lifecycle.ViewModelStore;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.sfh.lib.AppCacheManager;
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.data.UIData;
@@ -126,6 +129,20 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
             return null;
         }
         return this.getViewModel(mVMCls);
+    }
+
+
+    @Nullable
+    @Override
+    public Context getContext() {
+        Context context = super.getContext();
+        if (context == null) {
+            context = super.getActivity();
+            if (context == null) {
+                context = AppCacheManager.getApplication();
+            }
+        }
+        return context;
     }
 
     /***

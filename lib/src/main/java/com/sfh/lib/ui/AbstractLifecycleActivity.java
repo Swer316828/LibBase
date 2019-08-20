@@ -36,7 +36,7 @@ import io.reactivex.disposables.Disposable;
  * @date 2017/7/5
  */
 public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extends FragmentActivity implements IView, Observer {
-
+    private static final String BUNDLE_FRAGMENTS_KEY = "android:support:fragments";
     /***
      * 对话框句柄【基础操作】
      */
@@ -50,12 +50,29 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-
+        if (savedInstanceState != null && this.clearFragmentsTag()) {
+            //重建时清除 fragment的状态
+            savedInstanceState.remove(BUNDLE_FRAGMENTS_KEY);
+        }
         super.onCreate(savedInstanceState);
+
         if (this.mLiveDataRegistry == null) {
             this.mLiveDataRegistry = new LiveDataRegistry();
             this.mLiveDataRegistry.register(this);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (outState != null && this.clearFragmentsTag()) {
+            //销毁时不保存fragment的状态
+            outState.remove(BUNDLE_FRAGMENTS_KEY);
+        }
+    }
+
+    protected boolean clearFragmentsTag() {
+        return true;
     }
 
     @Override
