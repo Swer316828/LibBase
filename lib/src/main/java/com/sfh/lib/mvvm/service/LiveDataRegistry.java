@@ -37,13 +37,13 @@ import io.reactivex.functions.Function;
  */
 public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult {
 
-    private final static String TAG = LiveDataRegistry.class.getName ();
+    private final static String TAG = LiveDataRegistry.class.getName();
 
-    private volatile SparseArray<UIMethod> mUIMethod = new SparseArray<> (5);
+    private volatile SparseArray<UIMethod> mUIMethod = new SparseArray<>(5);
 
-    private CompositeDisposable mDisposableList = new CompositeDisposable ();
+    private CompositeDisposable mDisposableList = new CompositeDisposable();
 
-    private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData ();
+    private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData();
 
     private ViewModelProvider mViewModelProvider;
 
@@ -53,23 +53,23 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
      */
     public final void register(@NonNull IView listener) {
 
-        this.mLiveData.observe (listener, listener);
-        this.mDisposableList.add (RetrofitManager.executeSigin (Flowable.just (listener).map (this).onBackpressureLatest (), new EmptyResult ()));
+        this.mLiveData.observe(listener, listener);
+        this.mDisposableList.add(RetrofitManager.executeSigin(Flowable.just(listener).map(this).onBackpressureLatest(), new EmptyResult()));
     }
 
     public void onDestroy() {
 
-        UtilLog.d (TAG, "LiveDataRegistry onCleared =========== 资源销毁");
-        this.mLiveData.onCleared ();
-        this.mDisposableList.clear ();
-        this.mUIMethod.clear ();
+        UtilLog.d(TAG, "LiveDataRegistry onCleared =========== 资源销毁");
+        this.mLiveData.onCleared();
+        this.mDisposableList.clear();
+        this.mUIMethod.clear();
     }
 
     /***
      * 绑定数据监听与
      * @param viewModel
      */
-    public void bindLiveDataAndCompositeDisposable(BaseViewModel viewModel){
+    public void bindLiveDataAndCompositeDisposable(BaseViewModel viewModel) {
         viewModel.putLiveData(this.mLiveData);
     }
 
@@ -82,34 +82,34 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
     @Override
     public Boolean apply(IView iView) throws Exception {
 
-        final Method[] methods = iView.getClass ().getDeclaredMethods ();
+        final Method[] methods = iView.getClass().getDeclaredMethods();
 
         for (Method method : methods) {
 
-            final int modifiers = method.getModifiers ();
-            if (!Modifier.isPublic (modifiers)
-                    || Modifier.isFinal (modifiers)
-                    || Modifier.isAbstract (modifiers)
-                    || Modifier.isStatic (modifiers)) {
+            final int modifiers = method.getModifiers();
+            if (!Modifier.isPublic(modifiers)
+                    || Modifier.isFinal(modifiers)
+                    || Modifier.isAbstract(modifiers)
+                    || Modifier.isStatic(modifiers)) {
                 continue;
             }
 
-            LiveDataMatch liveEvent = method.getAnnotation (LiveDataMatch.class);
+            LiveDataMatch liveEvent = method.getAnnotation(LiveDataMatch.class);
             if (liveEvent != null) {
                 // 注册LiveData监听
-                UIMethod uiMethod = new UIMethod (method);
-                this.mUIMethod.put (uiMethod.hashCode (), uiMethod);
+                UIMethod uiMethod = new UIMethod(method);
+                this.mUIMethod.put(uiMethod.hashCode(), uiMethod);
             }
 
-            RxBusEvent rxBusEvent = method.getAnnotation (RxBusEvent.class);
+            RxBusEvent rxBusEvent = method.getAnnotation(RxBusEvent.class);
             if (rxBusEvent != null) {
-                Class<?>[] parameterTypes = method.getParameterTypes ();
+                Class<?>[] parameterTypes = method.getParameterTypes();
                 Class<?> dataClass;
                 if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
 
-                    RxBusEventManager.register (dataClass, this);
-                    UIMethod uiMethod = new UIMethod (method, dataClass);
-                    this.mUIMethod.put (uiMethod.hashCode (), uiMethod);
+                    RxBusEventManager.register(dataClass, this);
+                    UIMethod uiMethod = new UIMethod(method, dataClass);
+                    this.mUIMethod.put(uiMethod.hashCode(), uiMethod);
                 }
             }
         }
@@ -119,17 +119,17 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
     @Override
     public void onEventSuccess(Object data) throws Exception {
         // RxBus 消息监听
-        UIMethod eventMethod = this.mUIMethod.get (data.getClass ().getSimpleName ().hashCode ());
+        UIMethod eventMethod = this.mUIMethod.get(data.getClass().getSimpleName().hashCode());
         if (eventMethod != null) {
             //响应方法：当前ViewModel 监听方法
-            this.mLiveData.setValue (new UIData (eventMethod.method.getName (), data));
+            this.mLiveData.setValue(new UIData(eventMethod.method.getName(), data));
         }
     }
 
     @Override
     public void onSubscribe(Disposable d) {
 
-        this.mDisposableList.add (d);
+        this.mDisposableList.add(d);
     }
 
 
@@ -141,56 +141,56 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
     public final void showLiveData(@NonNull Object view, @Nullable UIData data) {
         // LiveData 数据监听
         if (view == null || data == null) {
-            UtilLog.e (TAG, "LiveDataRegistry method: null");
+            UtilLog.e(TAG, "LiveDataRegistry method: null");
             return;
         }
 
         try {
-            Method method = this.getPolishingMethod (view, data);
+            Method method = this.getPolishingMethod(view, data);
             if (method == null) {
                 return;
             }
 
             //方法需要参数
-            final Class<?>[] parameter = method.getParameterTypes ();
+            final Class<?>[] parameter = method.getParameterTypes();
             final int originalLength = parameter.length;
 
             //【响应方法】无参
             if (originalLength == 0) {
-                method.invoke (view);
+                method.invoke(view);
                 return;
             }
 
-            final int dataLength = data.getDataLength ();
+            final int dataLength = data.getDataLength();
 
             //【响应方法】有参
             if (originalLength == dataLength) {
                 // 正常匹配
-                method.invoke (view, data.getData ());
+                method.invoke(view, data.getData());
                 return;
             }
 
             //需要一个参数
             if (originalLength == 1 && dataLength == 0) {
-                method.invoke (view, new Object[]{this.getNullObject (parameter[0])});
+                method.invoke(view, new Object[]{this.getNullObject(parameter[0])});
                 return;
             }
 
             //补齐参数
-            List<Object> list = new ArrayList<> (originalLength);
+            List<Object> list = new ArrayList<>(originalLength);
 
-            final Object[] temp = data.getData ();
+            final Object[] temp = data.getData();
             for (int i = 0; i < originalLength; i++) {
                 if (i < dataLength) {
-                    list.add (temp[i]);
+                    list.add(temp[i]);
                 } else {
-                    list.add (this.getNullObject (parameter[i]));
+                    list.add(this.getNullObject(parameter[i]));
                 }
             }
-            method.invoke (view, list.toArray ());
+            method.invoke(view, list.toArray());
 
         } catch (Exception e) {
-            UtilLog.e (TAG, "LiveDataRegistry method:" + data.getAction () + " e:" + e);
+            UtilLog.e(TAG, "LiveDataRegistry method:" + data.getAction() + " e:" + e);
         }
     }
 
@@ -203,52 +203,56 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
     private Method getPolishingMethod(Object view, UIData data) {
 
         //LiveData
-        UIMethod uiMethod = this.mUIMethod.get (data.getAction ().hashCode ());
+        UIMethod uiMethod = this.mUIMethod.get(data.getAction().hashCode());
         if (uiMethod != null) {
             return uiMethod.method;
         }
 
         //RxBusEvent
-        Class<?> liveClass = data.getDataClass ();
+        Class<?> liveClass = data.getDataClass();
         if (liveClass != null) {
-            uiMethod = this.mUIMethod.get (liveClass.getSimpleName ().hashCode ());
+            uiMethod = this.mUIMethod.get(liveClass.getSimpleName().hashCode());
         }
         if (uiMethod != null) {
             return uiMethod.method;
         }
 
         // 补齐方法
-        final Method[] methods = view.getClass ().getDeclaredMethods ();
+        final Method[] methods = view.getClass().getDeclaredMethods();
 
         for (Method method : methods) {
-            final int modifiers = method.getModifiers ();
-            if (!Modifier.isPublic (modifiers)
-                    || Modifier.isFinal (modifiers)
-                    || Modifier.isAbstract (modifiers)
-                    || Modifier.isStatic (modifiers)) {
+            final int modifiers = method.getModifiers();
+            if (!Modifier.isPublic(modifiers)
+                    || Modifier.isFinal(modifiers)
+                    || Modifier.isAbstract(modifiers)
+                    || Modifier.isStatic(modifiers)) {
                 continue;
             }
 
-            if (TextUtils.equals (method.getName (), data.getAction ())) {
+            if (TextUtils.equals(method.getName(), data.getAction())) {
                 // 注册LiveData监听
-                uiMethod = new UIMethod (method);
-                this.mUIMethod.put (uiMethod.hashCode (), uiMethod);
+                uiMethod = new UIMethod(method);
+                this.mUIMethod.put(uiMethod.hashCode(), uiMethod);
                 return method;
             }
         }
         return null;
     }
 
+    private static final Integer EMPTY_INTEGER = Integer.valueOf(0);
+    private static final Long EMPTY_LONG = Long.valueOf(0L);
+    private static final Float EMPTY_FLOAT = Float.valueOf(0.0f);
+
     private Object getNullObject(Class<?> parameter) {
 
-        if (long.class.isAssignableFrom (parameter) || Long.class.isAssignableFrom (parameter)) {
-            return 0L;
-        } else if (boolean.class.isAssignableFrom (parameter) || Boolean.class.isAssignableFrom (parameter)) {
-            return false;
-        } else if (int.class.isAssignableFrom (parameter) || Integer.class.isAssignableFrom (parameter)) {
-            return 0;
-        } else if (float.class.isAssignableFrom (parameter) || Float.class.isAssignableFrom (parameter)) {
-            return 0.0f;
+        if (long.class.isAssignableFrom(parameter) || Long.class.isAssignableFrom(parameter)) {
+            return EMPTY_LONG;
+        } else if (boolean.class.isAssignableFrom(parameter) || Boolean.class.isAssignableFrom(parameter)) {
+            return Boolean.FALSE;
+        } else if (int.class.isAssignableFrom(parameter) || Integer.class.isAssignableFrom(parameter)) {
+            return EMPTY_INTEGER;
+        } else if (float.class.isAssignableFrom(parameter) || Float.class.isAssignableFrom(parameter)) {
+            return EMPTY_FLOAT;
         } else {
             return null;
         }
@@ -260,7 +264,7 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
      */
     public final void putDisposable(Disposable disposable) {
 
-        this.mDisposableList.add (disposable);
+        this.mDisposableList.add(disposable);
     }
 
 

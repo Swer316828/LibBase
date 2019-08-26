@@ -1,7 +1,6 @@
 package com.sfh.lib.http.service;
 
 import com.sfh.lib.http.IRxHttpClient;
-import com.sfh.lib.http.IRxHttpConfig;
 import com.sfh.lib.utils.UtilLog;
 
 import java.util.Map;
@@ -11,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.Dns;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * 功能描述:网络服务[需求单列模式]
@@ -51,22 +49,19 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
             httpBuilder.readTimeout(this.getReadTimeout(), TimeUnit.MILLISECONDS);
             httpBuilder.connectTimeout(this.getConnectTimeout(), TimeUnit.MILLISECONDS);
             httpBuilder.writeTimeout(this.getWriteTimeout(), TimeUnit.MILLISECONDS);
-            if (this.getInterceptor() != null) {
-                httpBuilder.addInterceptor(this.getInterceptor());
-            }
-            if (this.getHttpDns() != null) {
-                httpBuilder.dns(this.getHttpDns());
-            }
-            if (this.log()) {
-                HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-                loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-                httpBuilder.addNetworkInterceptor(loggingInterceptor);
-            }
 
-            if (this.getNetworkInterceptor() != null) {
-                httpBuilder.addNetworkInterceptor(this.getNetworkInterceptor());
+            Interceptor interceptor = this.getInterceptor();
+            if (interceptor != null) {
+                httpBuilder.addInterceptor(interceptor);
             }
-
+            Interceptor networkInterceptor = this.getNetworkInterceptor();
+            if (networkInterceptor != null) {
+                httpBuilder.addNetworkInterceptor(networkInterceptor);
+            }
+            Dns dns = this.getHttpDns();
+            if (dns != null) {
+                httpBuilder.dns(dns);
+            }
             if (this.mOkHttpClient == null && this.mBuilder.compareAndSet(false, true)) {
                 this.mOkHttpClient = httpBuilder.build();
             }
