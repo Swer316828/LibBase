@@ -192,54 +192,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         Disposable disposable = RetrofitManager.executeSigin(observable, listener);
         listener.addDisposable(disposable);
     }
-    /*------------------------------------Flowable 模式任务 start-------------------------------------------------------------------------------*/
 
-    /***
-     * 执行背压异步任务，任务回调成功方法，异常以对话框形式提示
-     * <p>*【属于单次任务】:任务执行结果回调结束后，当前任务监听会自动注销释放</p>
-     *
-     * @param task 需执行任务对象
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull Flowable<T> task) {
-
-        EmptyResult result = new EmptyResult<T>();
-        Disposable disposable = RetrofitManager.executeSigin(task, result);
-        result.addDisposable(disposable);
-    }
-
-    /***
-     * 执行背压异步任务，任务回调成功方法，异常以对话框形式提示
-     *  <p>*【属于单次任务】:任务执行结果回调结束后，当前任务监听会自动注销释放</p>
-     *
-     * @param task 需执行任务对象
-     * @param listener 接口为1:【IResultSuccess,错误信息以对话框形式进行提示】2:【 IResultSuccessNoFail时，错误信息在日志输出】3:【IResult时，需处理错误信息】
-     * @param <T>
-     */
-    public final <T> void execute(@NonNull Flowable<T> task, @Nullable final IResultSuccess<T> listener) {
-
-        this.executeTask(task, new Task<T>(listener));
-    }
-
-    /***
-     * 执行背压异步等待任务，任务回调成功方法，异常以对话框形式提示
-     *  <p>*【属于单次任务】:任务执行结果回调结束后，当前任务监听会自动注销释放</p>
-     *
-     * @param cancelDialog true 可取消，false 不可取消
-     * @param task 需执行任务对象
-     * @param listener 接口为1:【IResultSuccess,错误信息以对话框形式进行提示】2:【 IResultSuccessNoFail时，错误信息在日志输出】3:【IResult时，需处理错误信息】
-     * @param <T>
-     */
-    public final <T> void execute(boolean cancelDialog, @NonNull Flowable<T> task, @Nullable final IResultSuccess<T> listener) {
-
-        this.executeTask(task, new TaskLoading<T>(cancelDialog, listener));
-    }
-
-    private <T> void executeTask(@NonNull Flowable<T> flowable, Task<T> listener) {
-
-        Disposable disposable = RetrofitManager.executeSigin(flowable, listener);
-        listener.addDisposable(disposable);
-    }
     /*------------------------------------新的请求方式 start-------------------------------------------------------------------------------*/
 
     /***

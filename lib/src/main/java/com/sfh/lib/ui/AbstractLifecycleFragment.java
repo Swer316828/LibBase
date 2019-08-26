@@ -35,7 +35,7 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2017/7/5
  */
-public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extends Fragment implements IView, Observer {
+public abstract class AbstractLifecycleFragment extends Fragment implements IView, Observer {
 
     public abstract int getLayout();
 
@@ -44,8 +44,6 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
     protected LiveDataRegistry mLiveDataRegistry;
 
     protected ViewModelProvider mViewModelProvider;
-
-    protected Class<VM> mVMCls;
 
     protected View mRoot;
 
@@ -85,7 +83,6 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         if (this.mLiveDataRegistry != null) {
             this.mLiveDataRegistry.onDestroy();
         }
-        this.mVMCls = null;
         this.mViewModelProvider = null;
         this.mRoot = null;
     }
@@ -112,23 +109,6 @@ public abstract class AbstractLifecycleFragment<VM extends BaseViewModel> extend
         if (lifecycle instanceof LifecycleRegistry) {
             ((LifecycleRegistry) lifecycle).handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
         }
-    }
-
-    /***
-     * 【不推荐使用此方法】 建设使用getViewModel(@NonNull Class<T> cls)
-     * @return
-     */
-    @Override
-    @Nullable
-    public final VM getViewModel() {
-
-        if (mVMCls == null) {
-            mVMCls = UtilTool.getParameterizedType(this);
-        }
-        if (mVMCls == null) {
-            return null;
-        }
-        return this.getViewModel(mVMCls);
     }
 
 

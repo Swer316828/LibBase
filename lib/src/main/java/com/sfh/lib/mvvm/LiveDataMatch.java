@@ -1,4 +1,4 @@
-package com.sfh.lib.mvvm.annotation;
+package com.sfh.lib.mvvm;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -21,5 +21,7 @@ public @interface LiveDataMatch {
      */
     String tag() default "";
 
+    /***匹配规则（默认方法名）*/
+    String filter() default "";
 
 }

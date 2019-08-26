@@ -7,5 +7,5 @@ package com.sfh.lib.rx;
  * @date 2018/4/23
  */
 public interface IResultSuccess<T> {
-    void onSuccess(T t)  throws Exception ;
+    void onSuccess(T t);
 }

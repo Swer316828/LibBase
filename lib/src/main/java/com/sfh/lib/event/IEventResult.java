@@ -1,7 +1,5 @@
 package com.sfh.lib.event;
 
-import io.reactivex.disposables.Disposable;
-
 /**
  * 功能描述: 消息监听接口
  *
@@ -15,11 +13,6 @@ public interface IEventResult<T> {
      * @param t
      * @throws Exception
      */
-    void onEventSuccess(T t) throws Exception;
+    void onEventSuccess(T t);
 
-    /***
-     * 任务
-     * @param d
-     */
-    void onSubscribe(Disposable d);
 }

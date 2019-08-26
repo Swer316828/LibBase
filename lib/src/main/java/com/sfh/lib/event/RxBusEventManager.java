@@ -5,6 +5,9 @@ import android.support.annotation.NonNull;
 
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 
@@ -51,14 +54,15 @@ public final class RxBusEventManager {
      * @param <T> class类型
      * @return Disposable 需要手动销毁
      */
-    public static <T> void register(@NonNull final Class<T> eventClass, @NonNull final IEventResult<T> onNext) {
+    public static <T> Disposable register(@NonNull final Class<T> eventClass, @NonNull final IEventResult<T> onNext) {
         if (eventClass == null) {
-            throw new NullPointerException("Class<T> eventClass is null");
+            throw new NullPointerException("Class eventClass is null");
         }
         if (onNext == null) {
-            throw new NullPointerException("IEventResult<T> onNext is null");
+            throw new NullPointerException("IEventResult onNext is null");
         }
-        Hondler.EVENT.bus.ofType(eventClass).observeOn(AndroidSchedulers.mainThread()).subscribe(new RxEventObserver<>(onNext));
+        return Hondler.EVENT.bus.ofType(eventClass).subscribe(new RxEventObserver(onNext),RxEventObserver.onError);
     }
+
 
 }

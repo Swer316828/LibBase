@@ -22,7 +22,7 @@ public class EmptyResult<T> implements IResult<T> {
     }
 
     @Override
-    public void onSuccess(T t) throws Exception {
+    public void onSuccess(T t){
         if (this.disposable != null) {
             this.disposable.dispose();
         }
@@ -31,7 +31,6 @@ public class EmptyResult<T> implements IResult<T> {
     @Override
     public void onFail(HandleException e) {
 
-        UtilLog.w(EmptyResult.class.getName(), "RxJava EmptyResult.class onFail:" + e);
         if (this.disposable != null) {
             this.disposable.dispose();
         }

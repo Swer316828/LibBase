@@ -35,7 +35,7 @@ import io.reactivex.disposables.Disposable;
  * @author SunFeihu 孙飞虎
  * @date 2017/7/5
  */
-public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extends FragmentActivity implements IView, Observer {
+public abstract class AbstractLifecycleActivity extends FragmentActivity implements IView, Observer {
     private static final String BUNDLE_FRAGMENTS_KEY = "android:support:fragments";
     /***
      * 对话框句柄【基础操作】
@@ -45,8 +45,6 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
     protected LiveDataRegistry mLiveDataRegistry;
 
     protected ViewModelProvider mViewModelProvider;
-
-    protected Class<VM> mVMCls;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -86,26 +84,8 @@ public abstract class AbstractLifecycleActivity<VM extends BaseViewModel> extend
             if (this.mLiveDataRegistry != null) {
                 this.mLiveDataRegistry.onDestroy();
             }
-            this.mVMCls = null;
             this.mViewModelProvider = null;
         }
-    }
-
-    /***
-     * 【不推荐使用此方法】 建设使用getViewModel(@NonNull Class<T> cls)
-     * @return
-     */
-    @Override
-    @MainThread
-    public final VM getViewModel() {
-
-        if (mVMCls == null) {
-            mVMCls = UtilTool.getParameterizedType(this);
-        }
-        if (mVMCls == null) {
-            return null;
-        }
-        return this.getViewModel(mVMCls);
     }
 
     /***

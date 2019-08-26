@@ -1,6 +1,7 @@
 package com.sfh.lib.mvvm.service;
 
-import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.LiveData;
+import android.os.Looper;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,38 +13,46 @@ import java.util.Set;
  * @author SunFeihu 孙飞虎
  * @date 2019/3/12
  */
-public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
+public class ObjectMutableLiveData<T> extends LiveData<T> {
 
     private boolean mOnActive = true;
 
-    private volatile Set<T> mNetWorkState = new HashSet<> (7, 0.75f);
+    private Set<T> mNetWorkState = new HashSet<>(7, 0.75f);
 
     @Override
     public void setValue(T value) {
 
         if (this.mOnActive) {
-            super.setValue (value);
-        } else if (this.hasObservers ()) {
+            if (Looper.getMainLooper().getThread() == Thread.currentThread()) {
+                super.setValue(value);
+            } else {
+                super.postValue(value);
+            }
+        } else if (this.hasObservers()) {
             //应用在后台,暂存数据，防止丢失。
-            this.mNetWorkState.add (value);
+            this.mNetWorkState.add(value);
         }
     }
 
     public void onCleared() {
-        this.mNetWorkState.clear ();
+        this.mNetWorkState.clear();
     }
 
     @Override
     protected void onActive() {
 
         this.mOnActive = true;
-        super.onActive ();
-        if (!this.mNetWorkState.isEmpty ()) {
-
-            for (Iterator<T> it = this.mNetWorkState.iterator (); it.hasNext (); ) {
-                super.setValue (it.next ());
+        super.onActive();
+        if (!this.mNetWorkState.isEmpty()) {
+            boolean ui = Looper.getMainLooper().getThread() == Thread.currentThread();
+            for (Iterator<T> it = this.mNetWorkState.iterator(); it.hasNext(); ) {
+                if (ui) {
+                    super.setValue(it.next());
+                } else {
+                    super.postValue(it.next());
+                }
             }
-            this.mNetWorkState.clear ();
+            this.mNetWorkState.clear();
         }
     }
 
@@ -51,6 +60,6 @@ public class ObjectMutableLiveData<T> extends MutableLiveData<T> {
     protected void onInactive() {
 
         this.mOnActive = false;
-        super.onInactive ();
+        super.onInactive();
     }
 }
