@@ -6,15 +6,13 @@ import android.support.annotation.Nullable;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.utils.UtilLog;
 
-import org.reactivestreams.Publisher;
-
 import io.reactivex.Flowable;
-import io.reactivex.FlowableTransformer;
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.ObservableTransformer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
@@ -34,8 +32,8 @@ public final class RetrofitManager {
      */
     public static <T> Disposable executeSigin(@NonNull Observable<T> observable, @Nullable IResult<T> result) {
 
-        RxObserver<T> subscribe = new RxObserver (result);
-        return compose (observable).subscribe (subscribe, subscribe.getOnError (),subscribe);
+        RxObserver<T> subscribe = new RxObserver(result);
+        return compose(observable).subscribe(subscribe, subscribe.getOnError(), subscribe);
     }
 
 
@@ -47,8 +45,8 @@ public final class RetrofitManager {
      */
     public static <T> Disposable executeSigin(@NonNull Flowable<T> flowable, @Nullable IResult<T> result) {
 
-        RxObserver<T> subscribe = new RxObserver (result);
-        return compose (flowable).subscribe (subscribe, subscribe.getOnError (),subscribe);
+        RxObserver<T> subscribe = new RxObserver(result);
+        return compose(flowable).subscribe(subscribe, subscribe.getOnError(), subscribe);
     }
 
     /***
@@ -59,17 +57,10 @@ public final class RetrofitManager {
      */
     public static <T> Observable<T> compose(@NonNull Observable<T> observable) {
 
-        return observable.compose (new ObservableTransformer<T, T> () {
-
-            @Override
-            public ObservableSource<T> apply(Observable<T> upstream) {
-
-                return upstream.subscribeOn (Schedulers.io ())
-                        .unsubscribeOn (Schedulers.io ())
-                        .observeOn (AndroidSchedulers.mainThread ())
-                        .onErrorResumeNext (new ThrowableFunc ());
-            }
-        });
+        return observable.compose((ObservableTransformer<T, T>) upstream -> upstream.subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .onErrorResumeNext(new ThrowableFunc()));
     }
 
 
@@ -81,30 +72,21 @@ public final class RetrofitManager {
      */
     public static <T> Flowable<T> compose(@NonNull Flowable<T> observable) {
 
-        return observable.compose (new FlowableTransformer<T, T> () {
-
-            @Override
-            public Publisher<T> apply(Flowable<T> upstream) {
-
-                return upstream.subscribeOn (Schedulers.io ())
-                        .unsubscribeOn (Schedulers.io ())
-                        .observeOn (AndroidSchedulers.mainThread ())
-                        .onErrorResumeNext (new ThrowableFunc ());
-            }
-        });
+        return observable.compose(upstream -> upstream.subscribeOn(Schedulers.io())
+                .unsubscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())).onErrorResumeNext(new ThrowableFunc());
     }
 
     /***
      * 异常处理类
-     * @param <E>
      */
     public static class ThrowableFunc<E extends Throwable> implements Function<E, Observable<HandleException>> {
 
         @Override
-        public Observable<HandleException> apply(E throwable) throws Exception {
+        public Observable<HandleException> apply(E throwable) {
             // 封装成自定义异常对象
-            UtilLog.w("","RxJava ThrowableFunc.class throwable:"+throwable);
-            return Observable.error (HandleException.handleException (throwable));
+            UtilLog.w("", "RxJava ThrowableFunc.class throwable:" + throwable);
+            return Observable.error(HandleException.handleException(throwable));
         }
     }
 }

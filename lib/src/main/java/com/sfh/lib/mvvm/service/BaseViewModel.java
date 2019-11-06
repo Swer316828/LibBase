@@ -4,21 +4,20 @@ import android.arch.lifecycle.ViewModel;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 
+import com.sfh.lib.event.EventData;
 import com.sfh.lib.event.IEventResult;
 import com.sfh.lib.event.RxBusEvent;
 import com.sfh.lib.event.RxBusEventManager;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.transaction.OutreachRequest;
+import com.sfh.lib.mvvm.IView;
 import com.sfh.lib.mvvm.IViewModel;
-import com.sfh.lib.mvvm.data.UIData;
 import com.sfh.lib.rx.EmptyResult;
 import com.sfh.lib.rx.IResult;
 import com.sfh.lib.rx.IResultSuccess;
 import com.sfh.lib.rx.IResultSuccessNoFail;
 import com.sfh.lib.rx.RetrofitManager;
-import com.sfh.lib.rx.RxJavaDisposableThrowableHandler;
 import com.sfh.lib.ui.dialog.DialogBuilder;
 import com.sfh.lib.utils.UtilLog;
 
@@ -29,6 +28,8 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 
 /**
@@ -43,15 +44,14 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
     protected final CompositeDisposable mDisposableList;
 
-    /*** 消息监听方法*/
-    protected final SparseArray<Method> mEventMethod;
-
     /***监听任务*/
     protected ObjectMutableLiveData mLiveData;
 
+    protected IView mViewListener;
+
     public BaseViewModel() {
         this.mDisposableList = new CompositeDisposable();
-        this.mEventMethod = new SparseArray<>(5);
+
         // 注入ViewModel层之间数据通信
         if (this.eventOnOff()) {
             this.execute(Observable.just(TAG).map(this));
@@ -70,7 +70,6 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     protected void onCleared() {
 
         super.onCleared();
-        this.mEventMethod.clear();
         this.mDisposableList.clear();
     }
 
@@ -92,8 +91,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         for (Method method : methods) {
             int modifiers = method.getModifiers();
-            if (!Modifier.isPublic(modifiers)
-                    || Modifier.isFinal(modifiers)
+            if (Modifier.isFinal(modifiers)
                     || Modifier.isAbstract(modifiers)
                     || Modifier.isStatic(modifiers)) {
                 continue;
@@ -103,38 +101,38 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
             if (event == null) {
                 continue;
             }
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            Class<?> dataClass;
-            if (parameterTypes != null && (dataClass = parameterTypes[0]) != null) {
-                this.mEventMethod.put(dataClass.getSimpleName().hashCode(), method);
-                RxBusEventManager.register(dataClass, this);
+
+            Class<? extends EventData> dataClass = event.ofType();
+            if (dataClass != null) {
+                Disposable disposable = RxBusEventManager.register(event.mainThread(), dataClass, this);
+                this.putDisposable(disposable);
             }
         }
         return true;
     }
 
     @Override
-    public final void onEventSuccess(Object data) throws Exception {
+    public void accept(Object eventObject) throws Exception {
         // RxBus 消息监听
-        Method eventMethod = this.mEventMethod.get(data.getClass().getSimpleName().hashCode());
-        if (eventMethod != null) {
-            //响应方法：当前ViewModel 监听方法
-            eventMethod.invoke(this, data);
+        if (eventObject instanceof EventData) {
+            EventData eventData = (EventData) eventObject;
+            Method eventMethod = this.getClass().getMethod(eventData.getMethod(), eventData.getClass());
+            if (eventMethod != null) {
+                //响应方法：当前ViewModel 监听方法
+                eventMethod.invoke(this, eventObject);
+            }
+        } else {
+            System.out.println("RxBusEventManager accept:" + eventObject);
         }
     }
 
-    @Override
-    public final void onSubscribe(Disposable d) {
-
-        this.mDisposableList.add(d);
-    }
 
     /***
      * 发送Rx消息通知
      * @param t
      * @param <T>
      */
-    public final <T> void postEvent(T t) {
+    public final <T extends EventData> void postEvent(T t) {
 
         RxBusEventManager.postEvent(t);
     }
@@ -288,6 +286,11 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         task.addDisposable(disposable);
     }
 
+    private <T> void executeTask(@NonNull OutreachRequest<T> request, Task2<T> task) {
+        Disposable disposable = RetrofitManager.compose(request.getTask()).subscribe(task,task.onError,task);
+        task.addDisposable(disposable);
+    }
+
     class TaskLoading<T> extends Task<T> {
 
         public TaskLoading(boolean cancelDialog, IResultSuccess<T> listener) {
@@ -331,7 +334,7 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
 
         @Override
         public void onFail(HandleException e) {
-            UtilLog.w(TAG, "RxJava Task "+ this +" onFail() e:" + e);
+            UtilLog.w(TAG, "RxJava Task " + this + " onFail() e:" + e);
             if (this.listener != null) {
                 if (listener instanceof IResult) {
                     //回调处理异常失败
@@ -361,30 +364,74 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
         }
     }
 
+    class Task2<T> implements Consumer<T>, Action
+    {
+
+        Disposable disposable;
+
+        IResultSuccess<T> listener;
+
+        public Task2(IResultSuccess<T> listener) {
+            this.listener = listener;
+        }
+
+        public void addDisposable(Disposable disposable) {
+
+            this.disposable = disposable;
+            if (this.disposable != null) {
+                BaseViewModel.this.mDisposableList.add(this.disposable);
+            }
+        }
+
+        private Consumer onError = new Consumer<HandleException>() {
+
+            @Override
+            public void accept(HandleException e) {
+                UtilLog.w(TAG, "RxJava Task " + this + " onFail() e:" + e);
+                if (listener != null) {
+                    if (listener instanceof IResult) {
+                        //回调处理异常失败
+                        ((IResult) listener).onFail(e);
+                    } else if (listener instanceof IResultSuccessNoFail) {
+                        //不处理异常失败
+                        UtilLog.i(TAG, "onFail:" + e.toString());
+                    } else {
+                        //对话框形式提示异常失败
+                        BaseViewModel.this.showDialogToast(e.getMsg());
+                    }
+                }
+
+                if (disposable != null) {
+                    BaseViewModel.this.mDisposableList.remove(disposable);
+                }
+            }
+        };
+
+        @Override
+        public void run() throws Exception {
+
+        }
+
+        @Override
+        public void accept(T t) throws Exception {
+            if (this.listener != null) {
+                this.listener.onSuccess(t);
+            }
+            if (this.disposable != null) {
+                BaseViewModel.this.mDisposableList.remove(this.disposable);
+            }
+        }
+    }
+
     /* ---------------------------------------------------------------- 消息监听处理 刷新UI 数据管理------------------------------------------------------------------ */
 
     /***
-     * 刷新UI 数据
-     * @param action
-     * @param data
+     *  获取UI对象接口 数据
      */
-    @MainThread
-    public final void setValue(String action, Object... data) {
+    public <T extends IView> T getViewListener() {
 
-        if (this.mLiveData != null) {
-            this.mLiveData.setValue(new UIData(action, data));
-        }
+        return (T) mViewListener;
     }
-
-
-    @MainThread
-    public final void setValue(String action) {
-
-        if (this.mLiveData != null) {
-            this.mLiveData.setValue(new UIData(action));
-        }
-    }
-
 
     /***
      * 显示等待对话框
@@ -393,8 +440,8 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     @MainThread
     public final void showLoading(boolean cancel) {
 
-        if (this.mLiveData != null) {
-            this.mLiveData.setValue(NetWorkState.showLoading(cancel));
+        if (this.mViewListener != null) {
+            this.mViewListener.getDialog().showLoading(cancel);
         }
     }
 
@@ -403,11 +450,9 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
      */
     @MainThread
     public final void hideLoading() {
-
-        if (this.mLiveData != null) {
-            this.mLiveData.setValue(NetWorkState.hideLoading());
+        if (this.mViewListener != null) {
+            this.mViewListener.getDialog().hideLoading();
         }
-
     }
 
     /***
@@ -416,13 +461,10 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
      */
     @MainThread
     public final void showDialog(DialogBuilder dialog) {
-
-        if (this.mLiveData != null) {
-            this.mLiveData.setValue(NetWorkState.showDialog(dialog));
+        if (this.mViewListener != null) {
+            this.mViewListener.getDialog().showDialog(dialog);
         }
-
     }
-
 
     /***
      * Toast提示(正常提示)
@@ -430,10 +472,9 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     @MainThread
     public final void showToast(CharSequence msg) {
 
-        if (this.mLiveData != null) {
-            this.mLiveData.setValue(NetWorkState.showToast(msg));
+        if (this.mViewListener != null) {
+            this.mViewListener.getDialog().showToast(msg);
         }
-
     }
 
     /***
@@ -442,10 +483,12 @@ public class BaseViewModel extends ViewModel implements IViewModel, IEventResult
     @MainThread
     public final void showDialogToast(CharSequence msg) {
 
-        DialogBuilder dialogBuilder = new DialogBuilder();
-        dialogBuilder.setMessage(msg);
-        dialogBuilder.setHideCancel(true);
-        this.showDialog(dialogBuilder);
+        if (this.mViewListener != null) {
+            DialogBuilder dialogBuilder = new DialogBuilder();
+            dialogBuilder.setMessage(msg);
+            dialogBuilder.setHideCancel(true);
+            this.mViewListener.getDialog().showDialog(dialogBuilder);
+        }
     }
 
 

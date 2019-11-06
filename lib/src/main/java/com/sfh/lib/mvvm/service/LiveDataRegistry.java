@@ -43,9 +43,8 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
 
     private CompositeDisposable mDisposableList = new CompositeDisposable();
 
+    //Activity生命周期关联管理
     private final ObjectMutableLiveData mLiveData = new ObjectMutableLiveData();
-
-    private ViewModelProvider mViewModelProvider;
 
     /***
      * 解析业务响应方法,消息监听方法
@@ -71,12 +70,6 @@ public class LiveDataRegistry implements Function<IView, Boolean>, IEventResult 
      */
     public void bindLiveDataAndCompositeDisposable(BaseViewModel viewModel) {
         viewModel.putLiveData(this.mLiveData);
-    }
-
-
-    public ObjectMutableLiveData getLiveData() {
-
-        return this.mLiveData;
     }
 
     @Override

@@ -5,10 +5,14 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.content.Context;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.sfh.lib.event.IEventResult;
+import com.sfh.lib.mvvm.service.NetWorkState;
+import com.sfh.lib.ui.dialog.DialogBuilder;
+import com.sfh.lib.ui.dialog.IDialog;
 
 /**
  * 功能描述:
@@ -17,9 +21,15 @@ import com.sfh.lib.event.IEventResult;
  * @date 2016/11/14
  */
 
-public interface IView extends LifecycleOwner, Observer{
+public abstract class IView implements LifecycleOwner, Observer {
 
-    @Nullable
-    <T extends IViewModel> T getViewModel();
+    public IView(IDialog dialog) {
+        this.dialog = dialog;
+    }
 
+    IDialog dialog;
+
+    public IDialog getDialog() {
+        return dialog;
+    }
 }

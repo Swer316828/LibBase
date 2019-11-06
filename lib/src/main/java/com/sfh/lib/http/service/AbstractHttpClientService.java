@@ -1,11 +1,9 @@
 package com.sfh.lib.http.service;
 
 import com.sfh.lib.http.IRxHttpClient;
-import com.sfh.lib.utils.UtilLog;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.Dns;
 import okhttp3.Interceptor;
@@ -30,16 +28,10 @@ import okhttp3.OkHttpClient;
  */
 public abstract class AbstractHttpClientService implements IRxHttpClient {
 
-    private volatile OkHttpClient mOkHttpClient;
-    private AtomicBoolean mBuilder = new AtomicBoolean(false);
-
-    protected AbstractHttpClientService() {
-        //构建网络连接
-        UtilLog.setDEBUG(this.log());
-    }
+    private OkHttpClient mOkHttpClient;
 
     @Override
-    public OkHttpClient getHttpClientService() {
+    public synchronized OkHttpClient getHttpClientService() {
 
         if (this.mOkHttpClient == null) {
 
@@ -62,9 +54,7 @@ public abstract class AbstractHttpClientService implements IRxHttpClient {
             if (dns != null) {
                 httpBuilder.dns(dns);
             }
-            if (this.mOkHttpClient == null && this.mBuilder.compareAndSet(false, true)) {
-                this.mOkHttpClient = httpBuilder.build();
-            }
+            this.mOkHttpClient = httpBuilder.build();
         }
         return this.mOkHttpClient;
     }

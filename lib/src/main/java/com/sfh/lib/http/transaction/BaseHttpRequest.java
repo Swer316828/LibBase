@@ -2,10 +2,13 @@ package com.sfh.lib.http.transaction;
 
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.sfh.lib.exception.HttpCodeException;
 import com.sfh.lib.http.HttpMediaType;
 import com.sfh.lib.http.IRxHttpClient;
 
+import java.io.Reader;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -13,6 +16,7 @@ import java.util.Map;
 import okhttp3.Call;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -23,7 +27,7 @@ import okhttp3.Response;
  * @author SunFeihu 孙飞虎
  * @date 2018/12/28
  */
-public abstract class BaseHttpRequest<T> extends ParseResult {
+abstract class BaseHttpRequest<T> {
 
 
     public static final String GET = "GET";
@@ -34,16 +38,16 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
 
     protected transient String path;
 
-    protected transient String code;
-
     protected transient String method = POST;
 
+    protected static transient volatile Gson mGson;
+
+    /***处理请求参数*/
     public abstract Object buildParam();
 
     public abstract IRxHttpClient getHttpService();
 
-    public abstract String getUrl(String code);
-
+    public abstract String getUrl();
 
     public BaseHttpRequest(String path) {
 
@@ -89,36 +93,35 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
         this.method = method;
     }
 
-    /***
-     * 获取url的KEY
-     * @param code
-     */
-    public void setCode(String code) {
-
-        this.code = code;
-    }
-
-
     /**
      * 发起请求
      */
     public T sendRequest() throws Exception {
 
-        final IRxHttpClient httpClient = this.getHttpService();
+        IRxHttpClient httpClient = this.getHttpService();
         if (httpClient == null) {
             throw new NullPointerException("IRxHttpClient Cannot be NULL !");
         }
-
-        String url = this.getUrl(this.code) + this.path;
+        OkHttpClient okHttpClient = httpClient.getHttpClientService();
+        if (okHttpClient == null) {
+            throw new NullPointerException("okHttpClient Cannot be NULL !");
+        }
 
         final Request.Builder builder = new Request.Builder();
         //请求头
-        this.buildHeader(httpClient, builder);
+        Map<String, String> header = this.buildHeader(httpClient.getHeader());
+        if (header != null && header.size() > 0) {
+            for (Map.Entry<String, String> entry : header.entrySet()) {
+                builder.addHeader(entry.getKey(), entry.getValue());
+            }
+        }
 
-        final Object params = this.buildParam();
+        //请求参数
+        Object params = this.buildParam();
 
-        if (TextUtils.equals(POST, this.method)) {
+        String url = this.getUrl() + this.path;
 
+        if (TextUtils.equals(POST, this.method.toUpperCase())) {
             builder.url(url);
             RequestBody body;
             if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
@@ -134,9 +137,8 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
             builder.url(url).get();
         }
 
-        final Call call = httpClient.getHttpClientService().newCall(builder.build());
+        Response response = okHttpClient.newCall(builder.build()).execute();
 
-        Response response = call.execute();
         if (response.isSuccessful()) {
             T data = this.parseResult(response.body().charStream(), this.getClassType());
             this.cacheResponse(data);
@@ -156,27 +158,46 @@ public abstract class BaseHttpRequest<T> extends ParseResult {
 
     /**
      * 处理消息头
-     *
-     * @param builder
      */
-    public void buildHeader(IRxHttpClient client, Request.Builder builder) {
+    public Map<String, String> buildHeader(Map<String, String> header) {
 
-        Map<String, String> header = client.getHeader();
-        if (header != null && header.size() > 0) {
-            for (Map.Entry<String, String> entry : header.entrySet()) {
-                builder.addHeader(entry.getKey(), entry.getValue());
-            }
-        }
+        return header;
     }
 
     /***
      * 获取解析Class
      * @return
      */
-    private Type getClassType() {
+    public Type getClassType() {
 
         Type type = getClass().getGenericSuperclass();
         return ((ParameterizedType) type).getActualTypeArguments()[0];
 
+    }
+
+
+    public <T> T parseResult(Reader reader, Type cls) {
+
+        Gson gson = this.getGson();
+        return gson.fromJson(reader, cls);
+
+    }
+
+    public String toJson(Object object) {
+
+        Gson gson = this.getGson();
+        return gson.toJson(object);
+    }
+
+    public Gson getGson() {
+        if (mGson == null) {
+            mGson = new GsonBuilder()
+                    .setLenient()// json宽松
+//                .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
+                    .serializeNulls() //智能null
+                    .setPrettyPrinting()// 调整格式 ，使对齐
+                    .create();
+        }
+        return mGson;
     }
 }

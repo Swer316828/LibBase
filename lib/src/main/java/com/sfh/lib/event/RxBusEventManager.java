@@ -3,8 +3,10 @@ package com.sfh.lib.event;
 
 import android.support.annotation.NonNull;
 
-
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 
@@ -29,13 +31,13 @@ public final class RxBusEventManager {
     /***
      * 用RxJava实现事件总线
      */
-    private Subject<Object> bus = PublishSubject.create().toSerialized();
+    private final Subject<Object> bus = PublishSubject.create().toSerialized();
 
     /***
      * 发送一个新的事件
      * @param data 数据对象
      */
-    public static <T> void postEvent(@NonNull T data) {
+    public static <T extends EventData> void postEvent(@NonNull T data) {
         if (data == null) {
             return;
         }
@@ -51,14 +53,15 @@ public final class RxBusEventManager {
      * @param <T> class类型
      * @return Disposable 需要手动销毁
      */
-    public static <T> void register(@NonNull final Class<T> eventClass, @NonNull final IEventResult<T> onNext) {
+    public static <T extends EventData> Disposable register(boolean mainThread, @NonNull final Class<T> eventClass, @NonNull final IEventResult<T> onNext) {
         if (eventClass == null) {
             throw new NullPointerException("Class<T> eventClass is null");
         }
         if (onNext == null) {
             throw new NullPointerException("IEventResult<T> onNext is null");
         }
-        Hondler.EVENT.bus.ofType(eventClass).observeOn(AndroidSchedulers.mainThread()).subscribe(new RxEventObserver<>(onNext));
+        return Hondler.EVENT.bus.ofType(eventClass).observeOn(mainThread ? AndroidSchedulers.mainThread() : Schedulers.io()).subscribe(onNext, ON_ERROR_MISSING);
     }
 
+    static final Consumer<Throwable> ON_ERROR_MISSING = error -> System.out.println("RxBusEventManager error:" + error);
 }

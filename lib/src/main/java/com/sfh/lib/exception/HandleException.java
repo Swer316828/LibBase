@@ -152,17 +152,14 @@ public final class HandleException extends RuntimeException {
 
             return new HandleException(CODE_PARSE, AppCacheManager.getApplication().getString(R.string.exception_parse), e);
         }
-
+        //没有信任证书，导致请求失败
+        if (e instanceof SSLException || throwable instanceof SSLException ) {
+            return new HandleException(CODE_SSL, AppCacheManager.getApplication().getString(R.string.exception_ssl), e);
+        }
         // IO读写时出现
         if (e instanceof IOException || throwable instanceof IOException) {
             return new HandleException(CODE_IO, AppCacheManager.getApplication().getString(R.string.exception_io), e);
         }
-
-        //没有信任证书，导致请求失败
-        if (e instanceof SSLException || throwable instanceof SSLException) {
-            return new HandleException(CODE_SSL, AppCacheManager.getApplication().getString(R.string.exception_ssl), e);
-        }
-
         // 未捕获异常情况
         return new HandleException(CODE_UNKNOWN, AppCacheManager.getApplication().getString(R.string.exception_unknown), e);
     }

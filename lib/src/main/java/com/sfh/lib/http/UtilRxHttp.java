@@ -4,11 +4,13 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
 import com.google.gson.Gson;
-import com.sfh.lib.http.annotation.LoseParameter;
+import com.sfh.lib.utils.UtilLog;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,10 +27,25 @@ import okhttp3.RequestBody;
  */
 public final class UtilRxHttp {
 
-    private UtilRxHttp() {
+    /***
+     * 判断服务器是否通畅
+     * @param hostname
+     * @param time
+     * @return
+     */
+    public boolean isNoteReachable(String hostname, int time){
+        try {
+            InetAddress address = InetAddress.getByName(hostname);
+            if (address.isReachable(time)){
+                return true;
+            }else {
+              return 0 ==  Runtime.getRuntime().exec("ping -c 1 "+hostname).waitFor();
+            }
+        } catch (Exception e) {
+            UtilLog.d(UtilRxHttp.class, "httpHostContent Exception:"+e);
+        }
+        return false;
     }
-
-
     /***
      * 请求对象进行Map参数化处理
      * 要求在异步线程中调用
@@ -67,11 +84,7 @@ public final class UtilRxHttp {
                 || Modifier.isTransient(field.getModifiers())) {
             return true;
         }
-        LoseParameter lose = field.getAnnotation(LoseParameter.class);
-        if (lose != null) {
-            // 忽略参数
-            return true;
-        }
+
 
         Object value = field.get(object);
         if (value == null || TextUtils.isEmpty(value.toString())) {

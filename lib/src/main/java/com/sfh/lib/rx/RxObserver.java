@@ -4,8 +4,12 @@ package com.sfh.lib.rx;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.utils.UtilLog;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 
 /**
  * 功能描述:结果处理[需要把异常处理成自定义异常]
@@ -36,16 +40,17 @@ class RxObserver<T> implements Consumer<T>, Action {
     private Consumer onError = new Consumer<HandleException>() {
 
         @Override
-        public void accept(HandleException e) throws Exception {
+        public void accept(HandleException throwable) {
             if (result != null) {
-                result.onFail(e);
+                result.onFail(throwable);
             }
         }
     };
 
 
     @Override
-    public void run() throws Exception {
+    public void run()  {
 
     }
+
 }

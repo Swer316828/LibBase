@@ -4,7 +4,6 @@ import android.text.TextUtils;
 
 import com.sfh.lib.http.HttpMediaType;
 import com.sfh.lib.http.UtilRxHttp;
-import com.sfh.lib.http.annotation.LoseParameter;
 import com.sfh.lib.rx.IResult;
 import com.sfh.lib.rx.RetrofitManager;
 
@@ -13,8 +12,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -24,7 +21,7 @@ import okhttp3.RequestBody;
  * 功能描述:请求对象,默认POST方式，参数格式类型JSON,Gson解析返回数据
  *
  * <p>参数格式类型{@link HttpMediaType}</p>
- * <p>如自定义或处理返回结果 可以重写{@link ParseResult parseResult方法}</p>
+ * <p>如自定义或处理返回结果 可以重写</p>
  * <p>需参数进行处理操作，重载{@link OutreachRequest buildParam方法}</p>
  *
  * @author SunFeihu 孙飞虎
@@ -54,21 +51,16 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
      */
     public Observable<T> getTask() {
 
-        return Observable.create(new ObservableOnSubscribe<T>() {
+        return Observable.create(emitter -> {
 
-            @Override
-            public void subscribe(ObservableEmitter<T> emitter) throws Exception {
-
-                T t = OutreachRequest.this.sendRequest();
-                if (t == null) {
-                    //onNext called with null. Null values are generally not allowed in 2.x operators and sources.
-                    emitter.onError(new NullPointerException("请求失败，结果为NULL,Url" + getUrl(code) + path));
-                } else {
-                    emitter.onNext(t);
-                }
-                emitter.onComplete();
-
+            T t = OutreachRequest.this.sendRequest();
+            if (t == null) {
+                //onNext called with null. Null values are generally not allowed in 2.x operators and sources.
+                emitter.onError(new NullPointerException("请求失败，结果为NULL,Url" + getUrl() + path));
+            } else {
+                emitter.onNext(t);
             }
+
         });
     }
 
@@ -81,10 +73,12 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
             this.buildParamMultipart(this, builder);
             return builder.build();
         }
+        //json
         if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_JSON, this.mediaType)) {
             return this.toJson(this);
         }
 
+        //key-value
         return this.buildParamKeyValue(this);
     }
 
@@ -179,11 +173,6 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
         if (Modifier.isStatic(field.getModifiers())
                 || Modifier.isFinal(field.getModifiers())
                 || Modifier.isTransient(field.getModifiers())) {
-            return true;
-        }
-        LoseParameter lose = field.getAnnotation(LoseParameter.class);
-        if (lose != null) {
-            // 忽略参数
             return true;
         }
         return false;

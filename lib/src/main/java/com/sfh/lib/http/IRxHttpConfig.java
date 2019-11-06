@@ -13,12 +13,6 @@ import okhttp3.Interceptor;
  */
 public interface IRxHttpConfig {
 
-    /***
-     * 日志
-     * @return
-     */
-    boolean log();
-
     /**
      * 网络数据读取超时
      * @return

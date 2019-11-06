@@ -14,9 +14,23 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RxBusEvent {
+
+    /****
+     * 响应的类class
+     */
+    Class<? extends EventData> ofType();
+
+    /***
+     * 消息响应的运行线程
+     * @return true 主线程 false：io线程，默认true
+     */
+    boolean mainThread() default true;
+
     /***
      * 数据来源说明
      * @return
      */
-   String from();
+    String from();
+
+
 }
