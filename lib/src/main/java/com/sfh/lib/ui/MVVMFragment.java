@@ -32,7 +32,7 @@ public abstract class MVVMFragment extends Fragment implements IViewLinstener {
 
     @Nullable
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        boolean initCreateView;
+        boolean initCreateView = false;
         if (this.mRoot != null) {
             ViewGroup parent = (ViewGroup) this.mRoot.getParent();
             if (parent != null) {
@@ -40,7 +40,7 @@ public abstract class MVVMFragment extends Fragment implements IViewLinstener {
             }
 
             initCreateView = false;
-        } else {
+        } else if (this.getLayout() > 0) {
             this.mRoot = inflater.inflate(this.getLayout(), container, false);
             initCreateView = true;
         }

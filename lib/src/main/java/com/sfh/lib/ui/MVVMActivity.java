@@ -78,7 +78,7 @@ public class MVVMActivity extends FragmentActivity implements IViewLinstener {
         }
     }
 
-    public final void putDisposable(Future future) {
+    public final void putFuture(Future future) {
         if (this.liveDataManger != null) {
             this.liveDataManger.putFuture(future);
         }
