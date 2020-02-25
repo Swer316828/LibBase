@@ -2,7 +2,6 @@ package com.sfh.lib.cache;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.Nullable;
 import android.support.v4.util.LruCache;

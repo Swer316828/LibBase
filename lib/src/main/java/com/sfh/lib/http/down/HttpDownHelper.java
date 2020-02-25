@@ -2,7 +2,6 @@ package com.sfh.lib.http.down;
 
 import android.support.annotation.NonNull;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -11,12 +10,9 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
-import okio.Buffer;
 import okio.BufferedSink;
 import okio.BufferedSource;
-import okio.ForwardingSource;
 import okio.Okio;
-import okio.Source;
 
 /**
  * 功能描述:下载辅助

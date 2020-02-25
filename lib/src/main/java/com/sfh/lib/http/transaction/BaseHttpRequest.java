@@ -1,17 +1,18 @@
 package com.sfh.lib.http.transaction;
 
 import android.text.TextUtils;
+import android.util.Log;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.sfh.lib.exception.HttpCodeException;
+import com.sfh.lib.http.HttpCodeException;
 import com.sfh.lib.http.HttpMediaType;
-import com.sfh.lib.http.IRxHttpClient;
+import com.sfh.lib.http.IHttpConfig;
+import com.sfh.lib.http.UtilRxHttp;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Map;
+import java.util.concurrent.Callable;
 
 import okhttp3.Call;
 import okhttp3.MediaType;
@@ -27,27 +28,59 @@ import okhttp3.Response;
  * @author SunFeihu 孙飞虎
  * @date 2018/12/28
  */
-abstract class BaseHttpRequest<T> {
+abstract class BaseHttpRequest<T> implements Callable<T>, IHttpConfig {
 
+    private static final String TAG = BaseHttpRequest.class.getName();
 
     public static final String GET = "GET";
 
     public static final String POST = "POST";
 
-    protected transient String mediaType = HttpMediaType.MEDIA_TYPE_JSON;
 
-    protected transient String path;
+    /***
+     * Okhttp 请求对象
+     * @param httpConfig
+     * @return
+     */
+    public abstract OkHttpClient getHttpService(IHttpConfig httpConfig);
 
-    protected transient String method = POST;
+    /***
+     * 请求host
+     * @return
+     */
+    public abstract String getUrl();
 
-    protected static transient volatile Gson mGson;
+    /***
+     * 数据源转为对象
+     * @param reader  数据源转
+     * @param cls 对象类型
+     * @return
+     */
+    public abstract T parseResult(Reader reader, Type cls);
 
-    /***处理请求参数*/
+    /***
+     * 对象转为Josn 字符串
+     * @param object
+     * @return
+     */
+    public abstract String toJson(Object object);
+
+    /***
+     * 处理请求参数
+     * @return
+     */
     public abstract Object buildParam();
 
-    public abstract IRxHttpClient getHttpService();
 
-    public abstract String getUrl();
+    /*** 数据格式*/
+    protected transient HttpMediaType mediaType = HttpMediaType.MEDIA_TYPE_JSON;
+
+    /*** 请求路径*/
+    protected transient String path;
+
+    /*** 请求方式*/
+    protected transient String method = POST;
+
 
     public BaseHttpRequest(String path) {
 
@@ -58,95 +91,101 @@ abstract class BaseHttpRequest<T> {
      * 设置请求路径
      * @param path
      */
-    public void setPath(String path) {
+    public BaseHttpRequest<T> setPath(String path) {
 
         this.path = path;
-    }
-
-    /**
-     * 设置请求方式，请求路径
-     *
-     * @param method
-     * @param path
-     */
-    public void setPath(String method, String path) {
-
-        this.method = method;
-        this.path = path;
+        return this;
     }
 
     /***
      * 设置数据上传格式
-     * @param mediaType
+     * @param mediaType {@link HttpMediaType#MEDIA_TYPE_JSON,HttpMediaType#MEDIA_TYPE_TEXT 等}
      */
-    public void setMediaType(String mediaType) {
+    public BaseHttpRequest<T> setMediaType(HttpMediaType mediaType) {
 
         this.mediaType = mediaType;
+        return this;
     }
 
     /***
-     * 设置请求方式 {@link BaseHttpRequest GET,POST }
+     * 设置请求方式 {@link BaseHttpRequest#GET,BaseHttpRequest#POST }
      * @param method
      */
-    public void setMethod(String method) {
+    public BaseHttpRequest<T> setMethod(String method) {
 
         this.method = method;
+        return this;
     }
 
     /**
      * 发起请求
      */
-    public T sendRequest() throws Exception {
+    @Override
+    public T call() throws Exception {
 
-        IRxHttpClient httpClient = this.getHttpService();
-        if (httpClient == null) {
-            throw new NullPointerException("IRxHttpClient Cannot be NULL !");
+        if (TextUtils.isEmpty(this.getUrl())) {
+            throw new NullPointerException("URL cannot be empty !");
         }
-        OkHttpClient okHttpClient = httpClient.getHttpClientService();
+
+        final OkHttpClient okHttpClient = this.getHttpService(this);
         if (okHttpClient == null) {
-            throw new NullPointerException("okHttpClient Cannot be NULL !");
+            throw new NullPointerException("OkHttpClient Cannot be NULL !");
         }
 
         final Request.Builder builder = new Request.Builder();
-        //请求头
-        Map<String, String> header = this.buildHeader(httpClient.getHeader());
-        if (header != null && header.size() > 0) {
-            for (Map.Entry<String, String> entry : header.entrySet()) {
-                builder.addHeader(entry.getKey(), entry.getValue());
+
+        //设置请求头
+        this.buildHeader(new IBuilderHeader() {
+            @Override
+            public void addHeader(String key, String value) {
+                builder.addHeader(key, value);
             }
-        }
+        });
 
-        //请求参数
-        Object params = this.buildParam();
+        final Object params = this.buildParam();
 
-        String url = this.getUrl() + this.path;
+        String url = TextUtils.isEmpty(this.path) ? this.getUrl() : this.getUrl() + this.path;
 
-        if (TextUtils.equals(POST, this.method.toUpperCase())) {
+        if (TextUtils.equals(POST, this.method)) {
+
             builder.url(url);
             RequestBody body;
-            if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
+            if (HttpMediaType.MEDIA_TYPE_MULTIPART_FORM == this.mediaType) {
                 //文件上传
                 body = (MultipartBody) params;
             } else {
                 //其他 请求参数
-                body = RequestBody.create(MediaType.parse(this.mediaType), params.toString());
+                body = RequestBody.create(MediaType.parse(this.mediaType.toString()), params.toString());
             }
             builder.post(body);
         } else {
-            url = url + "?" + params.toString();
+            String paramsStr = params.toString();
+            url = TextUtils.isEmpty(paramsStr) ? url : String.format("%s?%s", url, paramsStr);
             builder.url(url).get();
         }
 
-        Response response = okHttpClient.newCall(builder.build()).execute();
+        final Call call = okHttpClient.newCall(builder.build());
 
-        if (response.isSuccessful()) {
-            T data = this.parseResult(response.body().charStream(), this.getClassType());
-            this.cacheResponse(data);
-            return data;
-        } else {
-            //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
-            throw new HttpCodeException(response.code(), response.toString());
+        try {
+            Response response = call.execute();
+            if (response.isSuccessful()) {
+                T data = this.parseResult(response.body().charStream(), this.getClassType());
+                this.cacheResponse(data);
+                return data;
+            } else {
+                Log.d(TAG, String.format("Request name:%s,fail:%s", this.getClass().getName(), response.toString()));
+                //Http请求错误-参考常见Http错误码如 401，403，404， 500 等
+                throw new HttpCodeException(response.code(), response.toString());
+            }
+        } catch (IOException e) {
+            Log.d(TAG, String.format("Request name:%s, url:%s,iOException:%s", this.getClass().getName(), url, e.getMessage()));
+            boolean connect = UtilRxHttp.isNoteReachable(url, 3 * 1000);
+            if (!connect) {
+                throw new HttpCodeException(10012, "当前网络不可用，请检查!(10012)");
+            }
+            throw e;
         }
+
     }
 
     /***
@@ -158,46 +197,21 @@ abstract class BaseHttpRequest<T> {
 
     /**
      * 处理消息头
+     *
+     * @param builder
      */
-    public Map<String, String> buildHeader(Map<String, String> header) {
-
-        return header;
+    public void buildHeader(IBuilderHeader builder) {
     }
 
     /***
      * 获取解析Class
      * @return
      */
-    public Type getClassType() {
+    private Type getClassType() {
 
         Type type = getClass().getGenericSuperclass();
         return ((ParameterizedType) type).getActualTypeArguments()[0];
-
     }
 
 
-    public <T> T parseResult(Reader reader, Type cls) {
-
-        Gson gson = this.getGson();
-        return gson.fromJson(reader, cls);
-
-    }
-
-    public String toJson(Object object) {
-
-        Gson gson = this.getGson();
-        return gson.toJson(object);
-    }
-
-    public Gson getGson() {
-        if (mGson == null) {
-            mGson = new GsonBuilder()
-                    .setLenient()// json宽松
-//                .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
-                    .serializeNulls() //智能null
-                    .setPrettyPrinting()// 调整格式 ，使对齐
-                    .create();
-        }
-        return mGson;
-    }
 }

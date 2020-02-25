@@ -2,18 +2,19 @@ package com.sfh.lib.http;
 
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.google.gson.Gson;
-import com.sfh.lib.utils.UtilLog;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -27,25 +28,39 @@ import okhttp3.RequestBody;
  */
 public final class UtilRxHttp {
 
+    private UtilRxHttp() {
+    }
+
     /***
      * 判断服务器是否通畅
-     * @param hostname
      * @param time
      * @return
      */
-    public boolean isNoteReachable(String hostname, int time){
+    public static boolean isNoteReachable(String url, int time) {
         try {
-            InetAddress address = InetAddress.getByName(hostname);
-            if (address.isReachable(time)){
+
+            if (url == null || url.trim().equals("")) {
+                return false;
+            }
+            String host = "";
+            Pattern p = Pattern.compile("(?<=//|)((\\w)+\\.)+\\w+");
+            Matcher matcher = p.matcher(url);
+            if (matcher.find()) {
+                host = matcher.group();
+            }
+
+            InetAddress address = InetAddress.getByName(host);
+            if (address.isReachable(time)) {
                 return true;
-            }else {
-              return 0 ==  Runtime.getRuntime().exec("ping -c 1 "+hostname).waitFor();
+            } else {
+                return 0 == Runtime.getRuntime().exec("ping -c 1 " + host).waitFor();
             }
         } catch (Exception e) {
-            UtilLog.d(UtilRxHttp.class, "httpHostContent Exception:"+e);
+            Log.e(UtilRxHttp.class.getName(), "httpHostContent Exception:" + e);
         }
         return false;
     }
+
     /***
      * 请求对象进行Map参数化处理
      * 要求在异步线程中调用
@@ -85,7 +100,6 @@ public final class UtilRxHttp {
             return true;
         }
 
-
         Object value = field.get(object);
         if (value == null || TextUtils.isEmpty(value.toString())) {
             return true;
@@ -117,7 +131,6 @@ public final class UtilRxHttp {
         }
         return false;
     }
-
 
 
     /**

@@ -2,21 +2,13 @@ package com.sfh.lib;
 
 import android.app.Application;
 import android.content.ComponentCallbacks;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.util.LruCache;
 import android.text.TextUtils;
-import android.util.Log;
 
-import com.google.gson.Gson;
 import com.sfh.lib.cache.CacheListener;
 import com.sfh.lib.cache.CacheManger;
-import com.sfh.lib.exception.HandleException;
-import com.sfh.lib.exception.ICrashReport;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;

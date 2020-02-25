@@ -2,27 +2,35 @@ package com.sfh.lib.http.transaction;
 
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.sfh.lib.http.HttpMediaType;
+import com.sfh.lib.http.IHttpConfig;
 import com.sfh.lib.http.UtilRxHttp;
-import com.sfh.lib.rx.IResult;
-import com.sfh.lib.rx.RetrofitManager;
+import com.sfh.lib.http.service.HttpClientService;
+import com.sfh.lib.http.service.gson.NullStringToEmptyAdapterFactory;
 
 import java.io.File;
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 
-import io.reactivex.Observable;
-import io.reactivex.disposables.Disposable;
+import okhttp3.Dns;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 
 /**
  * 功能描述:请求对象,默认POST方式，参数格式类型JSON,Gson解析返回数据
  *
- * <p>参数格式类型{@link HttpMediaType}</p>
- * <p>如自定义或处理返回结果 可以重写</p>
- * <p>需参数进行处理操作，重载{@link OutreachRequest buildParam方法}</p>
+ * <p>1.设置请求方式{@link OutreachRequest#setMethod(String)}</p>
+ * <p>2.设置提交参数格式类型{@link OutreachRequest#setMediaType(HttpMediaType)}</p>
+ * <p>3.对请求头进行处理操作，重载{@link OutreachRequest#buildHeader(IBuilderHeader)}</p>
+ * <p>4.对请求参数进行处理操作，重载{@link OutreachRequest#buildParam()}</p>
+ * <p>处理返回结果 可以重写方法 {@link OutreachRequest#cacheResponse(Object)}</p>
  *
  * @author SunFeihu 孙飞虎
  * @date 2018/12/17
@@ -35,50 +43,50 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
         super(path);
     }
 
-    /***
-     * 异步任务
-     * @param result 返回数据回调接口
-     * @return
-     */
-    public Disposable sendRequest(IResult<T> result) {
-
-        return RetrofitManager.executeSigin(this.getTask(), result);
+    @Override
+    public OkHttpClient getHttpService(IHttpConfig config) {
+        return HttpClientService.newInstance().getHttpService(config);
     }
 
-    /***
-     * 任务对象
-     * @return
-     */
-    public Observable<T> getTask() {
+    @Override
+    public T parseResult(Reader reader, Type cls) {
 
-        return Observable.create(emitter -> {
+        Gson gson = this.getGson();
+        return gson.fromJson(reader, cls);
+    }
 
-            T t = OutreachRequest.this.sendRequest();
-            if (t == null) {
-                //onNext called with null. Null values are generally not allowed in 2.x operators and sources.
-                emitter.onError(new NullPointerException("请求失败，结果为NULL,Url" + getUrl() + path));
-            } else {
-                emitter.onNext(t);
-            }
+    @Override
+    public String toJson(Object object) {
 
-        });
+        Gson gson = this.getGson();
+        return gson.toJson(object);
+    }
+
+    private static transient Gson GSON;
+
+    private Gson getGson() {
+        if (GSON == null) {
+            GSON = new GsonBuilder()
+                    .setLenient()// json宽松
+                    .registerTypeAdapterFactory(new NullStringToEmptyAdapterFactory()).create();
+        }
+        return GSON;
     }
 
     @Override
     public Object buildParam() {
 
-        if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_MULTIPART_FORM, this.mediaType)) {
+        if (HttpMediaType.MEDIA_TYPE_MULTIPART_FORM == this.mediaType) {
             // 文件类型
             MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
             this.buildParamMultipart(this, builder);
             return builder.build();
         }
-        //json
-        if (TextUtils.equals(HttpMediaType.MEDIA_TYPE_JSON, this.mediaType)) {
+
+        if (HttpMediaType.MEDIA_TYPE_JSON == this.mediaType) {
             return this.toJson(this);
         }
 
-        //key-value
         return this.buildParamKeyValue(this);
     }
 
@@ -176,5 +184,60 @@ public abstract class OutreachRequest<T> extends BaseHttpRequest<T> {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 网络数据读取超时
+     *
+     * @return
+     */
+    @Override
+    public long getReadTimeout() {
+        return 10 * 1000L;
+    }
+
+    /***
+     * 网络连接超时
+     * @return
+     */
+    @Override
+    public long getConnectTimeout() {
+        return 10 * 1000L;
+    }
+
+    /***
+     * 网络输出超时
+     * @return
+     */
+    @Override
+    public long getWriteTimeout() {
+        return 10 * 1000L;
+    }
+
+    /***
+     * 请求和响应拦截器
+     * @return
+     */
+    @Override
+    public Interceptor getInterceptor() {
+        return null;
+    }
+
+    /***
+     * 网络请求和响应拦截器
+     * @return
+     */
+    @Override
+    public Interceptor getNetworkInterceptor() {
+        return null;
+    }
+
+    /****
+     * DNS
+     * @return
+     */
+    @Override
+    public Dns getHttpDns() {
+        return null;
     }
 }
