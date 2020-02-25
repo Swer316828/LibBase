@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.ViewModelStoreOwner;
 
+import com.sfh.lib.ui.IDialog;
+
 public interface IViewLinstener extends LifecycleOwner, ViewModelStoreOwner {
 
-    boolean isFinishing();
-
     Activity getActivity();
+
+    IDialog getDialog();
 }

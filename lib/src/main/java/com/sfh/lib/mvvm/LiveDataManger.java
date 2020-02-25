@@ -1,5 +1,6 @@
 package com.sfh.lib.mvvm;
 
+import android.app.Activity;
 import android.arch.lifecycle.GenericLifecycleObserver;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleOwner;
@@ -46,7 +47,7 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
     /***
      * 对话框句柄【基础操作】
      */
-    private IDialog mDialogBridge;
+    private IDialog mDialog;
 
     public LiveDataManger(IViewLinstener linstener) {
 
@@ -135,7 +136,10 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
             ZLog.d(TAG, "LiveDataManger showUIValue()  methodName is null");
             return;
         }
-
+        if (!this.mActive) {
+            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive,methodName));
+            return;
+        }
         final IViewLinstener linstener = this.softReference.get();
         if (null == linstener) {
             ZLog.d(TAG, "LiveDataManger onChanged() but IViewLinstener is null, methodName:%s", methodName);
@@ -247,14 +251,9 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
         }
 
         if (ThreadUIUtils.isInUiThread()) {
-            mDialogBridge.showLoading(cancel);
+            mDialog.showLoading(cancel);
         } else {
-            this.runUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    mDialogBridge.showLoading(cancel);
-                }
-            });
+            this.runUIThread(() -> mDialog.showLoading(cancel));
         }
     }
 
@@ -266,14 +265,9 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
         }
 
         if (ThreadUIUtils.isInUiThread()) {
-            mDialogBridge.hideLoading();
+            mDialog.hideLoading();
         } else {
-            this.runUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    mDialogBridge.hideLoading();
-                }
-            });
+            this.runUIThread(() -> mDialog.hideLoading());
         }
     }
 
@@ -285,14 +279,9 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
         }
 
         if (ThreadUIUtils.isInUiThread()) {
-            this.mDialogBridge.showDialog(dialog);
+            this.mDialog.showDialog(dialog);
         } else {
-            this.runUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    mDialogBridge.showDialog(dialog);
-                }
-            });
+            this.runUIThread(() -> mDialog.showDialog(dialog));
         }
     }
 
@@ -302,14 +291,9 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
             return;
         }
         if (ThreadUIUtils.isInUiThread()) {
-            mDialogBridge.showToast(msg, Toast.LENGTH_SHORT);
+            mDialog.showToast(msg, Toast.LENGTH_SHORT);
         } else {
-            this.runUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    mDialogBridge.showToast(msg, Toast.LENGTH_SHORT);
-                }
-            });
+            this.runUIThread(() -> mDialog.showToast(msg, Toast.LENGTH_SHORT));
         }
     }
 
@@ -324,7 +308,6 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
 
     private void runUIThread(Runnable runnable) {
 
-        //noinspection ConstantConditions
         ThreadUIUtils.runOnUiThread(runnable);
     }
 
@@ -338,8 +321,12 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
             ZLog.d(TAG, "LiveDataManger createDialog() but IViewLinstener is null");
             return false;
         }
-        if (this.mDialogBridge == null) {
-            this.mDialogBridge = new AppDialog(linstener.getActivity());
+
+        //先外部获取
+        this.mDialog = linstener.getDialog();
+
+        if (this.mDialog == null) {
+            this.mDialog = new AppDialog(linstener.getActivity());
         }
         return true;
     }

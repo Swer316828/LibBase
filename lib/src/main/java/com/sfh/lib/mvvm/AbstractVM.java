@@ -56,7 +56,10 @@ public abstract class AbstractVM extends ViewModel implements IEventListener, ja
      * @param target
      */
     protected void loadMethods(Object target) {
-
+        if (!this.mActive) {
+            ZLog.d(TAG, "AbstractVM loadMethods() mActive:" + this.mActive +" target:"+target);
+            return;
+        }
         final Method[] methods = target.getClass().getDeclaredMethods();
         for (Method method : methods) {
 
