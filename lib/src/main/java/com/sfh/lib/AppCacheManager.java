@@ -10,9 +10,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.sfh.lib.cache.CacheListener;
+import com.sfh.lib.cache.CacheManger;
+import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.exception.ICrashReport;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +35,18 @@ import io.reactivex.schedulers.Schedulers;
  * @date 2018/3/29
  */
 public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
+    /*--------------------------------------------------属性-----------------------------------------------------*/
+
+    public static final String CACHE_FILE = "CACHE_FILE";
+
+    private final Thread.UncaughtExceptionHandler mDefaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+    private Disposable mTaskdisposable;
+
+    private Application mApplication;
+
+    private CacheListener mCacheListener;
+
     /***
      * 内部静态对象
      * @author SunFeihu 孙飞虎
@@ -39,11 +55,15 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
         private static final AppCacheManager APP_CACHE = new AppCacheManager();
     }
 
+    public static AppCacheManager getInitialization(){
+        return AppCacheHolder.APP_CACHE;
+    }
+
     /***
      * 获取AbstractApplication
      * @return
      */
-    public static Application  getApplication() {
+    public Application getApplication() {
 
         return AppCacheHolder.APP_CACHE.getApp();
     }
@@ -52,56 +72,21 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
      * 返回缓存文件
      * @return
      */
-    @Nullable
-    public static File getFileCache() {
+    public File getFileCache() {
 
-        String path = getCache(CACHE_FILE, String.class, "");
+        String path = this.mCacheListener.getString(CACHE_FILE, "");
         return new File(path);
     }
 
     /***
      * 获取信息
-     * @param key
-     * @param <T>
      * @return
      */
-    public static <T> T getCache(@NonNull String key, @NonNull Class<T> cls, Object... defaultObject) {
+    public  CacheListener getCacheListener() {
 
-        T data = (defaultObject != null && defaultObject.length > 0) ? (T) defaultObject[0] : null;
-        if (TextUtils.isEmpty(key)) {
-            return data;
-        }
-        Object temp = AppCacheHolder.APP_CACHE.getValue(key, cls);
-        return temp == null ? data : (T) temp;
+        return this.mCacheListener;
     }
 
-
-    /***
-     * 清除信息
-     * @param key
-     */
-    public static void removeCache(@NonNull String... key) {
-
-        if (key == null || key.length == 0) {
-            return;
-        }
-        AppCacheHolder.APP_CACHE.remove(key);
-    }
-
-    /***
-     * 保存缓存信息
-     *
-     * @param persist true 持久化数据 false 不持久化数据
-     * @param key
-     * @param value
-     * @return
-     */
-    public static <T> boolean putCache(@NonNull String key, @NonNull T value, boolean... persist) {
-        if (TextUtils.isEmpty(key)) {
-            return false;
-        }
-        return AppCacheHolder.APP_CACHE.putCache(key, value);
-    }
 
     /*--------------------------------------------------全局缓存构建Builder模式-----------------------------------------------------*/
 
@@ -115,6 +100,7 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
         Application application;
         String cachePath;
         CacheListener cacheListener;
+        ICrashReport crashReport;
 
         public Builder(@NonNull Application context) {
 
@@ -126,6 +112,16 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
             return this;
         }
 
+        public Builder setCacheListener(CacheListener cacheListener) {
+            this.cacheListener = cacheListener;
+            return this;
+        }
+
+        public Builder setCrashReport(ICrashReport crashReport) {
+            this.crashReport = crashReport;
+            return this;
+        }
+
         /**
          * 初始化缓存
          *
@@ -134,26 +130,29 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
         public synchronized AppCacheManager build() {
 
             AppCacheManager app = AppCacheHolder.APP_CACHE;
-            app.init(this.application, this.cachePath);
+            app.init(this.application, this.cachePath, this.cacheListener);
+            HandleException.setErrorHandler(crashReport);
             return app;
         }
     }
 
-    /*--------------------------------------------------属性-----------------------------------------------------*/
-
-    public static final String CACHE_FILE = "CACHE_FILE";
-
-    private final Thread.UncaughtExceptionHandler defaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
-
-    private Disposable mTaskdisposable;
-
-    private Application mApplication;
-
-    private CacheListener _CacheListener;
 
     private AppCacheManager() {
         //默认最大缓存15个对象数据
-        mLruCache = new LruCache(10);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            if (TextUtils.equals("FinalizerWatchdogDaemon", t.getName()) && e instanceof TimeoutException) {
+                System.out.println(AppCacheManager.class.getName() + " FinalizerWatchdogDaemon TimeoutException:" + e.getMessage());
+                // FinalizerWatchdogDaemon 出现 TimeoutException 时主动忽略这个异常，阻断 UncaughtExceptionHandler 链式调用，使系统默认的 UncaughtExceptionHandler 不会被调用，防止APP停止运行
+
+            } else {
+                mDefaultUncaughtExceptionHandler.uncaughtException(t, e);
+            }
+        });
+        // 防止Disposable 之后出现异常导致应用崩溃
+        RxJavaPlugins.setErrorHandler(throwable -> {
+            System.out.println(AppCacheManager.class.getName() + " RxJavaPlugins:" + throwable);
+        });
+
     }
 
     /***
@@ -161,21 +160,15 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
      * @param application
      * @return
      */
-    private void init(Application application, final String path) {
+    private void init(Application application, final String path, CacheListener cacheListener) {
 
         this.mApplication = application;
         this.mApplication.registerComponentCallbacks(this);
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            if (TextUtils.equals("FinalizerWatchdogDaemon", t.getName()) && e instanceof TimeoutException) {
-                System.out.println(" FinalizerWatchdogDaemon 出现 TimeoutException:" + e.getMessage());
-                // FinalizerWatchdogDaemon 出现 TimeoutException 时主动忽略这个异常，阻断 UncaughtExceptionHandler 链式调用，使系统默认的 UncaughtExceptionHandler 不会被调用，防止APP停止运行
-            } else {
-                defaultUncaughtExceptionHandler.uncaughtException(t, e);
-            }
-        });
-
-        // 防止Disposable 之后出现异常导致应用崩溃
-        RxJavaPlugins.setErrorHandler(RxJavaDisposableThrowableHandler.newInstance());
+        if (cacheListener != null) {
+            this.mCacheListener = cacheListener;
+        } else {
+            this.mCacheListener = new CacheManger(this.mApplication);
+        }
 
         String file = path;
         if (TextUtils.isEmpty(file)) {
@@ -193,15 +186,14 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
     @Override
     public void onLowMemory() {
         //内存紧张
-        if (this.mLruCache != null) {
-            this.mLruCache.evictAll();
+        if (this.mCacheListener != null) {
+            this.mCacheListener.getPersistListener().clearCache();
         }
     }
 
     private Application getApp() {
         return this.mApplication;
     }
-
 
 
     /***
@@ -218,13 +210,13 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
         //创建缓存失败，线创建定时30秒检查一次，10次结束
         this.mTaskdisposable = Observable.interval(1, 30, TimeUnit.SECONDS).take(10).map(aLong -> {
 
-            SharedPreferences.Editor editor = getPreferences().edit();
+            CacheListener.PersistListener editor = this.mCacheListener.getPersistListener();
             File cache;
             if (TextUtils.isEmpty(path)) {
                 //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
                 cache = new File(mApplication.getExternalCacheDir(), path);
                 if (cache.exists() || cache.mkdirs()) {
-                    editor.putString(CACHE_FILE, cache.getAbsolutePath()).commit();
+                    editor.putString(CACHE_FILE, cache.getAbsolutePath(), true);
                     return true;
                 }
             } else {
@@ -242,19 +234,19 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
 
                 if (cache.exists()) {
                     //创建目录存在
-                    editor.putString(CACHE_FILE, cache.getAbsolutePath()).commit();
+                    editor.putString(CACHE_FILE, cache.getAbsolutePath(), true);
                     return true;
                 }
 
                 // 创建目录 成功
                 if (cache.mkdirs()) {
-                    editor.putString(CACHE_FILE, cache.getAbsolutePath()).commit();
+                    editor.putString(CACHE_FILE, cache.getAbsolutePath(), true);
                     return true;
                 } else {
                     //使用APP 私有目录 /storage/emulated/0/Android/data/应用包名/cache
                     cache = new File(mApplication.getExternalCacheDir(), path);
                     if (cache.exists() || cache.mkdirs()) {
-                        editor.putString(CACHE_FILE, cache.getAbsolutePath()).commit();
+                        editor.putString(CACHE_FILE, cache.getAbsolutePath(), true);
                         return true;
                     }
                 }
@@ -266,120 +258,10 @@ public class AppCacheManager implements Consumer<Boolean>, ComponentCallbacks {
     @Override
     public void accept(Boolean result) throws Exception {
 
-        if (result && mTaskdisposable != null) {
-            mTaskdisposable.dispose();
+        if (result && this.mTaskdisposable != null) {
+            this.mTaskdisposable.dispose();
         }
     }
 
-    private SharedPreferences getPreferences() {
-        String packName = this.mApplication.getPackageName().replace(".", "");
-        return this.mApplication.getSharedPreferences(packName, Context.MODE_PRIVATE);
-    }
 
-
-    /***
-     * 持久化数据
-     * @param key
-     * @param value
-     * @param <T>
-     * @return
-     */
-    private <T> boolean putCache(@NonNull String key, @NonNull T value) {
-
-        final SharedPreferences.Editor editor = getPreferences().edit();
-
-        if (value instanceof Integer) {
-            return editor.putInt(key, (Integer) value).commit();
-
-        } else if (value instanceof Long) {
-            return editor.putLong(key, (Long) value).commit();
-
-        } else if (value instanceof Float || value instanceof Double) {
-            return editor.putFloat(key, (Float) value).commit();
-
-        } else if (value instanceof Boolean) {
-            return editor.putBoolean(key, (Boolean) value).commit();
-
-        } else if (value instanceof String) {
-            return editor.putString(key, String.valueOf(value)).commit();
-        } else {
-            return editor.putString(key, new Gson().toJson(value)).commit();
-        }
-    }
-
-    private <T> boolean putMemoryCache(@NonNull String key, @NonNull T value) {
-        this.mLruCache.put(key, value);
-        return true;
-    }
-
-    /***
-     * 查询数据
-     * @param key
-     * @return
-     */
-    private Object getValue(@NonNull String key, @NonNull Class cls) {
-        if (TextUtils.isEmpty(key) || cls == null) {
-            return null;
-        }
-        //查询临时缓存集合
-        Object dataObject = this.mLruCache.get(key);
-        if (dataObject != null) {
-            return dataObject;
-        }
-
-        //持久化数据查询
-        SharedPreferences preferences = this.getPreferences();
-        if (!preferences.contains(key)) {
-            return null;
-        }
-
-        if (Integer.class.isAssignableFrom(cls)) {
-
-            dataObject = preferences.getInt(key, 0);
-
-        } else if (Long.class.isAssignableFrom(cls)) {
-
-            dataObject = preferences.getLong(key, 0);
-
-        } else if (Float.class.isAssignableFrom(cls) || Double.class.isAssignableFrom(cls)) {
-
-            dataObject = preferences.getFloat(key, 0.0f);
-
-        } else if (Boolean.class.isAssignableFrom(cls)) {
-
-            dataObject = preferences.getBoolean(key, Boolean.FALSE);
-
-        } else if (String.class.isAssignableFrom(cls)) {
-
-            dataObject = preferences.getString(key, "");
-
-        } else {
-            String content = preferences.getString(key, "");
-            if (TextUtils.isEmpty(content)) {
-                return null;
-            }
-            dataObject = new Gson().fromJson(content, cls);
-        }
-        //存入临时缓存，下次加快再次获取速度
-        this.mLruCache.put(key, dataObject);
-        return dataObject;
-    }
-
-    /**
-     * 移除某个key值已经对应的值
-     *
-     * @param key
-     */
-    private void remove(String... key) {
-        SharedPreferences.Editor editor = getPreferences().edit();
-        for (String k : key) {
-            editor.remove(k);
-            this.mLruCache.remove(k);
-        }
-        editor.commit();
-    }
-
-    private void removeMemoryCache(String key) {
-        this.mLruCache.remove(key);
-    }
 }

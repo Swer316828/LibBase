@@ -51,21 +51,7 @@ public class ViewModelProviders {
         @NonNull
         @Override
         public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-            if (AndroidViewModel.class.isAssignableFrom(modelClass)) {
-                //noinspection TryWithIdenticalCatches
-                try {
-                    Application application = AppCacheManager.getApplication();
-                    return modelClass.getConstructor(Application.class).newInstance(application);
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
-                } catch (InstantiationException e) {
-                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
-                } catch (InvocationTargetException e) {
-                    throw new RuntimeException("Cannot create an instance of " + modelClass, e);
-                }
-            }
+
             return super.create(modelClass);
         }
     }
