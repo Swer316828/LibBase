@@ -30,9 +30,9 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
     private TextChangedListener textChanged;
 
 
-    TextViewTextObservable(TextView view,long timeout, TextChangedListener textChanged) {
+    TextViewTextObservable(TextView view, long timeout, TextChangedListener textChanged) {
         this.view = view;
-       // this.textChanged = textChanged;
+        this.textChanged = textChanged;
         this.mDuration = timeout;
     }
 
@@ -68,11 +68,11 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
             if (!isCancelled()) {
                 return;
             }
-            if (ThreadUIUtils.isInUiThread()){
-                if (textChanged != null){
+            if (ThreadUIUtils.isInUiThread()) {
+                if (textChanged != null) {
                     textChanged.textChanged(content);
                 }
-            }else {
+            } else {
                 ThreadUIUtils.onUiThread(this);
             }
         }

@@ -1,6 +1,7 @@
 package com.sfh.lib;
 
 import android.net.ParseException;
+import android.support.annotation.Nullable;
 
 import com.sfh.lib.http.HttpCodeException;
 
@@ -12,8 +13,6 @@ import java.net.ConnectException;
 import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLException;
-
-import io.reactivex.annotations.Nullable;
 
 /**
  * 功能描述:异常统一处理信息

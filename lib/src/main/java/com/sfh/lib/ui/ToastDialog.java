@@ -26,7 +26,7 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
 
     public static ToastDialog newToastDialog(Context context) {
 
-        return new ToastDialog (context);
+        return new ToastDialog(context);
     }
 
     public TextView tvTitle;
@@ -46,104 +46,104 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
 
     protected ToastDialog(Context context) {
 
-        super (context, R.style.dialogToast);
-        this.getWindow ().setWindowAnimations (R.style.dialogAnim);
+        super(context, R.style.dialogToast);
+        this.getWindow().setWindowAnimations(R.style.dialogAnim);
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        super.onCreate (savedInstanceState);
-        this.setContentView (R.layout.base_toast_dialog);
-        this.tvTitle = findViewById (R.id.tvTitle);
-        this.tvContent = findViewById (R.id.tvContent);
-        this.tvLeftClick = findViewById (R.id.tvLeftClick);
-        this.tvRightClick = findViewById (R.id.tvRightClick);
-        this.fyContent = findViewById (R.id.fyContent);
-        this.vLine = findViewById (R.id.vLine);
+        super.onCreate(savedInstanceState);
+        this.setContentView(R.layout.base_toast_dialog);
+        this.tvTitle = findViewById(R.id.tvTitle);
+        this.tvContent = findViewById(R.id.tvContent);
+        this.tvLeftClick = findViewById(R.id.tvLeftClick);
+        this.tvRightClick = findViewById(R.id.tvRightClick);
+        this.fyContent = findViewById(R.id.fyContent);
+        this.vLine = findViewById(R.id.vLine);
 
-        this.tvLeftClick.setOnClickListener (this);
-        this.tvRightClick.setOnClickListener (this);
-        this.tvContent.setMovementMethod (ScrollingMovementMethod.getInstance ());
+        this.tvLeftClick.setOnClickListener(this);
+        this.tvRightClick.setOnClickListener(this);
+        this.tvContent.setMovementMethod(ScrollingMovementMethod.getInstance());
 
         this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
     }
 
 
-
     public void show(DialogBuilder data) {
 
-        Context context = this.getContext ();
+        Context context = this.getContext();
         if (context == null) {
             return;
         }
         if (context instanceof Activity) {
-            if (((Activity) context).isFinishing ()) {
+            if (((Activity) context).isFinishing()) {
                 return;
             }
         }
-        super.show ();
+        super.show();
         this.showUIData(data);
     }
 
-    private void showUIData(DialogBuilder data){
+    private void showUIData(DialogBuilder data) {
         this.data = data;
         if (this.data == null) {
             return;
         }
-        this.setCancelable (data.isCancelable ());
+        this.setCancelable(data.isCancelable());
 
-        if (TextUtils.isEmpty (data.getTitle ())) {
-            this.tvTitle.setVisibility (View.GONE);
+        if (TextUtils.isEmpty(data.getTitle())) {
+            this.tvTitle.setVisibility(View.GONE);
         } else {
-            this.tvTitle.setVisibility (View.VISIBLE);
-            this.tvTitle.setText (data.getTitle ());
+            this.tvTitle.setVisibility(View.VISIBLE);
+            this.tvTitle.setText(data.getTitle());
         }
-        fyContent.removeAllViews ();
-        View v = data.getView ();
+        fyContent.removeAllViews();
+        View v = data.getView();
         if (v != null) {
-            tvContent.setVisibility (View.GONE);
-            fyContent.setVisibility (View.VISIBLE);
-            fyContent.addView (v);
+            tvContent.setVisibility(View.GONE);
+            fyContent.setVisibility(View.VISIBLE);
+            fyContent.addView(v);
 
         } else {
-            tvContent.setVisibility (View.VISIBLE);
-            fyContent.setVisibility (View.GONE);
-            this.tvContent.setGravity (data.getGravity ());
-            this.setTextViewStyle (this.tvContent, data.getMessage (), data.getMessageTextColor (), data.getMessageTextSize ());
+            tvContent.setVisibility(View.VISIBLE);
+            fyContent.setVisibility(View.GONE);
+            this.tvContent.setGravity(data.getGravity());
+            this.setTextViewStyle(this.tvContent, data.getMessage(), data.getMessageTextColor(), data.getMessageTextSize());
         }
 
-        if (data.isHideCancel ()) {
-            this.tvLeftClick.setVisibility (View.GONE);
-            this.vLine.setVisibility (View.GONE);
+        if (data.isHideCancel()) {
+            this.tvLeftClick.setVisibility(View.GONE);
+            this.vLine.setVisibility(View.GONE);
         } else {
-            this.tvLeftClick.setVisibility (View.VISIBLE);
-            this.vLine.setVisibility (View.VISIBLE);
-            this.setTextViewStyle (this.tvLeftClick, data.getCancelText (), data.getCancelTextColor (), data.getCancelTextSize ());
+            this.tvLeftClick.setVisibility(View.VISIBLE);
+            this.vLine.setVisibility(View.VISIBLE);
+            this.setTextViewStyle(this.tvLeftClick, data.getCancelText(), data.getCancelTextColor(), data.getCancelTextSize());
         }
 
-        this.setTextViewStyle (this.tvRightClick, data.getOkText (), data.getOkTextColor (), data.getOkTextSize ());
+        this.setTextViewStyle(this.tvRightClick, data.getOkText(), data.getOkTextColor(), data.getOkTextSize());
     }
 
     private void setTextViewStyle(TextView tv, CharSequence msg, int color, int size) {
 
-        if (TextUtils.isEmpty (msg)) {
-            tv.setVisibility (View.GONE);
+        if (TextUtils.isEmpty(msg)) {
+            tv.setVisibility(View.GONE);
             return;
         }
-        tv.setVisibility (View.VISIBLE);
-        tv.setText (msg);
+        tv.setVisibility(View.VISIBLE);
+        tv.setText(msg);
         if (color > 0) {
-            tv.setTextColor (ContextCompat.getColor (this.getContext (), color));
+            tv.setTextColor(ContextCompat.getColor(this.getContext(), color));
         }
         if (size > 0) {
-            tv.setTextSize (this.getContext ().getResources ().getDimensionPixelSize (size));
+            tv.setTextSize(this.getContext().getResources().getDimensionPixelSize(size));
         }
     }
 
     @Override
     public void dismiss() {
 
-        super.dismiss ();
+        super.dismiss();
         this.data = null;
     }
 
@@ -151,26 +151,26 @@ public class ToastDialog extends AlertDialog implements View.OnClickListener, Di
     public void onClick(View v) {
 
         if (this.data == null) {
-            this.dismiss ();
+            this.dismiss();
             return;
         }
 
         if (v == this.tvLeftClick) {
 
-            if (this.data.getCancelListener () == null) {
-                this.dismiss ();
+            if (this.data.getCancelListener() == null) {
+                this.dismiss();
                 return;
             }
-            this.data.getCancelListener ().onClick (this, v.getId ());
+            this.data.getCancelListener().onClick(this, v.getId());
             return;
         }
 
         if (v == this.tvRightClick) {
-            if (this.data.getOkListener () == null) {
-                this.dismiss ();
+            if (this.data.getOkListener() == null) {
+                this.dismiss();
                 return;
             }
-            this.data.getOkListener ().onClick (this, v.getId ());
+            this.data.getOkListener().onClick(this, v.getId());
         }
     }
 

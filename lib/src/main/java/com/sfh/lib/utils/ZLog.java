@@ -1,9 +1,6 @@
 package com.sfh.lib.utils;
 
-import android.content.Context;
 import android.util.Log;
-
-import com.sfh.lib.BuildConfig;
 
 
 /**

@@ -118,7 +118,7 @@ public class DialogBuilder {
 
     public DialogBuilder setCancelTextListener(CharSequence cancelText,DialogInterface.OnClickListener cancelListener) {
         this.cancelText = cancelText;
-       // this.cancelListener = cancelListener;
+        this.cancelListener = cancelListener;
         return this;
     }
     /* -------------------------------------------------------------------确定按钮----------------------------------------------------------------------------- */
@@ -148,7 +148,7 @@ public class DialogBuilder {
 
     public DialogBuilder  setOKTextListener(CharSequence okText,DialogInterface.OnClickListener okListener) {
         this.okText = okText;
-      //  this.okListener = okListener;
+        this.okListener = okListener;
         return this;
     }
 

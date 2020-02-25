@@ -1,7 +1,5 @@
 package com.sfh.lib;
 
-import com.sfh.lib.HandleException;
-
 /**
  * 功能描述: 异常回调
  *
