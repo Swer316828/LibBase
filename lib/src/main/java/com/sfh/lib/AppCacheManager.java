@@ -41,15 +41,16 @@ public class AppCacheManager implements Callable<Boolean>, ComponentCallbacks {
         private static final AppCacheManager APP_CACHE = new AppCacheManager();
     }
 
-    public static AppCacheManager getInitialization(){
+    public static AppCacheManager initialization() {
         return AppCacheHolder.APP_CACHE;
     }
+
 
     /***
      * 获取AbstractApplication
      * @return
      */
-    public Application getApplication() {
+    public static Application getApplication() {
 
         return AppCacheHolder.APP_CACHE.getApp();
     }
@@ -58,9 +59,9 @@ public class AppCacheManager implements Callable<Boolean>, ComponentCallbacks {
      * 返回缓存文件
      * @return
      */
-    public File getFileCache() {
+    public static File getFileCache() {
 
-        String path = this.mCacheListener.getString(CACHE_FILE, "");
+        String path = initialization().mCacheListener.getString(CACHE_FILE, "");
         return new File(path);
     }
 
@@ -68,11 +69,14 @@ public class AppCacheManager implements Callable<Boolean>, ComponentCallbacks {
      * 获取信息
      * @return
      */
-    public  CacheListener getCacheListener() {
+    public static CacheListener getCacheListener() {
 
-        return this.mCacheListener;
+        return AppCacheHolder.APP_CACHE.mCacheListener;
     }
 
+    public static CacheListener.PersistListener getPersistListener() {
+        return AppCacheHolder.APP_CACHE.mCacheListener.getPersistListener();
+    }
 
     /*--------------------------------------------------全局缓存构建Builder模式-----------------------------------------------------*/
 
@@ -152,10 +156,10 @@ public class AppCacheManager implements Callable<Boolean>, ComponentCallbacks {
             this.mCacheListener = new CacheManger(this.mApplication);
         }
 
-        String file = path;
-        if (TextUtils.isEmpty(file)) {
+        this.path = path;
+        if (TextUtils.isEmpty(this.path)) {
             //文件缓存路径已包名作为文件名
-            file = application.getPackageName().replace(".", "");
+            this.path = application.getPackageName().replace(".", "");
         }
         ThreadTaskUtils.execute(this);
     }

@@ -76,7 +76,7 @@ public abstract class MVVMFragment extends Fragment implements IViewLinstener {
         if (context == null) {
             context = super.getActivity();
             if (context == null) {
-                context = AppCacheManager.getInitialization().getApplication();
+                context = AppCacheManager.getApplication();
             }
         }
         return context;
