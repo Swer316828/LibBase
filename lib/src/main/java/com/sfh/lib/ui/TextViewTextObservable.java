@@ -76,6 +76,11 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
             } else {
                 ThreadUIUtils.onUiThread(this);
             }
+
+            if (TextViewTextObservable.this.mLastFuture != null && !TextViewTextObservable.this.mLastFuture.isCancelled()) {
+                TextViewTextObservable.this.mLastFuture.cancel(true);
+                TextViewTextObservable. this.mLastFuture = null;
+            }
         }
     }
 
