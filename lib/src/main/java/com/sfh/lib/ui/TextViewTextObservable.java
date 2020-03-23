@@ -26,7 +26,6 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
     private final TextView view;
     private final AtomicBoolean mCancelBoolean = new AtomicBoolean(true);
     private long mDuration;
-    private Future mLastFuture;
     private TextChangedListener textChanged;
 
 
@@ -50,17 +49,17 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
     @Override
     public void afterTextChanged(Editable s) {
 
-        if (this.mLastFuture != null && !this.mLastFuture.isDone() && !this.mLastFuture.isCancelled()) {
-            this.mLastFuture.cancel(true);
-            this.mLastFuture = null;
-        }
-        this.mLastFuture = ThreadTaskUtils.scheduleWithFixedDelay(new RunCharSequence(s), this.mDuration, this.mDuration, TimeUnit.MILLISECONDS);
+        view.removeCallbacks(runCharSequence);
+        runCharSequence.setData(s);
+        view.postDelayed(runCharSequence, this.mDuration);
     }
+
+    private final RunCharSequence runCharSequence = new RunCharSequence();
 
     class RunCharSequence implements Runnable {
         private CharSequence content;
 
-        RunCharSequence(CharSequence content) {
+        public void setData(CharSequence content) {
             this.content = content;
         }
 
@@ -75,11 +74,6 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
                 }
             } else {
                 ThreadUIUtils.onUiThread(this);
-            }
-
-            if (TextViewTextObservable.this.mLastFuture != null && !TextViewTextObservable.this.mLastFuture.isCancelled()) {
-                TextViewTextObservable.this.mLastFuture.cancel(true);
-                TextViewTextObservable. this.mLastFuture = null;
             }
         }
     }
@@ -103,14 +97,13 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
 
     @Override
     public CharSequence get() throws InterruptedException, ExecutionException {
-        return "";
+        return view.getText();
     }
 
     @Override
     public CharSequence get(long timeout, @NonNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return "";
+        return  view.getText();
     }
-
 
 }
 
