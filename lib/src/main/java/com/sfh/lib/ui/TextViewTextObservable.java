@@ -34,6 +34,7 @@ public class TextViewTextObservable implements Future<CharSequence>, TextWatcher
         this.view = view;
         this.textChanged = textChanged;
         this.mDuration = timeout;
+        this.view.addTextChangedListener(this);
     }
 
     @Override

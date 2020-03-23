@@ -31,6 +31,6 @@ ext {
             minSdkVersion    : 16,        // 最低版本
             targetSdkVersion : 22,        // 目标版本
             versionCode      : 30,
-            versionName      : '3.0.0',
+            versionName      : '3.0.1',
     ]
 }
