@@ -5,6 +5,8 @@ import android.arch.lifecycle.MutableLiveData;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -13,11 +15,11 @@ import java.util.Set;
  * @author SunFeihu 孙飞虎
  * @date 2019/3/12
  */
-public class UILiveDataObserver<T> extends MutableLiveData<T> {
+public class BaseLiveData<T> extends MutableLiveData<T> implements ILiveData<T> {
 
-    private boolean mOnActive = true;
+    private volatile boolean mOnActive = true;
 
-    private volatile Set<T> mNetWorkState = new HashSet<> (7, 0.75f);
+    private  List<T> mNetWorkState = new LinkedList<>();
 
     @Override
     public void setValue(T value) {

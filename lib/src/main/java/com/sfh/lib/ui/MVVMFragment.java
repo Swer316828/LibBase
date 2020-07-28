@@ -16,13 +16,13 @@ import com.sfh.lib.AppCacheManager;
 import com.sfh.lib.IViewLinstener;
 import com.sfh.lib.event.BusEventManager;
 import com.sfh.lib.mvvm.BaseViewModel;
-import com.sfh.lib.mvvm.LiveDataManger;
+import com.sfh.lib.mvvm.UIRegistry;
 
 import java.util.concurrent.Future;
 
 public abstract class MVVMFragment extends Fragment implements IViewLinstener {
 
-    protected LiveDataManger liveDataManger;
+    protected UIRegistry liveDataManger;
 
     protected View mRoot;
 
@@ -46,7 +46,7 @@ public abstract class MVVMFragment extends Fragment implements IViewLinstener {
         }
 
         if (this.liveDataManger == null) {
-            this.liveDataManger = new LiveDataManger(this);
+            this.liveDataManger = new UIRegistry(this);
         }
 
         if (initCreateView) {
@@ -85,7 +85,7 @@ public abstract class MVVMFragment extends Fragment implements IViewLinstener {
     public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
 
         if (this.liveDataManger == null) {
-            this.liveDataManger = new LiveDataManger(this);
+            this.liveDataManger = new UIRegistry(this);
         }
 
         return this.liveDataManger.getViewModel(cls);

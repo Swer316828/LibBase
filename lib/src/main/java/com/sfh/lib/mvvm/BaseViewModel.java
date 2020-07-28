@@ -1,6 +1,8 @@
 package com.sfh.lib.mvvm;
 
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 
 
@@ -10,11 +12,16 @@ import com.sfh.lib.IResultComplete;
 import com.sfh.lib.IResultSuccess;
 import com.sfh.lib.IResultSuccessNoFail;
 import com.sfh.lib.event.BusEventManager;
+import com.sfh.lib.event.EventMethod;
+import com.sfh.lib.event.EventMethodFinder;
+import com.sfh.lib.event.IEventListener;
 import com.sfh.lib.utils.ThreadTaskUtils;
 import com.sfh.lib.utils.ZLog;
 import com.sfh.lib.ui.DialogBuilder;
+import com.sfh.lib.utils.thread.CompositeFuture;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -28,29 +35,48 @@ import java.util.concurrent.FutureTask;
  * @author SunFeihu 孙飞虎
  * @date 2018/7/30
  */
-public class BaseViewModel extends AbstractVM {
+public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEventListener {
 
-    private final static String TAG = BaseViewModel.class.getName();
+    public final static String TAG = BaseViewModel.class.getName();
 
     /***监听任务*/
-    protected IShowDataListener mShowDataListener;
+    protected ILiveData mLiveData;
+    protected volatile boolean mActive = true;
+    private CompositeFuture mCompositeFuture = new CompositeFuture();
 
-    public BaseViewModel() {
+    public BaseViewModel(ILiveData liveData) {
+        mLiveData = liveData;
+
         if (this.eventOnOff()) {
             // 线程处理
             Future futureTask = ThreadTaskUtils.execute(this);
-            this.putFuture(futureTask);
+            mCompositeFuture.add(futureTask);
         }
     }
 
-    public void setShowDataListener(IShowDataListener mShowDataListener) {
-        this.mShowDataListener = mShowDataListener;
+    @Override
+    public Boolean call() throws Exception {
+        List<EventMethod> eventMethods = new EventMethodFinder(this.getClass()).call();
+        for (EventMethod method : eventMethods) {
+            if (mActive){
+                Future future = BusEventManager.register(method.getDataClass(), this);
+                mCompositeFuture.add(future);
+            }
+        }
+        return Boolean.TRUE;
     }
+
+    @Override
+    public void onEventSuccess(Object o) {
+
+    }
+
 
     @Override
     protected void onCleared() {
         super.onCleared();
-        this.mShowDataListener = null;
+        mCompositeFuture.cancel(true);
+        mLiveData.onCleared();
     }
 
 
@@ -65,11 +91,6 @@ public class BaseViewModel extends AbstractVM {
         return false;
     }
 
-    @Override
-    public Object call() throws Exception {
-        this.loadMethods(this);
-        return true;
-    }
 
     @Override
     public void setEventSuccess(Method method, Object data) {
@@ -224,6 +245,7 @@ public class BaseViewModel extends AbstractVM {
 
         ThreadTaskUtils.execute(task);
     }
+
 
     /***
      * 交互处理

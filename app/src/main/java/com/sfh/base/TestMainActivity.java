@@ -5,8 +5,8 @@ import android.view.View;
 import android.widget.Button;
 
 import com.sfh.lib.AppCacheManager;
-import com.sfh.lib.event.RxBusEvent;
-import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.mvvm.BusEvent;
+import com.sfh.lib.HandleException;
 import com.sfh.lib.http.down.HttpDownHelper;
 import com.sfh.lib.http.down.ProgressListener;
 import com.sfh.lib.rx.IResult;
@@ -14,8 +14,7 @@ import com.sfh.lib.rx.IResultSuccess;
 import com.sfh.lib.rx.RetrofitManager;
 import com.sfh.lib.rx.ui.UtilRxView;
 import com.sfh.lib.ui.AbstractLifecycleActivity;
-import com.sfh.lib.ui.dialog.DialogBuilder;
-import com.sfh.lib.utils.UtilLog;
+import com.sfh.lib.utils.ZLog;
 
 import java.io.File;
 
@@ -23,7 +22,6 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 
 
 public class TestMainActivity extends AbstractLifecycleActivity<TestMainModel> {
@@ -40,7 +38,7 @@ public class TestMainActivity extends AbstractLifecycleActivity<TestMainModel> {
 
     Button button =null;
     private void initView() {
-        UtilLog.setDEBUG(true);
+        ZLog.setDEBUG(true);
        Disposable disposable =  UtilRxView.clicks(findViewById(R.id.bt_text1),1000,new IResultSuccess<Object>() {
            @Override
            public void onSuccess(Object o) throws Exception {
@@ -103,7 +101,7 @@ public class TestMainActivity extends AbstractLifecycleActivity<TestMainModel> {
         });
     }
 
-    @RxBusEvent(from = "消息通知")
+    @BusEvent(from = "消息通知")
     public void eventMag(String msg){
         showDialogToast(msg);
     }

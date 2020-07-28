@@ -13,6 +13,7 @@ import com.sfh.lib.utils.ZLog;
  */
 public class EmptyResult<T> implements IResult<T> {
 
+    public static  final EmptyResult EmptyResult = new EmptyResult();
 
     @Override
     public void onSuccess(T t) throws Exception {

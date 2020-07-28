@@ -97,4 +97,11 @@ public class ThreadTaskUtils {
     }
 
 
+    public static void close(Future... tasks){
+        for (Future future : tasks) {
+            if (!future.isDone() && !future.isCancelled()) {
+                future.cancel(true);
+            }
+        }
+    }
 }

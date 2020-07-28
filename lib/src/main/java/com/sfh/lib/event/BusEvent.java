@@ -18,5 +18,11 @@ public @interface BusEvent {
      * 数据来源说明
      * @return
      */
-   String from();
+    String from();
+
+    /***
+     * 运行线程
+     * @return
+     */
+    int ThreadMode() default ThreadModel.MAIN;
 }

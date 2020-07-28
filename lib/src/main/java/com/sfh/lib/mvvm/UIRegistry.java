@@ -1,116 +1,110 @@
 package com.sfh.lib.mvvm;
 
-import android.app.Activity;
 import android.arch.lifecycle.GenericLifecycleObserver;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.ViewModel;
-import android.arch.lifecycle.ViewModelProvider;
-import android.arch.lifecycle.ViewModelStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.SparseArray;
 import android.widget.Toast;
 
 
 import com.sfh.lib.IViewLinstener;
+import com.sfh.lib.event.BusEventManager;
+import com.sfh.lib.event.EventMethod;
+import com.sfh.lib.event.EventMethodFinder;
 import com.sfh.lib.ui.AppDialog;
 import com.sfh.lib.ui.DialogBuilder;
 import com.sfh.lib.ui.IDialog;
 import com.sfh.lib.utils.ThreadTaskUtils;
 import com.sfh.lib.utils.ThreadUIUtils;
-import com.sfh.lib.utils.ViewModelUtils;
 import com.sfh.lib.utils.ZLog;
 
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.concurrent.FutureTask;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+
+import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
 
 
 /**
- * 功能描述:LiveDataManger 借助 ViewModel 生命周期管理
- * 1.处理UI LiveData 数据刷新,把LiveDate 数据持有者注入到真正业务ViewModel 中
- * 2.处理消息监听
- *
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class LiveDataManger extends AbstractVM implements IShowDataListener, GenericLifecycleObserver {
+public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean> {
 
-    private final static String TAG = LiveDataManger.class.getName();
+    private final static String TAG = UIRegistry.class.getName();
 
-    private SoftReference<IViewLinstener> softReference;
-
-    private ViewModelProvider mViewModelProvider;
-
+    private WeakReference<IViewLinstener> softReference;
+    private SparseArray<Method> mMethodArrays = new SparseArray<>();
+    private Class<?> targetCalss;
     /***
      * 对话框句柄【基础操作】
      */
     private IDialog mDialog;
 
-    public LiveDataManger(IViewLinstener linstener) {
+    private volatile boolean mAction = true;
 
-        linstener.getLifecycle().addObserver(this);
-        this.softReference = new SoftReference<>(linstener);
+    public UIRegistry(IViewLinstener linstener) {
 
-        FutureTask futureTask = new FutureTask(this);
-        ThreadTaskUtils.execute(futureTask);
+        this.softReference = new WeakReference<>(linstener);
+
+    }
+
+    public void register(Object subscriber) {
+
+        Future futureTask = ThreadTaskUtils.execute(this);
         this.putFuture(futureTask);
+    }
 
-        ViewModelStore viewModelStore = linstener.getViewModelStore();
-        if (viewModelStore != null) {
-            this.mViewModelProvider = ViewModelUtils.of(viewModelStore);
-            try {
-                //put(String key, ViewModel viewModel)
-                Method put = ViewModelStore.class.getDeclaredMethod("put", new Class[]{String.class, ViewModel.class});
-                put.setAccessible(true);
-                put.invoke(viewModelStore, "android.arch.lifecycle.ViewModelProvider.DefaultKey:" + LiveDataManger.class.getCanonicalName(), this);
-            } catch (Exception e) {
-                ZLog.d(TAG, "LiveDataManger() Exception: %s", e);
+    class MerhodFinder implements Callable{
+       final Class<?> targetCalss;
+
+        MerhodFinder(Class<?> targetCalss) {
+            this.targetCalss = targetCalss;
+        }
+
+        @Override
+        public Object call() throws Exception {
+
+            Future<List<Method>> live = ThreadTaskUtils.execute(new LiveMethonFinder(targetCalss));
+            Future<List<EventMethod>> eventFuture= ThreadTaskUtils.execute(new EventMethodFinder(targetCalss));
+            List<EventMethod> eventMethodList =  eventFuture.get();
+
+            if (mAction){
+                for (EventMethod eventMethod: eventMethodList){
+                    BusEventManager.register(eventMethod.getDataClass(),)
+                }
             }
+            return Boolean.TRUE;
         }
     }
 
     @Override
-    public Object call() throws Exception {
-        final IViewLinstener linstener = this.softReference.get();
-        if (null == linstener) {
-            ZLog.d(TAG, "LiveDataManger  run() IViewLinstener is null !");
-            return false;
-        }
+    public Boolean call() throws Exception {
+        final Class<?> targetCls = subscriber.getClass();
 
-        this.loadMethods(linstener);
-        return true;
+        Future<List<Method>> live = ThreadTaskUtils.execute(new LiveMethonFinder(targetCls));
+        Future<List<EventMethod>> eventMethods = ThreadTaskUtils.execute(new EventMethodFinder(targetCls));
+        List<Method> methods = live.get();
+        if (mAction){
+
+        }
+        event.get();
+        return Boolean.TRUE;
     }
 
     @Override
     public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
         ZLog.d(TAG, "LiveDataManger onStateChanged: " + event.name());
-    }
-
-    /***
-     * 使用ViewModel
-     * @param cls
-     * @param <T>
-     * @return
-     */
-    @Nullable
-    public final <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
-
-        T t = this.mViewModelProvider.get(cls);
-        if (t != null) {
-            t.setShowDataListener(this);
+        if (source.getLifecycle().getCurrentState() == DESTROYED) {
+            source.getLifecycle().removeObserver(this);
         }
-        return t;
     }
 
-    @Override
-    protected void onCleared() {
-        ZLog.d(TAG, "LiveDataManger onCleared() =========== ");
-        super.onCleared();
-        this.softReference.clear();
-    }
+
 
     @Override
     public void setEventSuccess(Method method, Object data) {
@@ -137,7 +131,7 @@ public class LiveDataManger extends AbstractVM implements IShowDataListener, Gen
             return;
         }
         if (!this.mActive) {
-            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive,methodName));
+            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive, methodName));
             return;
         }
         final IViewLinstener linstener = this.softReference.get();
