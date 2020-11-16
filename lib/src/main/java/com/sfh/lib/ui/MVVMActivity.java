@@ -1,6 +1,6 @@
 package com.sfh.lib.ui;
 
-import android.app.Activity;
+import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
 import android.os.Bundle;
@@ -8,37 +8,38 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 
-import com.sfh.lib.IViewLinstener;
-import com.sfh.lib.event.BusEventManager;
-import com.sfh.lib.mvvm.BaseLiveData;
+import com.sfh.lib.event.EventManager;
+import com.sfh.lib.event.IEventListener;
 import com.sfh.lib.mvvm.BaseViewModel;
-import com.sfh.lib.mvvm.ILiveData;
+import com.sfh.lib.mvvm.IDialog;
+import com.sfh.lib.mvvm.IUIListener;
 import com.sfh.lib.mvvm.UIRegistry;
 import com.sfh.lib.mvvm.ViewModelFactoty;
 
-import java.util.concurrent.Future;
+import java.util.List;
 
-public abstract class MVVMActivity extends FragmentActivity implements IViewLinstener, Observer {
+public class MVVMActivity extends FragmentActivity implements IDialog {
 
     private static final String BUNDLE_FRAGMENTS_KEY = "android:support:fragments";
-    protected UIRegistry liveDataManger;
+
+    protected final UIRegistry mUIRegistry = new UIRegistry(this);
+
+    private ViewModelProvider mViewModelProvider;
+
     protected IDialog dialog;
 
-    private final ILiveData mLiveData = new BaseLiveData();
-
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+
         if (savedInstanceState != null && this.clearFragmentsTag()) {
             savedInstanceState.remove(BUNDLE_FRAGMENTS_KEY);
         }
         super.onCreate(savedInstanceState);
-        if (liveDataManger == null) {
-            liveDataManger = new UIRegistry(this);
-        }
-
-        mLiveData.observe(this,this);
-
+        this.getLifecycle().addObserver(mUIRegistry);
     }
 
+
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (outState != null && this.clearFragmentsTag()) {
@@ -46,71 +47,100 @@ public abstract class MVVMActivity extends FragmentActivity implements IViewLins
         }
     }
 
-    protected boolean clearFragmentsTag() {
+    public boolean clearFragmentsTag() {
         return true;
     }
 
 
-    private ViewModelProvider mViewModelProvider;
 
     @Nullable
-    public final <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
+    public <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
 
-        if (mViewModelProvider == null){
-            mViewModelProvider = new ViewModelProvider(this,new ViewModelFactoty(mLiveData));
+        if (mViewModelProvider == null) {
+            mViewModelProvider = new ViewModelProvider(this, new ViewModelFactoty(mUIListener));
         }
         return mViewModelProvider.get(cls);
     }
 
+    protected IUIListener mUIListener = new IUIListener() {
 
+        @Override
+        public void call(String method, Object... args) {
 
-    public IDialog onCreateDialog() {
-        return new AppDialog(this);
-    }
-
-
-    public final void showDialog(DialogBuilder dialog) {
-        if (this.liveDataManger != null) {
-            this.liveDataManger.showDialog(dialog);
+            mUIRegistry.call(MVVMActivity.this, method, args);
         }
-    }
 
-    public final void showDialogToast(CharSequence msg) {
-        DialogBuilder dialog = new DialogBuilder();
-        dialog.setTitle("提示");
-        dialog.setHideCancel(true);
-        dialog.setMessage(msg);
-        this.showDialog(dialog);
-    }
-
-    public final void showToast(CharSequence msg) {
-        if (this.liveDataManger != null) {
-            this.liveDataManger.showToast(msg);
+        @Override
+        public LifecycleOwner getLifecycleOwner() {
+            return MVVMActivity.this;
         }
-    }
 
-    public final void putFuture(Future future) {
-        if (this.liveDataManger != null) {
-            this.liveDataManger.putFuture(future);
+        @Override
+        public IDialog getDialog() {
+            return MVVMActivity.this.getDialog();
         }
-    }
-
-    public final <T> void postEvent(T t) {
-        BusEventManager.postEvent(t);
-    }
-
+    };
 
     @Override
-    public Activity getActivity() {
-        return this;
+    public void showLoading(boolean cancel) {
+        if (this.isFinishing()) {
+            return;
+        }
+        this.getDialog().showLoading(cancel);
     }
 
     @Override
+    public void hideLoading() {
+        if (this.isFinishing()) {
+            return;
+        }
+        this.getDialog().hideLoading();
+    }
+
+    @Override
+    public void showDialog(DialogBuilder dialog) {
+        if (this.isFinishing()) {
+            return;
+        }
+        this.getDialog().showDialog(dialog);
+    }
+
+    @Override
+    public void showDialogToast(CharSequence msg) {
+        if (this.isFinishing()) {
+            return;
+        }
+        this.getDialog().showDialogToast(msg);
+    }
+
+    @Override
+    public void showToast(CharSequence msg) {
+        if (this.isFinishing()) {
+            return;
+        }
+        this.getDialog().showToast(msg);
+    }
+
+    @Override
+    public void showToast(CharSequence msg, int duration) {
+        if (this.isFinishing()) {
+            return;
+        }
+        this.getDialog().showToast(msg, duration);
+    }
+
+
+    public <T> boolean postEvent(T t) {
+        return EventManager.postEvent(t);
+    }
+
     public IDialog getDialog() {
         if (dialog == null) {
             dialog = new AppDialog(this);
+            this.getLifecycle().addObserver(dialog);
         }
         return dialog;
     }
+
 
 }

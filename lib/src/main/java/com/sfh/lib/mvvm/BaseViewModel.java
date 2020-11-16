@@ -1,21 +1,24 @@
 package com.sfh.lib.mvvm;
 
 
-import android.arch.lifecycle.LiveData;
+import android.app.Activity;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 
 
-import com.sfh.lib.HandleException;
-import com.sfh.lib.IResult;
-import com.sfh.lib.IResultComplete;
-import com.sfh.lib.IResultSuccess;
-import com.sfh.lib.IResultSuccessNoFail;
-import com.sfh.lib.event.BusEventManager;
-import com.sfh.lib.event.EventMethod;
-import com.sfh.lib.event.EventMethodFinder;
+import com.sfh.lib.exception.HandleException;
+import com.sfh.lib.Result;
+import com.sfh.lib.ResultComplete;
+import com.sfh.lib.ResultSuccess;
+import com.sfh.lib.ResultSuccessNoFail;
+import com.sfh.lib.event.EventManager;
+import com.sfh.lib.mvvm.hander.EventMethodFinder;
 import com.sfh.lib.event.IEventListener;
+import com.sfh.lib.mvvm.hander.EventMethod;
+import com.sfh.lib.mvvm.hander.LiveEventMethodFinder;
+import com.sfh.lib.mvvm.hander.MethodLinkedMap;
 import com.sfh.lib.utils.ThreadTaskUtils;
+import com.sfh.lib.utils.ThreadUIUtils;
 import com.sfh.lib.utils.ZLog;
 import com.sfh.lib.ui.DialogBuilder;
 import com.sfh.lib.utils.thread.CompositeFuture;
@@ -39,13 +42,22 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
 
     public final static String TAG = BaseViewModel.class.getName();
 
-    /***监听任务*/
-    protected ILiveData mLiveData;
-    protected volatile boolean mActive = true;
-    private CompositeFuture mCompositeFuture = new CompositeFuture();
+    //任务管理
+    protected final  CompositeFuture mCompositeFuture = new CompositeFuture();
 
-    public BaseViewModel(ILiveData liveData) {
-        mLiveData = liveData;
+    protected UILiveData mLiveData = new UILiveData();
+
+    protected volatile boolean mActive = true;
+
+    protected MethodLinkedMap mEventMethods;
+
+    public BaseViewModel(IUIListener listener) {
+
+        if (listener == null) {
+            throw new IllegalArgumentException("BaseViewModel() IUIListener is NULL !");
+        }
+
+        mLiveData.observe(listener.getLifecycleOwner(),listener);
 
         if (this.eventOnOff()) {
             // 线程处理
@@ -55,28 +67,13 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
     }
 
     @Override
-    public Boolean call() throws Exception {
-        List<EventMethod> eventMethods = new EventMethodFinder(this.getClass()).call();
-        for (EventMethod method : eventMethods) {
-            if (mActive){
-                Future future = BusEventManager.register(method.getDataClass(), this);
-                mCompositeFuture.add(future);
-            }
-        }
-        return Boolean.TRUE;
-    }
-
-    @Override
-    public void onEventSuccess(Object o) {
-
-    }
-
-
-    @Override
     protected void onCleared() {
         super.onCleared();
-        mCompositeFuture.cancel(true);
-        mLiveData.onCleared();
+        mCompositeFuture.clear();
+        if (mEventMethods != null){
+            mEventMethods.clear();
+        }
+        ZLog.d("%s: onCleared() ", this.getClass().getSimpleName());
     }
 
 
@@ -84,6 +81,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
 
     /***
      * 消息监听开关 【默认关闭】
+     * true 表示当前VM 接收信息通知
      * @return
      */
     public boolean eventOnOff() {
@@ -91,15 +89,36 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
         return false;
     }
 
+    @Override
+    public Boolean call() throws Exception {
+        Future<MethodLinkedMap> futureTask = ThreadTaskUtils.execute(new LiveEventMethodFinder(this.getClass()));
+        mCompositeFuture.add(futureTask);
+        mEventMethods = futureTask.get();
+
+        for (Class eventType : mEventMethods.getEventClass()) {
+            if (mActive) {
+                Future future = EventManager.register(eventType, this);
+                mCompositeFuture.add(future);
+            }
+        }
+        return Boolean.TRUE;
+    }
+
 
     @Override
-    public void setEventSuccess(Method method, Object data) {
-        try {
-            method.invoke(this, data);
-        } catch (Exception e) {
-            ZLog.d("setEventSuccess() Exception:%s", e);
+    public void onEventSuccess(Object event) {
+
+        if (mLiveData != null && mEventMethods.containsKey(event.getClass().getName())) {
+            try {
+                Method method = mEventMethods.get(event.getClass().getName());
+                method.invoke(this, event);
+            } catch (Exception e) {
+                ZLog.d("setEventSuccess() Exception:%s", e);
+            }
         }
+
     }
+
 
     /***
      * 发送Rx消息通知
@@ -107,7 +126,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      */
     public boolean postEvent(Object t) {
 
-        return BusEventManager.postEvent(t);
+        return EventManager.postEvent(t);
     }
 
     /*------------------------------------任务执行 start-------------------------------------------------------------------------------*/
@@ -138,7 +157,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      * @param listener 接口为1:【IResultSuccess,错误信息以对话框形式进行提示】2:【 IResultSuccessNoFail时，错误信息在日志输出】3:【IResult时，需处理错误信息】
      * @param <T>
      */
-    public <T> void execute(final Callable<T> request, IResultSuccess<T> listener) {
+    public <T> void execute(final Callable<T> request, ResultSuccess<T> listener) {
 
         this.execute(new Task<>(request, listener));
     }
@@ -151,7 +170,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      * @param taskList
      * @param <T>
      */
-    public <T> void executeTasks(final IResultSuccess<T> listener, final IResultComplete complete, final Callable<T>... taskList) {
+    public <T> void executeTasks(final ResultSuccess<T> listener, final ResultComplete complete, final Callable<T>... taskList) {
 
         ThreadTaskUtils.execute(new Runnable() {
             @Override
@@ -193,7 +212,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      * @param listener 接口为1:【IResultSuccess,错误信息以对话框形式进行提示】2:【 IResultSuccessNoFail时，错误信息在日志输出】3:【IResult时，需处理错误信息】
      * @param <T>
      */
-    public <T> void execute(boolean cancelDialog, final Callable<T> request, IResultSuccess<T> listener) {
+    public <T> void execute(boolean cancelDialog, final Callable<T> request, ResultSuccess<T> listener) {
         this.execute(new TaskLoading<>(cancelDialog, request, listener));
     }
 
@@ -205,7 +224,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      * @param taskList
      * @param <T>
      */
-    public <T> void executeTasks(boolean cancelDialog, final IResultSuccess<T> listener, final IResultComplete complete, final Callable<T>... taskList) {
+    public <T> void executeTasks(boolean cancelDialog, final ResultSuccess<T> listener, final ResultComplete complete, final Callable<T>... taskList) {
 
         this.showLoading(cancelDialog);
 
@@ -253,7 +272,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      */
     private class TaskLoading<T> extends Task<T> {
 
-        public TaskLoading(boolean cancelDialog, Callable<T> callable, IResultSuccess<T> listener) {
+        public TaskLoading(boolean cancelDialog, Callable<T> callable, ResultSuccess<T> listener) {
 
             super(callable, listener);
             BaseViewModel.this.showLoading(cancelDialog);
@@ -278,16 +297,16 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
      * 无交互处理
      * @param <T>
      */
-    private class Task<T> extends FutureTask<T> implements IResult<T> {
+    private class Task<T> extends FutureTask<T> implements Result<T> {
 
-        IResultSuccess<T> listener;
+        ResultSuccess<T> listener;
 
         public Task(@NonNull Callable<T> callable) {
             super(callable);
         }
 
 
-        public Task(@NonNull Callable<T> callable, IResultSuccess<T> listener) {
+        public Task(@NonNull Callable<T> callable, ResultSuccess<T> listener) {
             super(callable);
             this.listener = listener;
         }
@@ -314,15 +333,15 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
         @Override
         public void onFail(HandleException e) {
             ZLog.w(TAG, "TaskLinstener Task " + this + " onFail() e:" + e);
-            if (listener instanceof IResult) {
+            if (listener instanceof Result) {
                 //回调处理异常失败
-                ((IResult) listener).onFail(e);
+                ((Result) listener).onFail(e);
 
-            } else if (listener instanceof IResultSuccessNoFail) {
+            } else if (listener instanceof ResultSuccessNoFail) {
                 //不处理异常失败
                 ZLog.d(TAG, "onFail:" + e.toString());
 
-            } else if (listener instanceof IResultSuccess) {
+            } else if (listener instanceof ResultSuccess) {
                 //对话框形式提示异常失败
                 BaseViewModel.this.showDialogToast(e.getMessage());
             }
@@ -342,69 +361,45 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
 
     /* ---------------------------------------------------------------- 消息监听处理 刷新UI 数据管理------------------------------------------------------------------ */
 
-    /***
-     * 刷新UI 数据
-     * @param action
-     * @param data
-     */
-    public void setValue(String action, Object... data) {
+    public  void setValue(String action, Object... args) {
 
-        if (this.mShowDataListener != null && this.mActive) {
-            this.mShowDataListener.call(action, data);
-        } else {
-            ZLog.d("setValue() mShowDataListener is NULL, methodName:%s", action);
-        }
+        this.call(action, args);
     }
 
-    /***
-     * 显示等待对话框
-     * @param cancel true 可以取消默认值 false 不可以取消
-     */
+
+    public  void call(String method, Object... args) {
+
+        this.mLiveData.call(method,args);
+
+    }
+
     public void showLoading(boolean cancel) {
-        if (this.mShowDataListener != null && this.mActive) {
-            this.mShowDataListener.showLoading(cancel);
-        }
+        this.mLiveData.call("showLoading",cancel);
     }
 
-    /***
-     *隐藏等待对话框
-     */
-    public void hideLoading() {
-
-        if (this.mShowDataListener != null && this.mActive) {
-            this.mShowDataListener.hideLoading();
-        }
+    public  void hideLoading() {
+        this.mLiveData.call("hideLoading");
     }
 
-    /***
-     * 显示提示对话框
-     * @param dialog 提示信息
-     */
-    public void showDialog(DialogBuilder dialog) {
-        if (this.mShowDataListener != null && this.mActive) {
-            this.mShowDataListener.showDialog(dialog);
-        }
+    public void showDialog(DialogBuilder builder) {
+        this.mLiveData.call("showDialog",builder);
     }
 
-
-    /***
-     * Toast提示(正常提示)
-     */
     public void showToast(CharSequence msg) {
 
-        if (this.mShowDataListener != null && this.mActive) {
-            this.mShowDataListener.showToast(msg);
-        }
+        this.mLiveData.call("showToast",msg);
     }
 
-    /***
-     * Toast提示(正常提示)
-     */
+    public void showToast(CharSequence msg, int duration) {
+        this.mLiveData.call("showToast",msg,duration);
+    }
+
     public void showDialogToast(CharSequence msg) {
-        if (this.mShowDataListener != null && this.mActive) {
-            this.mShowDataListener.showDialogToast(msg);
-        }
+        this.mLiveData.call("showDialogToast",msg);
     }
 
+    public boolean putFuture(Future future) {
+        return mCompositeFuture.add(future);
+    }
 
 }

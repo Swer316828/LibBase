@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface BusEvent {
+public @interface Event {
     /***
      * 数据来源说明
      * @return

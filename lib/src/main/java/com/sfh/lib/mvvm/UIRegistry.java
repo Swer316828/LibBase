@@ -3,25 +3,24 @@ package com.sfh.lib.mvvm;
 import android.arch.lifecycle.GenericLifecycleObserver;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleOwner;
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import android.util.SparseArray;
-import android.widget.Toast;
 
 
-import com.sfh.lib.IViewLinstener;
-import com.sfh.lib.event.BusEventManager;
-import com.sfh.lib.event.EventMethod;
-import com.sfh.lib.event.EventMethodFinder;
-import com.sfh.lib.ui.AppDialog;
-import com.sfh.lib.ui.DialogBuilder;
-import com.sfh.lib.ui.IDialog;
+import com.sfh.lib.ViewLinstener;
+import com.sfh.lib.event.EventManager;
+import com.sfh.lib.event.IEventListener;
+import com.sfh.lib.mvvm.hander.LiveEventMethodFinder;
+import com.sfh.lib.mvvm.hander.MethodLinkedMap;
 import com.sfh.lib.utils.ThreadTaskUtils;
 import com.sfh.lib.utils.ThreadUIUtils;
 import com.sfh.lib.utils.ZLog;
+import com.sfh.lib.utils.thread.CompositeFuture;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -33,148 +32,122 @@ import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean> {
+public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean>{
 
     private final static String TAG = UIRegistry.class.getName();
 
-    private WeakReference<IViewLinstener> softReference;
-    private SparseArray<Method> mMethodArrays = new SparseArray<>();
-    private Class<?> targetCalss;
-    /***
-     * 对话框句柄【基础操作】
-     */
-    private IDialog mDialog;
+    private MethodLinkedMap mMethods;
 
-    private volatile boolean mAction = true;
+    private volatile boolean mActive = true;
 
-    public UIRegistry(IViewLinstener linstener) {
+    private final CompositeFuture compositeFuture = new CompositeFuture();
 
-        this.softReference = new WeakReference<>(linstener);
+    private Class<?> mTagClass;
 
+    private IEventListener eventListener;
+
+    private LiveData<List<Class>> mEvents = new MutableLiveData<>();
+
+    public LiveData<List<Class>> getEvents() {
+        return mEvents;
     }
 
-    public void register(Object subscriber) {
-
-        Future futureTask = ThreadTaskUtils.execute(this);
-        this.putFuture(futureTask);
-    }
-
-    class MerhodFinder implements Callable{
-       final Class<?> targetCalss;
-
-        MerhodFinder(Class<?> targetCalss) {
-            this.targetCalss = targetCalss;
-        }
-
-        @Override
-        public Object call() throws Exception {
-
-            Future<List<Method>> live = ThreadTaskUtils.execute(new LiveMethonFinder(targetCalss));
-            Future<List<EventMethod>> eventFuture= ThreadTaskUtils.execute(new EventMethodFinder(targetCalss));
-            List<EventMethod> eventMethodList =  eventFuture.get();
-
-            if (mAction){
-                for (EventMethod eventMethod: eventMethodList){
-                    BusEventManager.register(eventMethod.getDataClass(),)
-                }
-            }
-            return Boolean.TRUE;
-        }
+    public UIRegistry(Object tag) {
+        mTagClass = tag.getClass();
+        Future future = ThreadTaskUtils.execute(this);
+        compositeFuture.add(future);
     }
 
     @Override
     public Boolean call() throws Exception {
-        final Class<?> targetCls = subscriber.getClass();
 
-        Future<List<Method>> live = ThreadTaskUtils.execute(new LiveMethonFinder(targetCls));
-        Future<List<EventMethod>> eventMethods = ThreadTaskUtils.execute(new EventMethodFinder(targetCls));
-        List<Method> methods = live.get();
-        if (mAction){
-
+        mMethods = new LiveEventMethodFinder(mTagClass).call();
+        if (!mActive) {
+            mMethods.clear();
+            return Boolean.FALSE;
         }
-        event.get();
+
+        List<Class<?>> eventTypes = mMethods.getEventClass();
+        if (!eventTypes.isEmpty()) {
+            for (Class<?> cls : eventTypes) {
+                Future future = EventManager.register(cls, eventListener);
+                compositeFuture.add(future);
+            }
+            mMethods.clearEventClass();
+        }
         return Boolean.TRUE;
     }
 
+    private IEventListener eventListener = new IEventListener() {
+        @Override
+        public void onEventSuccess(Object data) {
+            //接收到消息通知
+            ZLog.d(TAG, "LiveDataManger onEventSuccess() start");
+            final IUIListener linstener = linstenerWeakReference.get();
+            if (null == linstener || mMethods == null) {
+                ZLog.d(TAG, "LiveDataManger onEventSuccess() but IViewLinstener is null, ClassName:%s", data.getClass().getName());
+                return;
+            }
+
+            Method method = mMethods.get(data.getClass().getName());
+            if (method != null) {
+                //消息监听方法同一个参数
+                showUI(linstener, method, data);
+            }
+
+            ZLog.d(TAG, "LiveDataManger onEventSuccess() end");
+        }
+    };
+
     @Override
     public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
+
         ZLog.d(TAG, "LiveDataManger onStateChanged: " + event.name());
         if (source.getLifecycle().getCurrentState() == DESTROYED) {
+            mActive = false;
+            compositeFuture.clear();
             source.getLifecycle().removeObserver(this);
+        } else {
+            mActive = true;
         }
     }
-
-
-
     @Override
-    public void setEventSuccess(Method method, Object data) {
-        //接收到消息通知
-        ZLog.d(TAG, "LiveDataManger onEventSuccess() start");
-        final IViewLinstener linstener = this.softReference.get();
-        if (null == linstener) {
+    public void onChanged(@Nullable VMData data) {
+        final ViewLinstener linstener = linstenerWeakReference.get();
+        if (null == linstener || mMethods == null) {
             ZLog.d(TAG, "LiveDataManger onEventSuccess() but IViewLinstener is null, ClassName:%s", data.getClass().getName());
             return;
         }
-        //消息监听方法同一个参数
-        this.showUI(linstener, method, data);
-
-        ZLog.d(TAG, "LiveDataManger onEventSuccess() end");
-    }
-
-
-    @Override
-    public void call(String methodName, Object... args) {
 
         ZLog.d(TAG, "LiveDataManger showUIValue() start");
-        if (TextUtils.isEmpty(methodName)) {
+        if (TextUtils.isEmpty(data.methodName)) {
             ZLog.d(TAG, "LiveDataManger showUIValue()  methodName is null");
             return;
         }
         if (!this.mActive) {
-            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive, methodName));
-            return;
-        }
-        final IViewLinstener linstener = this.softReference.get();
-        if (null == linstener) {
-            ZLog.d(TAG, "LiveDataManger onChanged() but IViewLinstener is null, methodName:%s", methodName);
+            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive, data.methodName));
             return;
         }
 
         //LiveData
-        Method targetMethod = this.mMethods.get(methodName);
-        if (targetMethod == null) {
-            final Method[] methods = linstener.getClass().getDeclaredMethods();
-
-            for (Method mtd : methods) {
-                final int modifiers = mtd.getModifiers();
-                if (!Modifier.isPublic(modifiers)
-                        || Modifier.isFinal(modifiers)
-                        || Modifier.isAbstract(modifiers)
-                        || Modifier.isStatic(modifiers)) {
-                    continue;
-                }
-
-                if (TextUtils.equals(mtd.getName(), methodName)) {
-                    // 注册LiveData监听
-                    this.mMethods.put(mtd.getName(), mtd);
-                    targetMethod = mtd;
-                    break;
-                }
-            }
-        }
+        Method targetMethod = this.mMethods.get(data.methodName.trim());
 
         if (targetMethod == null) {
-            ZLog.d(TAG, "LiveDataManger showUILiveData() Method is null, MethodName:%s", methodName);
+            ZLog.d(TAG, "LiveDataManger showUILiveData() Method is null, MethodName:%s", data.methodName);
             return;
         }
 
-        this.showUI(linstener, targetMethod, args);
+        this.showUI(linstener, targetMethod, data.args);
 
         ZLog.d(TAG, "LiveDataManger onChanged() end");
     }
 
 
-    private void showUI(final IViewLinstener linstener, final Method method, Object... args) {
+    public void call(Object ui,String method, Object... args){
+
+    }
+
+    public void showUI(Object ui, final Method method, Object... args) {
 
         if (null == args) {
             args = new Object[0];
@@ -203,23 +176,19 @@ public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean> {
         }
 
         if (ThreadUIUtils.isInUiThread()) {
-            this.invokeMethod(linstener, method, dyArgs);
+            this.invokeMethod(ui, method, dyArgs);
         } else {
-            this.runUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    invokeMethod(linstener, method, dyArgs);
-                }
-            });
+            ThreadUIUtils.onUiThread(() -> invokeMethod(ui, method, dyArgs));
+
         }
     }
 
-    private void invokeMethod(IViewLinstener linstener, Method method, Object... args) {
+    private void invokeMethod(Object ui, Method method, Object... args) {
         try {
             //消息监听方法同一个参数
-            method.invoke(linstener, args);
+            method.invoke(ui, args);
         } catch (Exception e) {
-            ZLog.d(TAG, "LiveDataManger invokeMethod()  IViewLinstener:%s, Method:%s, params:%s, exception:%s", linstener, method, args, e);
+            ZLog.e(TAG, "LiveDataManger invokeMethod()  IViewLinstener:%s, Method:%s, params:%s, exception:%s", ui, method, args, e);
         }
     }
 
@@ -238,91 +207,15 @@ public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean> {
         }
     }
 
-    @Override
-    public void showLoading(final boolean cancel) {
-        if (!this.enableShowDialog()) {
-            return;
-        }
 
-        if (ThreadUIUtils.isInUiThread()) {
-            mDialog.showLoading(cancel);
-        } else {
-            this.runUIThread(() -> mDialog.showLoading(cancel));
-        }
+    public boolean putFuture(Future future) {
+      return   compositeFuture.add(future);
     }
 
-    @Override
-    public void hideLoading() {
-
-        if (!this.enableShowDialog()) {
-            return;
-        }
-
-        if (ThreadUIUtils.isInUiThread()) {
-            mDialog.hideLoading();
-        } else {
-            this.runUIThread(() -> mDialog.hideLoading());
-        }
+    public ILiveDataUI getLiveData() {
+        return liveData;
     }
-
-    @Override
-    public void showDialog(final DialogBuilder dialog) {
-
-        if (!this.enableShowDialog()) {
-            return;
-        }
-
-        if (ThreadUIUtils.isInUiThread()) {
-            this.mDialog.showDialog(dialog);
-        } else {
-            this.runUIThread(() -> mDialog.showDialog(dialog));
-        }
+    public IUIListener getIUIListener(){
+        return this;
     }
-
-    @Override
-    public void showToast(final CharSequence msg) {
-        if (!this.enableShowDialog()) {
-            return;
-        }
-        if (ThreadUIUtils.isInUiThread()) {
-            mDialog.showToast(msg, Toast.LENGTH_SHORT);
-        } else {
-            this.runUIThread(() -> mDialog.showToast(msg, Toast.LENGTH_SHORT));
-        }
-    }
-
-    @Override
-    public void showDialogToast(CharSequence msg) {
-        DialogBuilder dialog = new DialogBuilder();
-        dialog.setTitle("提示");
-        dialog.setHideCancel(true);
-        dialog.setMessage(msg);
-        this.showDialog(dialog);
-    }
-
-    private void runUIThread(Runnable runnable) {
-
-        ThreadUIUtils.runOnUiThread(runnable);
-    }
-
-    public boolean enableShowDialog() {
-        if (!this.mActive) {
-            return false;
-        }
-
-        IViewLinstener linstener = this.softReference.get();
-        if (null == linstener) {
-            ZLog.d(TAG, "LiveDataManger createDialog() but IViewLinstener is null");
-            return false;
-        }
-
-        //先外部获取
-        this.mDialog = linstener.getDialog();
-
-        if (this.mDialog == null) {
-            this.mDialog = new AppDialog(linstener.getActivity());
-        }
-        return true;
-    }
-
 }

@@ -1,4 +1,4 @@
-package com.sfh.lib.mvvm;
+package com.sfh.lib.mvvm.hander;
 /*=============================================================================================
  * 功能描述:
  *---------------------------------------------------------------------------------------------
@@ -9,8 +9,8 @@ package com.sfh.lib.mvvm;
  *  @Author     SunFeihu 孙飞虎  on  2020/7/28
  *=============================================================================================*/
 
-import com.sfh.lib.event.BusEvent;
-import com.sfh.lib.event.EventMethod;
+import com.sfh.lib.event.Event;
+import com.sfh.lib.mvvm.hander.EventMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -18,35 +18,40 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class LiveMethonFinder implements Callable<List<Method>> {
+ public class EventMethodFinder implements Callable<List<EventMethod>> {
+
     private static final int BRIDGE = 0x40;
     private static final int SYNTHETIC = 0x1000;
     private static final int MODIFIERS_IGNORE = Modifier.ABSTRACT | Modifier.STATIC | BRIDGE | SYNTHETIC;
 
-    final Class<?> targetCls;
+    final Class<?> targetClass;
 
-    public LiveMethonFinder(Class<?> targetCls) {
-        this.targetCls = targetCls;
+    public EventMethodFinder(Class<?> targetClass) {
+        this.targetClass = targetClass;
     }
 
     @Override
-    public List<Method> call() throws Exception {
+    public List<EventMethod> call() throws Exception {
 
-        List<Method> findState = new LinkedList<>();
+        List<EventMethod> findState = new LinkedList<>();
 
-        Method[] methods = targetCls.getDeclaredMethods();
+        Method[] methods = targetClass.getDeclaredMethods();
 
         for (Method method : methods) {
             int modifiers = method.getModifiers();
             if ((modifiers & Modifier.PUBLIC) != 0 && (modifiers & MODIFIERS_IGNORE) == 0) {
-                LiveDataMatch liveDataMatch = method.getAnnotation(LiveDataMatch.class);
-                if (liveDataMatch != null) {
-                    findState.add(method);
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                if (parameterTypes.length == 1) {
+                    Event busEvent = method.getAnnotation(Event.class);
+                    if (busEvent != null) {
+                        Class<?> eventType = parameterTypes[0];
+                        findState.add(new EventMethod(eventType, method));
+                    }
                 }
-            } else if (method.isAnnotationPresent(LiveDataMatch.class)) {
+            } else if (method.isAnnotationPresent(Event.class)) {
                 String methodName = method.getDeclaringClass().getName() + "." + method.getName();
                 throw new RuntimeException(methodName +
-                        " is a illegal @LiveDataMatch method: must be public, non-static, and non-abstract");
+                        " is a illegal @BusEvent method: must be public, non-static, and non-abstract");
             }
         }
         return findState;

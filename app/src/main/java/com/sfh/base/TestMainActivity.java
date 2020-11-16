@@ -4,9 +4,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import com.sfh.lib.AppCacheManager;
+import com.sfh.lib.MVCache;
 import com.sfh.lib.mvvm.BusEvent;
-import com.sfh.lib.HandleException;
+import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.http.down.HttpDownHelper;
 import com.sfh.lib.http.down.ProgressListener;
 import com.sfh.lib.rx.IResult;
@@ -110,7 +110,7 @@ public class TestMainActivity extends AbstractLifecycleActivity<TestMainModel> {
         Disposable disposable = RetrofitManager.executeSigin(Observable.create(new ObservableOnSubscribe<File>() {
             @Override
             public void subscribe(ObservableEmitter<File> emitter) throws Exception {
-                File file = new HttpDownHelper.Builder(url).setTagFile(new File(AppCacheManager.getFileCache(), "test.apk")).setProgressListener(new ProgressListener() {
+                File file = new HttpDownHelper.Builder(url).setTagFile(new File(MVCache.getFileCache(), "test.apk")).setProgressListener(new ProgressListener() {
                     @Override
                     public void onProgress(long total, long percent, long progress) {
 

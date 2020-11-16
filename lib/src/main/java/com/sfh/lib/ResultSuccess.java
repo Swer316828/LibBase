@@ -6,6 +6,6 @@ package com.sfh.lib;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/23
  */
-public interface IResultSuccess<T> {
+public interface ResultSuccess<T> {
     void onSuccess(T t)  throws Exception ;
 }

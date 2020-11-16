@@ -6,5 +6,5 @@ package com.sfh.lib;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/23
  */
-public interface IResultSuccessNoFail<T> extends IResultSuccess<T>  {
+public interface ResultSuccessNoFail<T> extends ResultSuccess<T> {
 }

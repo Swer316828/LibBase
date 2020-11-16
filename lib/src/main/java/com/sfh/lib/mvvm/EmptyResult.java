@@ -1,8 +1,8 @@
 package com.sfh.lib.mvvm;
 
 
-import com.sfh.lib.IResult;
-import com.sfh.lib.HandleException;
+import com.sfh.lib.Result;
+import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.utils.ZLog;
 
 /**
@@ -11,7 +11,7 @@ import com.sfh.lib.utils.ZLog;
  * @author SunFeihu 孙飞虎
  * @date 2018/6/11
  */
-public class EmptyResult<T> implements IResult<T> {
+public class EmptyResult<T> implements Result<T> {
 
     public static  final EmptyResult EmptyResult = new EmptyResult();
 

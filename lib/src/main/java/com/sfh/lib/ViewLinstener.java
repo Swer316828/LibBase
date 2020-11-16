@@ -4,9 +4,9 @@ import android.app.Activity;
 import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.ViewModelStoreOwner;
 
-import com.sfh.lib.ui.IDialog;
+import com.sfh.lib.mvvm.IDialog;
 
-public interface IViewLinstener extends LifecycleOwner, ViewModelStoreOwner {
+public interface ViewLinstener extends LifecycleOwner, ViewModelStoreOwner {
 
     Activity getActivity();
 

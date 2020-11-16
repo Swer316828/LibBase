@@ -1,5 +1,5 @@
 package com.sfh.lib;
 
-public interface IResultComplete {
+public interface ResultComplete {
     void complete();
 }

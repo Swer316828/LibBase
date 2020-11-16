@@ -8,11 +8,21 @@ package com.sfh.lib.mvvm;
  *--------------------------------------------------------------------------------------------
  *=============================================================================================*/
 
+import android.app.Activity;
 import android.arch.lifecycle.LifecycleOwner;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.support.annotation.NonNull;
 
-public interface ILiveData<T> {
+public interface ILiveDataUI<T> {
+
     void observe(@NonNull LifecycleOwner owner, @NonNull Observer<T> observer);
+
     void onCleared();
+
+    Activity getActivity();
+
+    IDialog getDialog();
+
+    void call(String method, Object... args);
 }

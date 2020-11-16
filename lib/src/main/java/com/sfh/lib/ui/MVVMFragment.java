@@ -2,6 +2,7 @@ package com.sfh.lib.ui;
 
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleRegistry;
+import android.arch.lifecycle.ViewModelProvider;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -12,59 +13,64 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.sfh.lib.AppCacheManager;
-import com.sfh.lib.IViewLinstener;
-import com.sfh.lib.event.BusEventManager;
+import com.sfh.lib.MVCache;
+import com.sfh.lib.ViewLinstener;
+import com.sfh.lib.event.EventManager;
 import com.sfh.lib.mvvm.BaseViewModel;
+import com.sfh.lib.mvvm.IDialog;
+import com.sfh.lib.mvvm.ViewModelFactoty;
 import com.sfh.lib.mvvm.UIRegistry;
 
 import java.util.concurrent.Future;
 
-public abstract class MVVMFragment extends Fragment implements IViewLinstener {
+public abstract class MVVMFragment extends Fragment implements ViewLinstener {
 
-    protected UIRegistry liveDataManger;
+    protected final UIRegistry uiRegistry = new UIRegistry(this);
 
-    protected View mRoot;
+    protected ViewModelProvider viewModelProvider;
+
+    protected View rootView;
+
+    protected  IDialog dialog;
 
     public abstract int getLayout();
 
-    public abstract void initData(View var1);
+    public abstract void initData(View view);
 
     @Nullable
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         boolean initCreateView = false;
-        if (this.mRoot != null) {
-            ViewGroup parent = (ViewGroup) this.mRoot.getParent();
+        if (this.rootView != null) {
+            ViewGroup parent = (ViewGroup) this.rootView.getParent();
             if (parent != null) {
-                parent.removeView(this.mRoot);
+                parent.removeView(this.rootView);
             }
 
             initCreateView = false;
         } else if (this.getLayout() > 0) {
-            this.mRoot = inflater.inflate(this.getLayout(), container, false);
+            this.rootView = inflater.inflate(this.getLayout(), container, false);
             initCreateView = true;
         }
 
-        if (this.liveDataManger == null) {
-            this.liveDataManger = new UIRegistry(this);
-        }
-
         if (initCreateView) {
-            this.initData(this.mRoot);
+            this.initData(this.rootView);
         }
 
-        return this.mRoot;
+        return this.rootView;
     }
 
     public void onDestroy() {
         super.onDestroy();
-        this.mRoot = null;
+        this.viewModelProvider = null;
+        this.dialog= null;
+        this.rootView = null;
     }
 
 
     public final void activateLifecycleEvent() {
         Lifecycle lifecycle = this.getLifecycle();
         if (lifecycle instanceof LifecycleRegistry) {
+
             ((LifecycleRegistry) lifecycle).handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
         }
     }
@@ -76,60 +82,82 @@ public abstract class MVVMFragment extends Fragment implements IViewLinstener {
         if (context == null) {
             context = super.getActivity();
             if (context == null) {
-                context = AppCacheManager.getApplication();
+                context = MVCache.getApplication();
             }
         }
         return context;
     }
 
-    public final <T extends BaseViewModel> T getViewModel(Class<T> cls) {
+    @Nullable
+    public  <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
 
-        if (this.liveDataManger == null) {
-            this.liveDataManger = new UIRegistry(this);
+        if (viewModelProvider == null) {
+            viewModelProvider = new ViewModelProvider(this, new ViewModelFactoty(uiRegistry.getLiveData()));
         }
-
-        return this.liveDataManger.getViewModel(cls);
+        return viewModelProvider.get(cls);
     }
 
 
-    public final void showDialog(DialogBuilder dialog) {
-        if (this.liveDataManger != null) {
-            this.liveDataManger.showDialog(dialog);
+    public void showLoading(boolean cancel) {
+        if (!this.isAdded()){
+            return;
         }
+        this.getDialog().showLoading(cancel);
     }
 
-    public final void showDialogToast(CharSequence msg) {
-        DialogBuilder dialog = new DialogBuilder();
-        dialog.setTitle("提示");
-        dialog.setHideCancel(false);
-        dialog.setMessage(msg);
-        this.showDialog(dialog);
-    }
-
-    public final void showToast(CharSequence msg) {
-        if (this.liveDataManger != null) {
-            this.liveDataManger.showToast(msg);
+    public void hideLoading() {
+        if (!this.isAdded()){
+            return;
         }
+        this.getDialog().hideLoading();
     }
-
-    public final void putFuture(Future future) {
-        if (this.liveDataManger != null) {
-            this.liveDataManger.putFuture(future);
+    public  void showDialog(DialogBuilder dialog) {
+        if (!this.isAdded()){
+            return;
         }
+        this.getDialog().showDialog(dialog);
     }
 
-    public final <T> void postEvent(T t) {
-        BusEventManager.postEvent(t);
+    public  void showDialogToast(CharSequence msg) {
+        if (!this.isAdded()){
+            return;
+        }
+        this.getDialog().showDialogToast(msg);
+    }
+
+    public  void showToast(CharSequence msg) {
+        if (!this.isAdded()){
+            return;
+        }
+        this.getDialog().showToast(msg);
+    }
+
+    public  void putFuture(Future future) {
+            this.uiRegistry.putFuture(future);
+    }
+
+    public  <T> boolean postEvent(T t) {
+       return EventManager.postEvent(t);
     }
 
 
     @Override
     public IDialog getDialog() {
-        FragmentActivity fragmentActivity = getActivity();
-        if (fragmentActivity != null && fragmentActivity instanceof MVVMActivity) {
-            MVVMActivity mvvmActivity = (MVVMActivity) fragmentActivity;
-            return mvvmActivity.getDialog();
+
+        if (dialog == null){
+            FragmentActivity fragmentActivity = this.getActivity();
+
+            if (fragmentActivity != null && fragmentActivity instanceof MVVMActivity) {
+
+                MVVMActivity mvvmActivity = (MVVMActivity) fragmentActivity;
+                dialog =  mvvmActivity.getDialog();
+
+            }else {
+
+                dialog =  new AppDialog(getActivity());
+                this.getLifecycle().addObserver(dialog);
+            }
         }
-        return null;
+        return dialog;
     }
 }

@@ -27,7 +27,12 @@ public class CacheManger implements CacheListener {
         String packName = application.getPackageName().replace(".", "");
         this.mPreferences = application.getSharedPreferences(packName, Context.MODE_PRIVATE);
         //默认最大缓存15个对象数据
-        this.mLruCache = new LruCache(10);
+        this.mLruCache = new LruCache(17){
+            @Override
+            protected int sizeOf(Object key, Object value) {
+                return 1;
+            }
+        };
         this.mPersist = new Persist(this.mPreferences.edit(), this.mLruCache);
 
     }

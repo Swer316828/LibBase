@@ -1,11 +1,10 @@
 package com.sfh.lib.mvvm;
 
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.ViewModel;
 import android.arch.lifecycle.ViewModelProvider;
 import android.support.annotation.NonNull;
 
-import com.sfh.lib.HandleException;
+import com.sfh.lib.exception.HandleException;
 
 import java.lang.reflect.Constructor;
 
@@ -17,10 +16,10 @@ import java.lang.reflect.Constructor;
  */
 public class ViewModelFactoty extends ViewModelProvider.NewInstanceFactory {
 
-    ILiveData baseLiveData;
+    IUIListener listener;
 
-    public ViewModelFactoty(ILiveData liveData) {
-        this.baseLiveData = liveData;
+    public ViewModelFactoty(IUIListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -30,9 +29,9 @@ public class ViewModelFactoty extends ViewModelProvider.NewInstanceFactory {
             return super.create(modelClass);
         }
         try {
-            Constructor<T> constructor = modelClass.getConstructor(new Class[]{ILiveData.class});
+            Constructor<T> constructor = modelClass.getConstructor(new Class[]{IUIListener.class});
             constructor.setAccessible(true);
-            return constructor.newInstance(baseLiveData);
+            return constructor.newInstance(listener);
         } catch (Exception e) {
             throw HandleException.handleException(e);
         }

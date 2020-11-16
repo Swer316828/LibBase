@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.view.Gravity;
 import android.widget.Toast;
 
+import com.sfh.lib.mvvm.IDialog;
+
 import java.lang.ref.WeakReference;
 
 public class AppDialog implements IDialog {
