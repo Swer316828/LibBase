@@ -16,10 +16,6 @@ import com.sfh.lib.R;
  */
 public class WaitDialog extends AlertDialog {
 
-    //    public static WaitDialog newToastDialog(Context context) {
-//
-//        return new WaitDialog (context);
-//    }
     public static WaitDialog newToastDialog(Context context) {
 
         return new WaitDialog(context);

@@ -1,4 +1,5 @@
-package com.sfh.lib.mvvm;
+package com.sfh.lib.annotation;
+
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,4 +15,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LiveDataMatch {
+    /***
+     * 数据来源说明
+     * @return
+     */
+    String from() ;
 }

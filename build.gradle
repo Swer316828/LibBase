@@ -26,10 +26,10 @@ task clean(type: Delete) {
 ext {
     //配置
     config = [
-            compileSdkVersion: 27,        // 编译版本
-            buildToolsVersion: '26.0.2',  // 编译工具版本
-            minSdkVersion    : 16,        // 最低版本
-            targetSdkVersion : 22,        // 目标版本
+            compileSdkVersion: 28,        // 编译版本
+            buildToolsVersion: '28.0.2',  // 编译工具版本
+            minSdkVersion    : 17,        // 最低版本
+            targetSdkVersion : 28,        // 目标版本
             versionCode      : 30,
             versionName      : '3.0.1',
     ]

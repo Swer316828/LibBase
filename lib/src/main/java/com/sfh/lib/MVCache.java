@@ -10,12 +10,12 @@ import android.util.Log;
 
 import com.sfh.lib.cache.CacheListener;
 import com.sfh.lib.cache.CacheManger;
+import com.sfh.lib.exception.CrashReport;
 import com.sfh.lib.utils.ThreadTaskUtils;
 import com.sfh.lib.utils.ZLog;
 
 import java.io.File;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeoutException;
 
 /**
  * 功能描述: 全局唯一缓存类

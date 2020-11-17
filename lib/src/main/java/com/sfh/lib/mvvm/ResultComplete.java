@@ -1,4 +1,4 @@
-package com.sfh.lib;
+package com.sfh.lib.mvvm;
 
 public interface ResultComplete {
     void complete();

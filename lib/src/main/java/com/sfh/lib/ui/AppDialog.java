@@ -1,6 +1,10 @@
 package com.sfh.lib.ui;
 
 import android.app.Activity;
+import android.arch.lifecycle.GenericLifecycleObserver;
+import android.arch.lifecycle.Lifecycle;
+import android.arch.lifecycle.LifecycleObserver;
+import android.arch.lifecycle.LifecycleOwner;
 import android.view.Gravity;
 import android.widget.Toast;
 
@@ -8,7 +12,9 @@ import com.sfh.lib.mvvm.IDialog;
 
 import java.lang.ref.WeakReference;
 
-public class AppDialog implements IDialog {
+import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
+
+public class AppDialog implements IDialog, GenericLifecycleObserver {
 
     private ToastDialog mToastDialog;
 
@@ -27,7 +33,7 @@ public class AppDialog implements IDialog {
 
 
     @Override
-    public synchronized void showLoading(boolean cancel) {
+    public void showLoading(boolean cancel) {
         Activity activity = this.mActivity.get();
 
         if (activity == null) {
@@ -37,8 +43,8 @@ public class AppDialog implements IDialog {
             mWaitDialog = WaitDialog.newToastDialog(activity);
         }
 
-       mWaitDialog.setCancelable(cancel);
-       mWaitDialog.show();
+        mWaitDialog.setCancelable(cancel);
+        mWaitDialog.show();
     }
 
     @Override
@@ -55,7 +61,7 @@ public class AppDialog implements IDialog {
     }
 
     @Override
-    public synchronized void showDialog(DialogBuilder dialog) {
+    public void showDialog(DialogBuilder dialog) {
         Activity activity = this.mActivity.get();
 
         if (activity == null) {
@@ -65,6 +71,16 @@ public class AppDialog implements IDialog {
             mToastDialog = ToastDialog.newToastDialog(activity);
         }
         mToastDialog.show(dialog);
+    }
+
+    @Override
+    public void showDialogToast(CharSequence msg) {
+
+    }
+
+    @Override
+    public void showToast(CharSequence msg) {
+
     }
 
 
@@ -87,13 +103,16 @@ public class AppDialog implements IDialog {
 
 
     @Override
-    public void onDestory() {
-        this.hideLoading();
-        mActivity.clear();
-        if (mToastDialog != null) {
-            mToastDialog.dismiss();
+    public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
+        if (source.getLifecycle().getCurrentState() == DESTROYED) {
+            this.hideLoading();
+            mActivity.clear();
+            if (mToastDialog != null) {
+                mToastDialog.dismiss();
+            }
+            mToastDialog = null;
+            mWaitDialog = null;
         }
-        mToastDialog = null;
-        mWaitDialog = null;
+
     }
 }

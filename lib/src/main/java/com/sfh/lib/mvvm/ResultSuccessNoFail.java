@@ -1,4 +1,4 @@
-package com.sfh.lib;
+package com.sfh.lib.mvvm;
 
 /**
  * 功能描述:仅处理结果,异常不提示不处理

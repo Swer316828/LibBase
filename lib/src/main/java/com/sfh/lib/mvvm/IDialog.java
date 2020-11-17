@@ -6,7 +6,7 @@ import android.arch.lifecycle.LifecycleOwner;
 
 import com.sfh.lib.ui.DialogBuilder;
 
-public interface IDialog extends GenericLifecycleObserver {
+public interface IDialog  {
 
     /***
      * 显示等待对话框
@@ -36,10 +36,5 @@ public interface IDialog extends GenericLifecycleObserver {
      * Toast提示
      */
     void showToast(CharSequence msg, int duration);
-
-    @Override
-    default public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
-
-    }
 
 }

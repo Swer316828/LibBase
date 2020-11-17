@@ -1,30 +1,24 @@
 package com.sfh.lib.mvvm;
 
 
-import android.app.Activity;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 
 
+import com.sfh.lib.annotation.EventMatch;
 import com.sfh.lib.exception.HandleException;
-import com.sfh.lib.Result;
-import com.sfh.lib.ResultComplete;
-import com.sfh.lib.ResultSuccess;
-import com.sfh.lib.ResultSuccessNoFail;
 import com.sfh.lib.event.EventManager;
-import com.sfh.lib.mvvm.hander.EventMethodFinder;
 import com.sfh.lib.event.IEventListener;
-import com.sfh.lib.mvvm.hander.EventMethod;
-import com.sfh.lib.mvvm.hander.LiveEventMethodFinder;
-import com.sfh.lib.mvvm.hander.MethodLinkedMap;
 import com.sfh.lib.utils.ThreadTaskUtils;
-import com.sfh.lib.utils.ThreadUIUtils;
 import com.sfh.lib.utils.ZLog;
 import com.sfh.lib.ui.DialogBuilder;
 import com.sfh.lib.utils.thread.CompositeFuture;
 
 import java.lang.reflect.Method;
-import java.util.List;
+import java.lang.reflect.Modifier;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -38,30 +32,29 @@ import java.util.concurrent.FutureTask;
  * @author SunFeihu 孙飞虎
  * @date 2018/7/30
  */
-public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEventListener {
+public class BaseViewModel extends ViewModel {
 
     public final static String TAG = BaseViewModel.class.getName();
 
     //任务管理
-    protected final  CompositeFuture mCompositeFuture = new CompositeFuture();
+    protected final CompositeFuture mCompositeFuture = new CompositeFuture();
 
-    protected UILiveData mLiveData = new UILiveData();
+    protected final UILiveData mLiveData;
 
     protected volatile boolean mActive = true;
 
-    protected MethodLinkedMap mEventMethods;
+    private LinkedHashMap<Class<?>, Method> mEventMethods;
 
-    public BaseViewModel(IUIListener listener) {
+    public BaseViewModel(UILiveData liveData) {
 
-        if (listener == null) {
-            throw new IllegalArgumentException("BaseViewModel() IUIListener is NULL !");
+        if (liveData == null) {
+            throw new IllegalArgumentException("BaseViewModel() UILiveData is NULL !");
         }
-
-        mLiveData.observe(listener.getLifecycleOwner(),listener);
+        this.mLiveData = liveData;
 
         if (this.eventOnOff()) {
             // 线程处理
-            Future futureTask = ThreadTaskUtils.execute(this);
+            Future futureTask = ThreadTaskUtils.execute(new EventHandler(this));
             mCompositeFuture.add(futureTask);
         }
     }
@@ -70,7 +63,7 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
     protected void onCleared() {
         super.onCleared();
         mCompositeFuture.clear();
-        if (mEventMethods != null){
+        if (mEventMethods != null) {
             mEventMethods.clear();
         }
         ZLog.d("%s: onCleared() ", this.getClass().getSimpleName());
@@ -89,34 +82,64 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
         return false;
     }
 
-    @Override
-    public Boolean call() throws Exception {
-        Future<MethodLinkedMap> futureTask = ThreadTaskUtils.execute(new LiveEventMethodFinder(this.getClass()));
-        mCompositeFuture.add(futureTask);
-        mEventMethods = futureTask.get();
 
-        for (Class eventType : mEventMethods.getEventClass()) {
-            if (mActive) {
-                Future future = EventManager.register(eventType, this);
-                mCompositeFuture.add(future);
-            }
+    class EventHandler implements Callable<Boolean>, IEventListener {
+        private static final int MODIFIERS_IGNORE = Modifier.ABSTRACT | Modifier.STATIC;
+
+        Class tagClass;
+        public EventHandler(BaseViewModel tagClass){
+            this.tagClass = tagClass.getClass();
         }
-        return Boolean.TRUE;
-    }
 
-
-    @Override
-    public void onEventSuccess(Object event) {
-
-        if (mLiveData != null && mEventMethods.containsKey(event.getClass().getName())) {
-            try {
-                Method method = mEventMethods.get(event.getClass().getName());
-                method.invoke(this, event);
-            } catch (Exception e) {
-                ZLog.d("setEventSuccess() Exception:%s", e);
+        @Override
+        public void onEventSuccess(Object event) {
+            if (mLiveData != null && mEventMethods.containsKey(event.getClass())) {
+                try {
+                    Method method = mEventMethods.get(event.getClass());
+                    method.invoke(this, event);
+                } catch (Exception e) {
+                    ZLog.d("setEventSuccess() Exception:%s", e);
+                }
             }
         }
 
+
+        @Override
+        public Boolean call() throws Exception {
+
+
+            LinkedHashMap<Class<?>, Method> findState = new LinkedHashMap<>();
+
+            Method[] methods = tagClass.getDeclaredMethods();
+
+            for (Method method : methods) {
+                int modifiers = method.getModifiers();
+                if ((modifiers & Modifier.PUBLIC) != 0 && (modifiers & MODIFIERS_IGNORE) == 0) {
+                    Class<?>[] parameterTypes = method.getParameterTypes();
+                    if (parameterTypes.length == 1) {
+                        EventMatch busEvent = method.getAnnotation(EventMatch.class);
+                        if (busEvent != null) {
+                            Class<?> eventType = parameterTypes[0];
+                            findState.put(eventType, method);
+                        }
+                    }
+                } else if (method.isAnnotationPresent(EventMatch.class)) {
+                    String methodName = method.getDeclaringClass().getName() + "." + method.getName();
+                    throw new RuntimeException(methodName +
+                            " is a illegal @BusEvent method: must be public, non-static, and non-abstract");
+                }
+            }
+
+            if (mActive && findState.size() > 0) {
+
+                mEventMethods = findState;
+                for (Iterator<Map.Entry<Class<?>, Method>> iterator = mEventMethods.entrySet().iterator(); iterator.hasNext(); ) {
+                    Future future = EventManager.register(iterator.next().getClass(), EventHandler.this);
+                    mCompositeFuture.add(future);
+                }
+            }
+            return Boolean.TRUE;
+        }
     }
 
 
@@ -361,41 +384,41 @@ public class BaseViewModel extends ViewModel implements Callable<Boolean>, IEven
 
     /* ---------------------------------------------------------------- 消息监听处理 刷新UI 数据管理------------------------------------------------------------------ */
 
-    public  void setValue(String action, Object... args) {
+    public void setValue(String action, Object... args) {
 
         this.call(action, args);
     }
 
 
-    public  void call(String method, Object... args) {
+    public void call(String method, Object... args) {
 
-        this.mLiveData.call(method,args);
+        this.mLiveData.call(method, args);
 
     }
 
     public void showLoading(boolean cancel) {
-        this.mLiveData.call("showLoading",cancel);
+        this.mLiveData.call("showLoading", cancel);
     }
 
-    public  void hideLoading() {
+    public void hideLoading() {
         this.mLiveData.call("hideLoading");
     }
 
     public void showDialog(DialogBuilder builder) {
-        this.mLiveData.call("showDialog",builder);
+        this.mLiveData.call("showDialog", builder);
     }
 
     public void showToast(CharSequence msg) {
 
-        this.mLiveData.call("showToast",msg);
+        this.mLiveData.call("showToast", msg);
     }
 
     public void showToast(CharSequence msg, int duration) {
-        this.mLiveData.call("showToast",msg,duration);
+        this.mLiveData.call("showToast", msg, duration);
     }
 
     public void showDialogToast(CharSequence msg) {
-        this.mLiveData.call("showDialogToast",msg);
+        this.mLiveData.call("showDialogToast", msg);
     }
 
     public boolean putFuture(Future future) {

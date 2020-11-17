@@ -14,24 +14,24 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.sfh.lib.MVCache;
-import com.sfh.lib.ViewLinstener;
 import com.sfh.lib.event.EventManager;
 import com.sfh.lib.mvvm.BaseViewModel;
 import com.sfh.lib.mvvm.IDialog;
+import com.sfh.lib.mvvm.IUIListener;
 import com.sfh.lib.mvvm.ViewModelFactoty;
 import com.sfh.lib.mvvm.UIRegistry;
 
 import java.util.concurrent.Future;
 
-public abstract class MVVMFragment extends Fragment implements ViewLinstener {
+public abstract class MVVMFragment extends Fragment implements IDialog {
 
-    protected final UIRegistry uiRegistry = new UIRegistry(this);
+    protected final UIRegistry mUIRegistry = new UIRegistry(this);
 
     protected ViewModelProvider viewModelProvider;
 
     protected View rootView;
 
-    protected  IDialog dialog;
+    protected IDialog dialog;
 
     public abstract int getLayout();
 
@@ -53,6 +53,7 @@ public abstract class MVVMFragment extends Fragment implements ViewLinstener {
         }
 
         if (initCreateView) {
+            mUIRegistry.observe(this, mUIListener);
             this.initData(this.rootView);
         }
 
@@ -62,7 +63,7 @@ public abstract class MVVMFragment extends Fragment implements ViewLinstener {
     public void onDestroy() {
         super.onDestroy();
         this.viewModelProvider = null;
-        this.dialog= null;
+        this.dialog = null;
         this.rootView = null;
     }
 
@@ -89,73 +90,87 @@ public abstract class MVVMFragment extends Fragment implements ViewLinstener {
     }
 
     @Nullable
-    public  <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
+    public <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
 
         if (viewModelProvider == null) {
-            viewModelProvider = new ViewModelProvider(this, new ViewModelFactoty(uiRegistry.getLiveData()));
+            viewModelProvider = new ViewModelProvider(this, new ViewModelFactoty(mUIRegistry.getLiveData()));
         }
         return viewModelProvider.get(cls);
     }
 
+    protected IUIListener mUIListener = new IUIListener() {
 
+        @Override
+        public void call(String method, Object... args) {
+
+            mUIRegistry.call(MVVMFragment.this, method, args);
+        }
+    };
+
+    @Override
     public void showLoading(boolean cancel) {
-        if (!this.isAdded()){
+        if (!this.isAdded()) {
             return;
         }
         this.getDialog().showLoading(cancel);
     }
 
+    @Override
     public void hideLoading() {
-        if (!this.isAdded()){
+        if (!this.isAdded()) {
             return;
         }
         this.getDialog().hideLoading();
     }
-    public  void showDialog(DialogBuilder dialog) {
-        if (!this.isAdded()){
+
+    @Override
+    public void showDialog(DialogBuilder dialog) {
+        if (!this.isAdded()) {
             return;
         }
         this.getDialog().showDialog(dialog);
     }
 
-    public  void showDialogToast(CharSequence msg) {
-        if (!this.isAdded()){
+    @Override
+    public void showDialogToast(CharSequence msg) {
+        if (!this.isAdded()) {
             return;
         }
         this.getDialog().showDialogToast(msg);
     }
 
-    public  void showToast(CharSequence msg) {
-        if (!this.isAdded()){
+    @Override
+    public void showToast(CharSequence msg) {
+        if (!this.isAdded()) {
             return;
         }
         this.getDialog().showToast(msg);
     }
 
-    public  void putFuture(Future future) {
-            this.uiRegistry.putFuture(future);
+    public void putFuture(Future future) {
+        this.mUIRegistry.putFuture(future);
     }
 
-    public  <T> boolean postEvent(T t) {
-       return EventManager.postEvent(t);
+    public <T> boolean postEvent(T t) {
+        return EventManager.postEvent(t);
     }
 
 
-    @Override
     public IDialog getDialog() {
 
-        if (dialog == null){
+        if (dialog == null) {
             FragmentActivity fragmentActivity = this.getActivity();
 
             if (fragmentActivity != null && fragmentActivity instanceof MVVMActivity) {
 
                 MVVMActivity mvvmActivity = (MVVMActivity) fragmentActivity;
-                dialog =  mvvmActivity.getDialog();
+                dialog = mvvmActivity.getDialog();
 
-            }else {
+            } else {
 
-                dialog =  new AppDialog(getActivity());
-                this.getLifecycle().addObserver(dialog);
+                AppDialog appDialog = new AppDialog(getActivity());
+                this.getLifecycle().addObserver(appDialog);
+                dialog = appDialog;
             }
         }
         return dialog;

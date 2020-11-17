@@ -1,4 +1,4 @@
-package com.sfh.lib.ui;
+package com.sfh.lib.utils.ui;
 
 import android.support.annotation.NonNull;
 import android.text.Editable;
@@ -6,7 +6,6 @@ import android.text.TextWatcher;
 import android.widget.TextView;
 
 
-import com.sfh.lib.utils.ThreadTaskUtils;
 import com.sfh.lib.utils.ThreadUIUtils;
 
 import java.util.concurrent.ExecutionException;

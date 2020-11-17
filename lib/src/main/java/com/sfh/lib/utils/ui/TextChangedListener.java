@@ -1,4 +1,4 @@
-package com.sfh.lib.ui;
+package com.sfh.lib.utils.ui;
 
 public interface TextChangedListener {
     void textChanged(CharSequence s);

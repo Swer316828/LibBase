@@ -1,4 +1,4 @@
-package com.sfh.lib.ui;
+package com.sfh.lib.utils.ui;
 
 import android.support.annotation.NonNull;
 import android.view.View;

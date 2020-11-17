@@ -13,12 +13,20 @@ import android.arch.lifecycle.GenericLifecycleObserver;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleOwner;
 
-public class BusEventLifecycleObserver implements GenericLifecycleObserver {
+import com.sfh.lib.utils.SafeIterableMap;
+
+import java.util.List;
+import java.util.Map;
+
+public class EventLifecycleObserver implements GenericLifecycleObserver {
+
+    SafeIterableMap<LifecycleOwner, List<IEventListener>> mObsever = new SafeIterableMap<>();
 
     @Override
     public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
-        if (source.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED){
+        if (source.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
 
+            List<IEventListener> values = mObsever.remove(source);
         }
     }
 }

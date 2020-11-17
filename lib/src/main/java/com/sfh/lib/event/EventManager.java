@@ -1,13 +1,20 @@
 package com.sfh.lib.event;
 
 
+import android.app.ActivityManager;
+import android.app.Application;
+import android.content.Context;
+import android.os.Process;
+import android.text.TextUtils;
 
 import com.sfh.lib.utils.ZLog;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 
@@ -22,8 +29,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class EventManager {
 
     private static final String TAG = EventManager.class.getName();
-    private final ReentrantLock mLock = new ReentrantLock();
     private final LinkedHashMap<Class, LinkedList<IEventListener>> linkedHashMap;
+    private EventLifecycleObserver mEventLifecycleObserver;
+    private AtomicBoolean mStart = new AtomicBoolean();
 
     private final static class Hondler {
 
@@ -32,17 +40,34 @@ public final class EventManager {
 
     private EventManager() {
         linkedHashMap = new LinkedHashMap<>(17);
+        mEventLifecycleObserver = new EventLifecycleObserver();
     }
 
+    public void init(Application application) {
+        if (this.equalProcess(application)){
+            mStart.set(true);
+            application.registerActivityLifecycleCallbacks();
+        }
 
-    private synchronized  <T> FutureEvent put(Class<T> eventClass, final IEventListener<T> listener) {
+    }
 
-//        mLock.tryLock();
-//        try {
-//
-//        }finally {
-//            mLock.unlock();
-//        }
+    private boolean equalProcess(Application application) {
+        String packageName = application.getPackageName();
+        ActivityManager activityManager = (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> processInfoList = activityManager.getRunningAppProcesses();
+        if (processInfoList == null || processInfoList.isEmpty()) {
+            return false;
+        }
+        for (ActivityManager.RunningAppProcessInfo processInf : processInfoList) {
+            if (processInf.pid == Process.myPid() && TextUtils.equals(processInf.processName, packageName))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private <T> FutureEvent put(Class<T> eventClass, final IEventListener<T> listener) {
 
         LinkedList<IEventListener> lits = this.linkedHashMap.get(eventClass);
         if (null == lits) {
@@ -78,14 +103,14 @@ public final class EventManager {
         return true;
     }
 
-    private void removeListener(IEventListener listener){
+    private void removeListener(IEventListener listener) {
 
-        Collection<LinkedList<IEventListener>>   linkedLists = linkedHashMap.values();
-        for (LinkedList<IEventListener>  linkedList :linkedLists){
-            if (linkedList.isEmpty()){
+        Collection<LinkedList<IEventListener>> linkedLists = linkedHashMap.values();
+        for (LinkedList<IEventListener> linkedList : linkedLists) {
+            if (linkedList.isEmpty()) {
                 continue;
             }
-            if (linkedList.remove(listener)){
+            if (linkedList.remove(listener)) {
                 break;
             }
         }
@@ -119,15 +144,15 @@ public final class EventManager {
         if (eventResult == null) {
             throw new NullPointerException("IEventListener<T> onNext is null");
         }
-        return  Hondler.EVENT.put(eventClass, eventResult);
+        return Hondler.EVENT.put(eventClass, eventResult);
     }
 
-    public static void unRegister(IEventListener listener){
-            if (listener == null){
-                return;
-            }
+    public static void unRegister(IEventListener listener) {
+        if (listener == null) {
+            return;
+        }
 
-            Hondler.EVENT.removeListener(listener);
+        Hondler.EVENT.removeListener(listener);
     }
 
 }

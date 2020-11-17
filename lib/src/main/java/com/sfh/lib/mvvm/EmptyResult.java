@@ -1,7 +1,6 @@
 package com.sfh.lib.mvvm;
 
 
-import com.sfh.lib.Result;
 import com.sfh.lib.exception.HandleException;
 import com.sfh.lib.utils.ZLog;
 

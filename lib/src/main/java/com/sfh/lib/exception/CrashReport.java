@@ -1,4 +1,4 @@
-package com.sfh.lib;
+package com.sfh.lib.exception;
 
 import com.sfh.lib.exception.HandleException;
 

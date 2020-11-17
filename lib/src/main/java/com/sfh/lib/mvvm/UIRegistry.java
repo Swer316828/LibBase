@@ -3,25 +3,23 @@ package com.sfh.lib.mvvm;
 import android.arch.lifecycle.GenericLifecycleObserver;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.LiveData;
-import android.arch.lifecycle.MutableLiveData;
-import android.support.annotation.Nullable;
+import android.support.annotation.MainThread;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 
-import com.sfh.lib.ViewLinstener;
+import com.sfh.lib.annotation.LiveDataMatch;
+import com.sfh.lib.annotation.EventMatch;
 import com.sfh.lib.event.EventManager;
 import com.sfh.lib.event.IEventListener;
-import com.sfh.lib.mvvm.hander.LiveEventMethodFinder;
-import com.sfh.lib.mvvm.hander.MethodLinkedMap;
 import com.sfh.lib.utils.ThreadTaskUtils;
 import com.sfh.lib.utils.ThreadUIUtils;
 import com.sfh.lib.utils.ZLog;
 import com.sfh.lib.utils.thread.CompositeFuture;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.lang.reflect.Modifier;
+import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -32,122 +30,137 @@ import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean>{
+public class UIRegistry implements GenericLifecycleObserver{
 
     private final static String TAG = UIRegistry.class.getName();
 
-    private MethodLinkedMap mMethods;
+    //任务管理
+    private final CompositeFuture mCompositeFuture = new CompositeFuture();
 
+    //UI 数据监听
+    private final UILiveData mLiveData = new UILiveData();
+
+    //当前关联Activity,Fragment 注入方法集合
+    private LinkedHashMap<String, Method> mMethods  = new LinkedHashMap<>(10);
+
+    //状态
     private volatile boolean mActive = true;
 
-    private final CompositeFuture compositeFuture = new CompositeFuture();
-
-    private Class<?> mTagClass;
-
-    private IEventListener eventListener;
-
-    private LiveData<List<Class>> mEvents = new MutableLiveData<>();
-
-    public LiveData<List<Class>> getEvents() {
-        return mEvents;
-    }
 
     public UIRegistry(Object tag) {
-        mTagClass = tag.getClass();
-        Future future = ThreadTaskUtils.execute(this);
-        compositeFuture.add(future);
+        Future future = ThreadTaskUtils.execute(new LiveEventHandler(tag.getClass()));
+        mCompositeFuture.add(future);
     }
 
-    @Override
-    public Boolean call() throws Exception {
+    @MainThread
+    public void observe(@NonNull LifecycleOwner owner, @NonNull IUIListener observer){
 
-        mMethods = new LiveEventMethodFinder(mTagClass).call();
-        if (!mActive) {
-            mMethods.clear();
-            return Boolean.FALSE;
-        }
-
-        List<Class<?>> eventTypes = mMethods.getEventClass();
-        if (!eventTypes.isEmpty()) {
-            for (Class<?> cls : eventTypes) {
-                Future future = EventManager.register(cls, eventListener);
-                compositeFuture.add(future);
-            }
-            mMethods.clearEventClass();
-        }
-        return Boolean.TRUE;
+        mLiveData.observe(owner,observer);
+        owner.getLifecycle().addObserver(this);
     }
 
-    private IEventListener eventListener = new IEventListener() {
+    class LiveEventHandler implements Callable<Boolean>,IEventListener{
+        private static final int MODIFIERS_IGNORE = Modifier.ABSTRACT | Modifier.STATIC;
+
+        private Class<?> tagClass;
+        public LiveEventHandler(Class<?> tagClass){
+            this.tagClass = tagClass;
+        }
+
         @Override
-        public void onEventSuccess(Object data) {
-            //接收到消息通知
-            ZLog.d(TAG, "LiveDataManger onEventSuccess() start");
-            final IUIListener linstener = linstenerWeakReference.get();
-            if (null == linstener || mMethods == null) {
-                ZLog.d(TAG, "LiveDataManger onEventSuccess() but IViewLinstener is null, ClassName:%s", data.getClass().getName());
-                return;
+        public Boolean call() throws Exception {
+
+            Method[] methods = tagClass.getDeclaredMethods();
+            for (Method method : methods) {
+
+                int modifiers = method.getModifiers();
+
+                if ((modifiers & Modifier.PUBLIC) != 0 && (modifiers & MODIFIERS_IGNORE) == 0) {
+
+
+                    LiveDataMatch live = method.getAnnotation(LiveDataMatch.class);
+                    if (live != null) {
+                        mMethods.put(method.getName(), method);
+                    }
+
+                    EventMatch event = method.getAnnotation(EventMatch.class);
+                    if (event != null) {
+                        Class<?>[] parameterTypes = method.getParameterTypes();
+                        if (parameterTypes.length == 1) {
+                            Class<?> eventType = parameterTypes[0];
+                            mMethods.put(eventType.getName(), method);
+                            Future future = EventManager.register(eventType, LiveEventHandler.this);
+                            mCompositeFuture.add(future);
+                        }
+
+                    }
+
+                } else if (method.isAnnotationPresent(LiveDataMatch.class) || method.isAnnotationPresent(EventMatch.class)) {
+
+                    String methodName = method.getDeclaringClass().getName() + "." + method.getName();
+                    throw new RuntimeException(methodName +
+                            " is a illegal @LiveDataMatch or @Event method: must be public, non-static, and non-abstract");
+                }
             }
 
-            Method method = mMethods.get(data.getClass().getName());
-            if (method != null) {
-                //消息监听方法同一个参数
-                showUI(linstener, method, data);
+            //对话框常用方法
+            methods = IDialog.class.getDeclaredMethods();
+            for (Method method : methods) {
+                mMethods.put(method.getName(), method);
             }
 
+            return Boolean.TRUE;
+        }
+
+        @Override
+        public void onEventSuccess(Object event) {
+
+            mLiveData.call(event.getClass().getName(),event);
             ZLog.d(TAG, "LiveDataManger onEventSuccess() end");
         }
-    };
+    }
+
 
     @Override
     public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
 
         ZLog.d(TAG, "LiveDataManger onStateChanged: " + event.name());
+
         if (source.getLifecycle().getCurrentState() == DESTROYED) {
-            mActive = false;
-            compositeFuture.clear();
+
             source.getLifecycle().removeObserver(this);
+            mActive = false;
+            mCompositeFuture.clear();
+
         } else {
             mActive = true;
         }
     }
-    @Override
-    public void onChanged(@Nullable VMData data) {
-        final ViewLinstener linstener = linstenerWeakReference.get();
-        if (null == linstener || mMethods == null) {
-            ZLog.d(TAG, "LiveDataManger onEventSuccess() but IViewLinstener is null, ClassName:%s", data.getClass().getName());
-            return;
-        }
 
-        ZLog.d(TAG, "LiveDataManger showUIValue() start");
-        if (TextUtils.isEmpty(data.methodName)) {
-            ZLog.d(TAG, "LiveDataManger showUIValue()  methodName is null");
+
+    public void call(Object ui, String method, Object... args) {
+
+        if (TextUtils.isEmpty(method)) {
+            ZLog.d(TAG, "LiveDataManger call()  methodName is null");
             return;
         }
         if (!this.mActive) {
-            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive, data.methodName));
+            ZLog.d(TAG, String.format("LiveDataManger call() mActive:%s, method:%s", this.mActive, method));
             return;
         }
 
         //LiveData
-        Method targetMethod = this.mMethods.get(data.methodName.trim());
+        Method targetMethod = this.mMethods.get(method.trim());
 
         if (targetMethod == null) {
-            ZLog.d(TAG, "LiveDataManger showUILiveData() Method is null, MethodName:%s", data.methodName);
+            ZLog.d(TAG, "LiveDataManger showUILiveData() Method is null, MethodName:%s", method);
             return;
         }
 
-        this.showUI(linstener, targetMethod, data.args);
-
-        ZLog.d(TAG, "LiveDataManger onChanged() end");
+        this.showUI(ui, targetMethod, args);
     }
 
-
-    public void call(Object ui,String method, Object... args){
-
-    }
-
-    public void showUI(Object ui, final Method method, Object... args) {
+    private void showUI(Object ui, final Method method, Object... args) {
 
         if (null == args) {
             args = new Object[0];
@@ -207,15 +220,11 @@ public class UIRegistry implements GenericLifecycleObserver, Callable<Boolean>{
         }
     }
 
-
     public boolean putFuture(Future future) {
-      return   compositeFuture.add(future);
+        return mCompositeFuture.add(future);
     }
 
-    public ILiveDataUI getLiveData() {
-        return liveData;
-    }
-    public IUIListener getIUIListener(){
-        return this;
+    public UILiveData getLiveData() {
+        return mLiveData;
     }
 }

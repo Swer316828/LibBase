@@ -35,7 +35,7 @@ public class MVVMActivity extends FragmentActivity implements IDialog {
             savedInstanceState.remove(BUNDLE_FRAGMENTS_KEY);
         }
         super.onCreate(savedInstanceState);
-        this.getLifecycle().addObserver(mUIRegistry);
+        mUIRegistry.observe(this,mUIListener);
     }
 
 
@@ -52,12 +52,11 @@ public class MVVMActivity extends FragmentActivity implements IDialog {
     }
 
 
-
     @Nullable
     public <T extends BaseViewModel> T getViewModel(@NonNull Class<T> cls) {
 
         if (mViewModelProvider == null) {
-            mViewModelProvider = new ViewModelProvider(this, new ViewModelFactoty(mUIListener));
+            mViewModelProvider = new ViewModelProvider(this, new ViewModelFactoty(mUIRegistry.getLiveData()));
         }
         return mViewModelProvider.get(cls);
     }
@@ -70,15 +69,6 @@ public class MVVMActivity extends FragmentActivity implements IDialog {
             mUIRegistry.call(MVVMActivity.this, method, args);
         }
 
-        @Override
-        public LifecycleOwner getLifecycleOwner() {
-            return MVVMActivity.this;
-        }
-
-        @Override
-        public IDialog getDialog() {
-            return MVVMActivity.this.getDialog();
-        }
     };
 
     @Override
@@ -136,8 +126,9 @@ public class MVVMActivity extends FragmentActivity implements IDialog {
 
     public IDialog getDialog() {
         if (dialog == null) {
-            dialog = new AppDialog(this);
-            this.getLifecycle().addObserver(dialog);
+            AppDialog appDialog = new AppDialog(this);
+            dialog = appDialog;
+            this.getLifecycle().addObserver(appDialog);
         }
         return dialog;
     }

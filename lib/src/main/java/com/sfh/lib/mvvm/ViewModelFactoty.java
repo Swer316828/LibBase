@@ -16,10 +16,10 @@ import java.lang.reflect.Constructor;
  */
 public class ViewModelFactoty extends ViewModelProvider.NewInstanceFactory {
 
-    IUIListener listener;
+    UILiveData mLiveData;
 
-    public ViewModelFactoty(IUIListener listener) {
-        this.listener = listener;
+    public ViewModelFactoty(UILiveData liveData) {
+        this.mLiveData = liveData;
     }
 
     @Override
@@ -29,9 +29,9 @@ public class ViewModelFactoty extends ViewModelProvider.NewInstanceFactory {
             return super.create(modelClass);
         }
         try {
-            Constructor<T> constructor = modelClass.getConstructor(new Class[]{IUIListener.class});
+            Constructor<T> constructor = modelClass.getConstructor(new Class[]{UILiveData.class});
             constructor.setAccessible(true);
-            return constructor.newInstance(listener);
+            return constructor.newInstance(mLiveData);
         } catch (Exception e) {
             throw HandleException.handleException(e);
         }

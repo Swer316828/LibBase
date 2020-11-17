@@ -18,10 +18,9 @@ import static android.arch.lifecycle.Lifecycle.State.STARTED;
 
  class UILiveData {
 
-
     private SafeIterableMap<IUIListener, ObserverWrapper> mObservers =
             new SafeIterableMap<>();
-    private LinkedHashMap<String, Object[]> mData = new LinkedHashMap<>();
+    private LinkedHashMap<String, Object[]> mData = new LinkedHashMap<>(7);
     private boolean mDispatchingValue;
     private boolean mDispatchInvalidated;
 
@@ -165,7 +164,6 @@ import static android.arch.lifecycle.Lifecycle.State.STARTED;
         }
     }
 
-
     public void removeObserver(@NonNull final IUIListener observer) {
 
         ObserverWrapper removed = mObservers.remove(observer);
@@ -176,11 +174,9 @@ import static android.arch.lifecycle.Lifecycle.State.STARTED;
         removed.activeStateChanged(false);
     }
 
-
     public void call(String method, Object... args) {
         mData.put(method, args);
         dispatchingValue(null);
     }
-
 
 }
