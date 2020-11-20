@@ -6,6 +6,7 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import android.util.SparseArray;
 
 
 import com.sfh.lib.annotation.LiveDataMatch;
@@ -30,9 +31,11 @@ import static android.arch.lifecycle.Lifecycle.State.DESTROYED;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/8
  */
-public class UIRegistry implements GenericLifecycleObserver{
+public class UIRegistry implements GenericLifecycleObserver,IEventListener,Callable<Boolean> {
 
     private final static String TAG = UIRegistry.class.getName();
+
+    private static final int MODIFIERS_IGNORE = Modifier.ABSTRACT | Modifier.STATIC;
 
     //任务管理
     private final CompositeFuture mCompositeFuture = new CompositeFuture();
@@ -41,83 +44,80 @@ public class UIRegistry implements GenericLifecycleObserver{
     private final UILiveData mLiveData = new UILiveData();
 
     //当前关联Activity,Fragment 注入方法集合
-    private LinkedHashMap<String, Method> mMethods  = new LinkedHashMap<>(10);
+    private SparseArray< Method> mMethods = new SparseArray<>(10);
 
     //状态
     private volatile boolean mActive = true;
 
 
     public UIRegistry(Object tag) {
-        Future future = ThreadTaskUtils.execute(new LiveEventHandler(tag.getClass()));
+        Future future = ThreadTaskUtils.execute(this);
         mCompositeFuture.add(future);
     }
 
     @MainThread
-    public void observe(@NonNull LifecycleOwner owner, @NonNull IUIListener observer){
+    public void observe(@NonNull LifecycleOwner owner, @NonNull IUIListener observer) {
 
-        mLiveData.observe(owner,observer);
+        mLiveData.observe(owner, observer);
         owner.getLifecycle().addObserver(this);
     }
 
-    class LiveEventHandler implements Callable<Boolean>,IEventListener{
-        private static final int MODIFIERS_IGNORE = Modifier.ABSTRACT | Modifier.STATIC;
+    @Override
+    public Boolean call() throws Exception {
 
-        private Class<?> tagClass;
-        public LiveEventHandler(Class<?> tagClass){
-            this.tagClass = tagClass;
-        }
+        Method[] methods = this.getClass().getDeclaredMethods();
+        for (Method method : methods) {
 
-        @Override
-        public Boolean call() throws Exception {
+            int modifiers = method.getModifiers();
 
-            Method[] methods = tagClass.getDeclaredMethods();
-            for (Method method : methods) {
-
-                int modifiers = method.getModifiers();
-
-                if ((modifiers & Modifier.PUBLIC) != 0 && (modifiers & MODIFIERS_IGNORE) == 0) {
+            if ((modifiers & Modifier.PUBLIC) != 0 && (modifiers & MODIFIERS_IGNORE) == 0) {
 
 
-                    LiveDataMatch live = method.getAnnotation(LiveDataMatch.class);
-                    if (live != null) {
-                        mMethods.put(method.getName(), method);
-                    }
+                LiveDataMatch live = method.getAnnotation(LiveDataMatch.class);
 
-                    EventMatch event = method.getAnnotation(EventMatch.class);
-                    if (event != null) {
-                        Class<?>[] parameterTypes = method.getParameterTypes();
-                        if (parameterTypes.length == 1) {
-                            Class<?> eventType = parameterTypes[0];
-                            mMethods.put(eventType.getName(), method);
-                            Future future = EventManager.register(eventType, LiveEventHandler.this);
-                            mCompositeFuture.add(future);
-                        }
-
-                    }
-
-                } else if (method.isAnnotationPresent(LiveDataMatch.class) || method.isAnnotationPresent(EventMatch.class)) {
-
-                    String methodName = method.getDeclaringClass().getName() + "." + method.getName();
-                    throw new RuntimeException(methodName +
-                            " is a illegal @LiveDataMatch or @Event method: must be public, non-static, and non-abstract");
+                if (live != null) {
+                    mMethods.put(method.getName().hashCode(), method);
                 }
-            }
 
-            //对话框常用方法
-            methods = IDialog.class.getDeclaredMethods();
-            for (Method method : methods) {
-                mMethods.put(method.getName(), method);
-            }
+                EventMatch event = method.getAnnotation(EventMatch.class);
 
-            return Boolean.TRUE;
+                if (event != null) {
+                    Class<?>[] parameterTypes = method.getParameterTypes();
+
+                    if (parameterTypes.length == 1) {
+
+                        Class<?> eventType = parameterTypes[0];
+                        mMethods.put(eventType.getName().hashCode(), method);
+                        Future future = EventManager.register(eventType, this);
+                        mCompositeFuture.add(future);
+                    }
+
+                }
+
+            } else if (method.isAnnotationPresent(LiveDataMatch.class) || method.isAnnotationPresent(EventMatch.class)) {
+
+                String methodName = method.getDeclaringClass().getName() + "." + method.getName();
+                throw new RuntimeException(methodName +
+                        " is a illegal @LiveDataMatch or @Event method: must be public, non-static, and non-abstract");
+            }
         }
 
-        @Override
-        public void onEventSuccess(Object event) {
-
-            mLiveData.call(event.getClass().getName(),event);
-            ZLog.d(TAG, "LiveDataManger onEventSuccess() end");
+        //对话框常用方法
+        methods = IDialog.class.getDeclaredMethods();
+        for (Method method : methods) {
+            mMethods.put(method.getName().hashCode(), method);
         }
+
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public void onEventSuccess(Object event) {
+
+        if (mActive){
+            mLiveData.call(event.getClass().getName(), event);
+        }
+        ZLog.d(TAG, "LiveDataManger onEventSuccess() end");
     }
 
 
@@ -150,7 +150,7 @@ public class UIRegistry implements GenericLifecycleObserver{
         }
 
         //LiveData
-        Method targetMethod = this.mMethods.get(method.trim());
+        Method targetMethod = this.mMethods.get(method.trim().hashCode());
 
         if (targetMethod == null) {
             ZLog.d(TAG, "LiveDataManger showUILiveData() Method is null, MethodName:%s", method);
@@ -177,13 +177,12 @@ public class UIRegistry implements GenericLifecycleObserver{
 
             dyArgs = new Object[paramLen];
 
-            for (int i = 0; i < paramLen; i++) {
-                if (i < dataLen) {
-                    dyArgs[i] = args[i];
-                } else {
-                    dyArgs[i] = this.getNullObject(parameter[i]);
-                }
+            System.arraycopy(args, 0, dyArgs, 0, dataLen);
+
+            for (int i = dataLen; i < paramLen; i++) {
+                dyArgs[i] = this.getNullObject(parameter[i]);
             }
+
         } else {
             dyArgs = args;
         }
@@ -205,16 +204,20 @@ public class UIRegistry implements GenericLifecycleObserver{
         }
     }
 
+    private static final Long EMPTY_L = 0L;
+    private static final Integer EMPTY_I = 0;
+    private static final Float EMPTY_F = 0.0F;
+
     private Object getNullObject(Class<?> parameter) {
 
         if (long.class.isAssignableFrom(parameter) || Long.class.isAssignableFrom(parameter)) {
-            return 0L;
+            return EMPTY_L;
         } else if (boolean.class.isAssignableFrom(parameter) || Boolean.class.isAssignableFrom(parameter)) {
             return Boolean.FALSE;
         } else if (int.class.isAssignableFrom(parameter) || Integer.class.isAssignableFrom(parameter)) {
-            return 0;
+            return EMPTY_I;
         } else if (float.class.isAssignableFrom(parameter) || Float.class.isAssignableFrom(parameter)) {
-            return 0.0F;
+            return EMPTY_F;
         } else {
             return null;
         }

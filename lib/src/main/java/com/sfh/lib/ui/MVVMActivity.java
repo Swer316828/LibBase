@@ -17,6 +17,8 @@ import com.sfh.lib.mvvm.UIRegistry;
 import com.sfh.lib.mvvm.ViewModelFactoty;
 
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 public class MVVMActivity extends FragmentActivity implements IDialog {
 
@@ -61,15 +63,7 @@ public class MVVMActivity extends FragmentActivity implements IDialog {
         return mViewModelProvider.get(cls);
     }
 
-    protected IUIListener mUIListener = new IUIListener() {
-
-        @Override
-        public void call(String method, Object... args) {
-
-            mUIRegistry.call(MVVMActivity.this, method, args);
-        }
-
-    };
+    protected IUIListener mUIListener = (method, args) -> mUIRegistry.call(MVVMActivity.this, method, args);
 
     @Override
     public void showLoading(boolean cancel) {
@@ -122,6 +116,13 @@ public class MVVMActivity extends FragmentActivity implements IDialog {
 
     public <T> boolean postEvent(T t) {
         return EventManager.postEvent(t);
+    }
+
+
+    public <T> boolean  putFutureTask(Future<T> future){
+
+       return mUIRegistry.putFuture(future);
+
     }
 
     public IDialog getDialog() {

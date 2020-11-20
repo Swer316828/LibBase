@@ -75,12 +75,12 @@ public class AppDialog implements IDialog, GenericLifecycleObserver {
 
     @Override
     public void showDialogToast(CharSequence msg) {
-
+        this.showDialog(new DialogBuilder().setHideCancel(true).setMessage(msg));
     }
 
     @Override
     public void showToast(CharSequence msg) {
-
+        this.showToast(msg,Toast.LENGTH_SHORT);
     }
 
 

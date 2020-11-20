@@ -6,6 +6,6 @@ package com.sfh.lib.mvvm;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/23
  */
-public interface ResultSuccess<T> {
+public interface IResultSuccess<T> {
     void onSuccess(T t)  throws Exception ;
 }

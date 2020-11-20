@@ -37,7 +37,7 @@ public abstract class MVVMFragment extends Fragment implements IDialog {
 
     public abstract void initData(View view);
 
-    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         boolean initCreateView = false;
         if (this.rootView != null) {
@@ -60,6 +60,7 @@ public abstract class MVVMFragment extends Fragment implements IDialog {
         return this.rootView;
     }
 
+    @Override
     public void onDestroy() {
         super.onDestroy();
         this.viewModelProvider = null;
@@ -78,6 +79,7 @@ public abstract class MVVMFragment extends Fragment implements IDialog {
 
 
     @Nullable
+    @Override
     public Context getContext() {
         Context context = super.getContext();
         if (context == null) {
@@ -98,14 +100,7 @@ public abstract class MVVMFragment extends Fragment implements IDialog {
         return viewModelProvider.get(cls);
     }
 
-    protected IUIListener mUIListener = new IUIListener() {
-
-        @Override
-        public void call(String method, Object... args) {
-
-            mUIRegistry.call(MVVMFragment.this, method, args);
-        }
-    };
+    protected IUIListener mUIListener = (method, args) -> mUIRegistry.call(MVVMFragment.this, method, args);
 
     @Override
     public void showLoading(boolean cancel) {
@@ -147,8 +142,10 @@ public abstract class MVVMFragment extends Fragment implements IDialog {
         this.getDialog().showToast(msg);
     }
 
-    public void putFuture(Future future) {
-        this.mUIRegistry.putFuture(future);
+    public <T> boolean  putFutureTask(Future<T> future){
+
+        return mUIRegistry.putFuture(future);
+
     }
 
     public <T> boolean postEvent(T t) {

@@ -61,7 +61,7 @@ public class ThreadTaskUtils {
      * 立即执行
      * @param runnable
      */
-    public static <T> Future<T> execute(Callable<T> runnable) {
+    public static <T> FutureTask<T> execute(Callable<T> runnable) {
         FutureTask<T> futureTask = new FutureTask(runnable);
         THREAD_POOL_EXECUTOR.execute(futureTask);
         return futureTask;

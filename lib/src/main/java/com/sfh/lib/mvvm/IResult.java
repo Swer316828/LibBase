@@ -9,6 +9,6 @@ import com.sfh.lib.exception.HandleException;
  * @author SunFeihu 孙飞虎
  * @date 2018/4/23
  */
-public interface Result<T> extends ResultSuccess<T> {
+public interface IResult<T> extends IResultSuccess<T> {
     void onFail(HandleException e);
 }
